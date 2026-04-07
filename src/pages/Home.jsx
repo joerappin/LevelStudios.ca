@@ -68,23 +68,6 @@ function LoginModal({ onClose }) {
             Se connecter
           </button>
         </form>
-        <div className="mt-6 pt-6" style={{ borderTop: '1px solid #1e1e1e' }}>
-          <p className="text-zinc-600 text-xs text-center mb-3">Comptes de démonstration</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {[
-              { role: 'Admin', email: 'joe.rappin@gmail.com', pwd: 'level88' },
-              { role: 'Employé', email: 'employe@levelstudio.fr', pwd: 'emp123' },
-              { role: 'Client', email: 'client@test.fr', pwd: 'client123' },
-            ].map(a => (
-              <button key={a.role} onClick={() => { setEmail(a.email); setPassword(a.pwd) }}
-                className="border text-zinc-400 rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/5"
-                style={{ background: '#1a1a1a', borderColor: '#2a2a2a' }}>
-                <div className="font-medium">{a.role}</div>
-                <div className="text-zinc-500 truncate">{a.email}</div>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )

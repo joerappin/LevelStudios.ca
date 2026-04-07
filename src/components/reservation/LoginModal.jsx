@@ -113,12 +113,6 @@ export default function LoginModal({ onClose, mode = 'login', onLoginSuccess }) 
               <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-2.5 font-medium transition-colors">
                 {loading ? 'Connexion...' : 'Se connecter'}
               </button>
-              <div className="text-center">
-                <p className="text-zinc-500 text-xs mt-2">Comptes test :</p>
-                <p className="text-zinc-600 text-xs">Admin: joe.rappin@gmail.com / level88</p>
-                <p className="text-zinc-600 text-xs">Employé: employe@levelstudio.fr / emp123</p>
-                <p className="text-zinc-600 text-xs">Client: client@test.fr / client123</p>
-              </div>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-3">
