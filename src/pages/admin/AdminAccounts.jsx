@@ -91,10 +91,15 @@ export default function AdminAccounts() {
   const handleDelete = (id, isEmployee) => {
     if (!confirm('Supprimer ce compte définitivement ?')) return
     if (isEmployee) {
+      const emp = employees.find(e => e.id === id)
+      const isAdmin = emp?.roleKey === 'admin'
       Store.updateEmployee(id, { active: false, deleted: true })
+      Store.deleteAccount(id)
+      fetch(`${isAdmin ? '/api/admins' : '/api/workers'}/${id}`, { method: 'DELETE' }).catch(() => {})
       setEmployees(Store.getEmployees().filter(e => !e.deleted))
     } else {
       Store.deleteAccount(id)
+      fetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(() => {})
       setClients(Store.getAccounts().filter(a => a.type === 'client'))
     }
   }
@@ -167,7 +172,9 @@ export default function AdminAccounts() {
       chef_projet: ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'alerts', 'library'],
       technicien:  ['dashboard', 'projects', 'messaging', 'check', 'calendar', 'leave', 'alerts', 'rushes'],
     }
-    fetch('/api/workers', {
+    const isAdmin = empForm.role === 'admin'
+    const apiEndpoint = isAdmin ? '/api/admins' : '/api/workers'
+    fetch(apiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -177,9 +184,9 @@ export default function AdminAccounts() {
         role: roleName,
         roleKey: empForm.role,
         phone: empForm.phone || null,
-        type: 'employee',
+        type: isAdmin ? 'admin' : 'employee',
         permissions: ROLE_PERMISSIONS[empForm.role] || [],
-        dashboard: empForm.role === 'chef_projet' ? '/chef/dashboard' : '/employee/dashboard',
+        dashboard: isAdmin ? '/admin/dashboard' : empForm.role === 'chef_projet' ? '/chef/dashboard' : '/employee/dashboard',
         created_at: new Date().toISOString(),
       }),
     }).catch(() => {})

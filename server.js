@@ -13,8 +13,11 @@ if (!fs.existsSync(CUSTOMERS_DIR)) fs.mkdirSync(CUSTOMERS_DIR, { recursive: true
 const WORKERS_DIR = path.join(__dirname, 'workers')
 if (!fs.existsSync(WORKERS_DIR)) fs.mkdirSync(WORKERS_DIR, { recursive: true })
 
-const CLIENTS_DIR = path.join(__dirname, 'clients')
+const CLIENTS_DIR = path.join(__dirname, 'customers')
 if (!fs.existsSync(CLIENTS_DIR)) fs.mkdirSync(CLIENTS_DIR, { recursive: true })
+
+const ADM_DIR = path.join(__dirname, 'adm')
+if (!fs.existsSync(ADM_DIR)) fs.mkdirSync(ADM_DIR, { recursive: true })
 
 const app = express()
 app.use(cors())
@@ -166,6 +169,31 @@ app.post('/api/clients', (req, res) => {
 
 app.delete('/api/clients/:id', (req, res) => {
   const p = path.join(CLIENTS_DIR, `${req.params.id}.json`)
+  if (fs.existsSync(p)) fs.unlinkSync(p)
+  res.json({ ok: true })
+})
+
+// ─── Admins archive ───────────────────────────────────────────────────────────
+app.get('/api/admins', (req, res) => {
+  const admins = fs.readdirSync(ADM_DIR)
+    .filter(f => f.endsWith('.json'))
+    .map(f => {
+      try { return JSON.parse(fs.readFileSync(path.join(ADM_DIR, f), 'utf8')) } catch { return null }
+    })
+    .filter(Boolean)
+  res.json(admins)
+})
+
+app.post('/api/admins', (req, res) => {
+  const admin = req.body
+  if (!admin?.id) return res.status(400).json({ error: 'id requis' })
+  const filename = `${admin.id}.json`
+  fs.writeFileSync(path.join(ADM_DIR, filename), JSON.stringify(admin, null, 2), 'utf8')
+  res.json({ ok: true, filename })
+})
+
+app.delete('/api/admins/:id', (req, res) => {
+  const p = path.join(ADM_DIR, `${req.params.id}.json`)
   if (fs.existsSync(p)) fs.unlinkSync(p)
   res.json({ ok: true })
 })
