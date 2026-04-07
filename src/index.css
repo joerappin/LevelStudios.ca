@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base reset ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: 'Open Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Heading font — Montserrat ──────────────────────────── */
+h1, h2, h3, h4, h5, h6,
+.font-bold, .font-semibold, .font-black {
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+/* ─── Smooth scroll ──────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ─── Scrollbar — brand navy ─────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #010A2A;
+}
+::-webkit-scrollbar-thumb {
+  background: #0A4C99;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3C9FA9;
+}

@@ -1,0 +1,107 @@
+<!--
+  Template EmailJS — Bienvenue Level Studios
+
+  CONFIGURATION :
+  1. Connectez-vous sur https://www.emailjs.com
+  2. Email Templates → Create New Template
+  3. Collez ce HTML dans l'éditeur HTML du template
+  4. Paramètres du template :
+     - Subject : Bienvenue chez Level Studios, {{first_name}} !
+     - To Email : {{to_email}}
+     - From Name : Level Studios
+     - Reply To : {{reply_to}}
+  5. Notez le Template ID et collez-le dans .env → VITE_EMAILJS_TEMPLATE_ID
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bienvenue chez Level Studios</title>
+</head>
+<body style="margin:0;padding:0;background:#010A2A;font-family:'Open Sans',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#010A2A;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:560px;background:#01154B;border-radius:16px;border:1px solid rgba(10,76,153,0.4);overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#01154B 0%,#0A4C99 100%);padding:40px 40px 32px;text-align:center;">
+              <div style="font-family:'Montserrat',Arial,sans-serif;font-size:26px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;">
+                LEVEL STUDIOS
+              </div>
+              <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px;letter-spacing:1px;text-transform:uppercase;">
+                Studios de production professionnels
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <p style="font-size:22px;font-weight:700;color:#ffffff;margin:0 0 8px;">
+                Bienvenue, {{first_name}} ! 👋
+              </p>
+              <p style="font-size:14px;color:rgba(255,255,255,0.6);margin:0 0 28px;line-height:1.6;">
+                Votre compte <strong style="color:#ffffff;">Level Studios</strong> a bien été créé.
+                Vous pouvez dès maintenant réserver votre studio et accéder à votre espace client.
+              </p>
+
+              <!-- Info compte -->
+              <table width="100%" style="background:rgba(255,255,255,0.05);border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;">Informations du compte</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:13px;color:rgba(255,255,255,0.5);padding:4px 0;width:130px;">Nom</td>
+                        <td style="font-size:13px;color:#ffffff;font-weight:600;padding:4px 0;">{{to_name}}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:13px;color:rgba(255,255,255,0.5);padding:4px 0;">Email</td>
+                        <td style="font-size:13px;color:#ffffff;font-weight:600;padding:4px 0;">{{to_email}}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:13px;color:rgba(255,255,255,0.5);padding:4px 0;">Type de compte</td>
+                        <td style="font-size:13px;color:#ffffff;font-weight:600;padding:4px 0;">{{account_type}}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="{{login_url}}"
+                      style="display:inline-block;background:#0A4C99;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:16px 40px;border-radius:12px;letter-spacing:0.3px;box-shadow:0 4px 20px rgba(10,76,153,0.5);">
+                      Accéder à mon espace →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size:12px;color:rgba(255,255,255,0.3);margin:28px 0 0;line-height:1.6;text-align:center;">
+                Une question ? Répondez directement à cet email ou écrivez-nous à
+                <a href="mailto:contact@levelstudio.fr" style="color:#3C9FA9;text-decoration:none;">contact@levelstudio.fr</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 40px;border-top:1px solid rgba(255,255,255,0.07);text-align:center;">
+              <p style="font-size:11px;color:rgba(255,255,255,0.2);margin:0;">
+                © 2025 Level Studios Inc. · Montréal, QC
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
