@@ -41,7 +41,7 @@ function generateResId() {
 }
 
 // ─── Seed version — increment to force a full re-seed ───────────────────────
-const SEED_VERSION = '7'
+const SEED_VERSION = '8'
 
 // Clear all demo data on version change
 function seedIfEmpty() {

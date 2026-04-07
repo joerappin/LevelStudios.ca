@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
     if (backup) {
       try { setImpersonatedBy(JSON.parse(backup)) } catch {}
     }
-    Store.restoreAccountsFromServer().finally(() => setLoading(false))
+    setLoading(false)
   }, [])
 
   const login = (email, password) => {
