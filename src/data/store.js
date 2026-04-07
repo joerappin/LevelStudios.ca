@@ -250,6 +250,9 @@ export const Store = {
   findAccountByEmailAndPassword: (email, password) => {
     return getAll(KEYS.accounts).find(a => a.email === email && a.password === password && !a.pending) || null
   },
+  deleteAccount: (id) => {
+    saveAll(KEYS.accounts, getAll(KEYS.accounts).filter(a => a.id !== id))
+  },
 
   // Alerts
   getAlerts: () => getAll(KEYS.alerts),

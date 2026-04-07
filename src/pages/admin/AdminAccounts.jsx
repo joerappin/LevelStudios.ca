@@ -8,10 +8,6 @@ import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { sendAccountCreatedEmail } from '../../utils/emailService'
 
-const INITIAL_CLIENTS = [
-  { id: 'LVL3C0001', email: 'client@test.fr', name: 'Thomas Martin', type: 'client', clientType: 'particulier', phone: '0612345678', created_at: '2024-06-01', suspended: false },
-  { id: 'LVL3B0001', email: 'pro@company.fr', name: 'Société Media Pro', type: 'client', clientType: 'pro', phone: '0123456789', created_at: '2024-07-15', suspended: false },
-]
 
 const EMPLOYEE_ROLES = [
   {
@@ -50,7 +46,7 @@ export default function AdminAccounts() {
   const isDark = theme === 'dark'
   const [tab, setTab] = useState('clients')
   const [search, setSearch] = useState('')
-  const [clients, setClients] = useState(INITIAL_CLIENTS)
+  const [clients, setClients] = useState(() => Store.getAccounts().filter(a => a.type === 'client'))
   const [employees, setEmployees] = useState(Store.getEmployees())
 
   // Modal state
@@ -86,7 +82,9 @@ export default function AdminAccounts() {
       Store.updateEmployee(id, { active: !emp.active })
       setEmployees(Store.getEmployees())
     } else {
-      setClients(prev => prev.map(c => c.id === id ? { ...c, suspended: !c.suspended } : c))
+      const client = clients.find(c => c.id === id)
+      Store.updateAccount(id, { suspended: !client.suspended })
+      setClients(Store.getAccounts().filter(a => a.type === 'client'))
     }
   }
 
@@ -96,7 +94,8 @@ export default function AdminAccounts() {
       Store.updateEmployee(id, { active: false, deleted: true })
       setEmployees(Store.getEmployees().filter(e => !e.deleted))
     } else {
-      setClients(prev => prev.filter(c => c.id !== id))
+      Store.deleteAccount(id)
+      setClients(Store.getAccounts().filter(a => a.type === 'client'))
     }
   }
 
@@ -133,17 +132,7 @@ export default function AdminAccounts() {
         created_at: new Date().toISOString(),
       }),
     }).catch(() => {})
-    setClients(prev => [...prev, {
-      id: account.id,
-      email: clientForm.email,
-      name,
-      type: 'client',
-      clientType,
-      company: clientForm.company || null,
-      phone: '',
-      created_at: new Date().toISOString().split('T')[0],
-      suspended: false,
-    }])
+    setClients(Store.getAccounts().filter(a => a.type === 'client'))
     setSuccessInfo({ name, email: clientForm.email, setUrl: result.setUrl })
     setModal('success')
     setTab('clients')
@@ -194,7 +183,7 @@ export default function AdminAccounts() {
         created_at: new Date().toISOString(),
       }),
     }).catch(() => {})
-    setEmployees(Store.getEmployees())
+    setEmployees(Store.getEmployees().filter(e => !e.deleted))
     setSuccessInfo({ name: empForm.name, email: empForm.email, setUrl: result.setUrl })
     setModal('success')
     setTab('employees')
