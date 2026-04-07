@@ -41,134 +41,14 @@ function generateResId() {
 }
 
 // ─── Seed version — increment to force a full re-seed ───────────────────────
-const SEED_VERSION = '5'
+const SEED_VERSION = '6'
 
-// Seed initial data if empty
+// Clear all demo data on version change
 function seedIfEmpty() {
-  // Force re-seed when version changes (fixes incorrect demo prices)
   if (localStorage.getItem('_seed_v') !== SEED_VERSION) {
     Object.values(KEYS).forEach(k => localStorage.removeItem(k))
+    localStorage.removeItem('level_studio_user')
     localStorage.setItem('_seed_v', SEED_VERSION)
-  }
-
-  if (getAll(KEYS.reservations).length === 0) {
-    // Prices: ARGENT 221 CAD/h · GOLD 587 CAD/h
-    const reservations = [
-      {
-        id: generateResId(),
-        client_email: 'client@test.fr',
-        client_name: 'Thomas Martin',
-        client_id: 'LVL3C0001',
-        studio: 'Studio A',
-        service: 'ARGENT',
-        price: 442,           // 221 CAD/h × 2h
-        date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-        start_time: '10:00',
-        end_time: '12:00',
-        duration: 2,
-        persons: 2,
-        status: 'validee',
-        created_at: new Date().toISOString(),
-        additional_services: [],
-        promo_code: null,
-      },
-      {
-        id: generateResId(),
-        client_email: 'client@test.fr',
-        client_name: 'Thomas Martin',
-        client_id: 'LVL3C0001',
-        studio: 'Studio B',
-        service: 'ARGENT',
-        price: 486,           // 221 CAD/h × 2h + Short vidéo 44 CAD
-        date: new Date(Date.now() - 86400000 * 7).toISOString().split('T')[0],
-        start_time: '14:00',
-        end_time: '16:00',
-        duration: 2,
-        persons: 3,
-        status: 'livree',
-        created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
-        additional_services: ['Short'],
-        promo_code: null,
-      },
-      {
-        id: generateResId(),
-        client_email: 'client@test.fr',
-        client_name: 'Thomas Martin',
-        client_id: 'LVL3C0001',
-        studio: 'Studio C',
-        service: 'GOLD',
-        price: 1174,          // 587 CAD/h × 2h
-        date: new Date(Date.now() - 86400000 * 21).toISOString().split('T')[0],
-        start_time: '09:00',
-        end_time: '11:00',
-        duration: 2,
-        persons: 4,
-        status: 'livree',
-        created_at: new Date(Date.now() - 86400000 * 28).toISOString(),
-        additional_services: ['Photo', 'Short'],
-        promo_code: null,
-      },
-    ]
-    saveAll(KEYS.reservations, reservations)
-  }
-
-  if (getAll(KEYS.promoCodes).length === 0) {
-    const promoCodes = [
-      { id: generateId('PROMO'), code: 'LEVEL10', type: 'percentage', value: 10, active: true, uses: 0, max_uses: 100, expires_at: null, created_at: new Date().toISOString() },
-      { id: generateId('PROMO'), code: 'BIENVENUE20', type: 'percentage', value: 20, active: true, uses: 3, max_uses: 50, expires_at: '2026-12-31', created_at: new Date().toISOString() },
-      { id: generateId('PROMO'), code: 'REMISE50', type: 'fixed', value: 50, active: true, uses: 1, max_uses: null, expires_at: null, created_at: new Date().toISOString() },
-    ]
-    saveAll(KEYS.promoCodes, promoCodes)
-  }
-
-  if (getAll(KEYS.employees).length === 0) {
-    const employees = [
-      { id: 'LVL20001', email: 'employe@levelstudio.fr', name: 'Marie Dupont', role: 'Project Manager', phone: '0612345678', joined_at: '2024-01-15', active: true },
-      { id: 'LVL20002', email: 'marc@levelstudio.fr', name: 'Marc Lefebvre', role: 'Technicien', phone: '0623456789', joined_at: '2024-03-01', active: true },
-    ]
-    saveAll(KEYS.employees, employees)
-  }
-
-  if (getAll(KEYS.hourPacks).length === 0) {
-    const packs = [
-      {
-        id: generateId('PACK'),
-        client_email: 'client@test.fr',
-        client_name: 'Thomas Martin',
-        tier: 'ARGENT',
-        name: 'ARGENT — Pack 10h',
-        hours_total: 10,
-        hours_used: 3,
-        price_cad: 1874,        // 187 CAD/h × 10h (-15%)
-        price_per_hour: 187,
-        created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
-        expires_at: null,
-      },
-    ]
-    saveAll(KEYS.hourPacks, packs)
-  }
-
-  if (getAll(KEYS.projects).length === 0) {
-    const projects = [
-      { id: generateId('PROJ'), client_email: 'client@test.fr', client_name: 'Thomas Martin', title: 'Podcast Episode 1', studio: 'Alpha', status: 'En cours', pipeline: 'Alpha', assigned_to: 'employe@levelstudio.fr', created_at: new Date().toISOString(), files: [] },
-      { id: generateId('PROJ'), client_email: 'client@test.fr', client_name: 'Thomas Martin', title: 'Interview CEO', studio: 'Beta', status: 'Livré', pipeline: 'Alpha', assigned_to: 'employe@levelstudio.fr', created_at: new Date(Date.now() - 86400000 * 5).toISOString(), files: [{ name: 'interview_ceo.mp4', url: '#', type: 'video', size: '2.4 GB' }] },
-    ]
-    saveAll(KEYS.projects, projects)
-  }
-
-  if (getAll(KEYS.messages).length === 0) {
-    const messages = [
-      { id: generateId('MSG'), from_email: 'client@test.fr', from_name: 'Thomas Martin', subject: 'Question sur ma réservation', body: 'Bonjour, je souhaitais savoir si je pouvais modifier ma réservation du 26 mars ?', type: 'sav', read: false, created_at: new Date(Date.now() - 3600000).toISOString(), replies: [] },
-    ]
-    saveAll(KEYS.messages, messages)
-  }
-
-  if (getAll(KEYS.checkIns).length === 0) {
-    const today = new Date().toISOString().split('T')[0]
-    const checkIns = [
-      { id: generateId('CHK'), employee_email: 'employe@levelstudio.fr', employee_name: 'Marie Dupont', date: today, check_in: '09:02', check_out: null, created_at: new Date().toISOString() },
-    ]
-    saveAll(KEYS.checkIns, checkIns)
   }
 }
 

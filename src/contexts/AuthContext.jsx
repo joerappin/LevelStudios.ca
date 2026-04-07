@@ -9,28 +9,6 @@ const TEST_ACCOUNTS = [
     name: 'Joe Rappin',
     id: 'LVL10001',
   },
-  {
-    email: 'employe@levelstudio.fr',
-    password: 'emp123',
-    type: 'employee',
-    name: 'Marie Dupont',
-    id: 'LVL20001',
-  },
-  {
-    email: 'client@test.fr',
-    password: 'client123',
-    type: 'client',
-    name: 'Thomas Martin',
-    id: 'LVL3C0001',
-  },
-  {
-    email: 'pro@company.fr',
-    password: 'pro123',
-    type: 'client',
-    clientType: 'pro',
-    name: 'Société Media Pro',
-    id: 'LVL3B0001',
-  },
 ]
 
 const AuthContext = createContext(null)
