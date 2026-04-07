@@ -40,7 +40,6 @@ import EmployeeAlerts from './pages/employee/EmployeeAlerts'
 // Chef de Projet pages
 import ChefDashboard from './pages/chef/ChefDashboard'
 import ChefCalendar from './pages/chef/ChefCalendar'
-import ChefBooking from './pages/chef/ChefBooking'
 import ChefReservations from './pages/chef/ChefReservations'
 import ChefProjects from './pages/chef/ChefProjects'
 import ChefAlerts from './pages/chef/ChefAlerts'
@@ -111,7 +110,6 @@ function AppRoutes() {
 
       <Route path="/chef/dashboard" element={<ProtectedRoute requiredType="employee"><ChefDashboard /></ProtectedRoute>} />
       <Route path="/chef/calendar" element={<ProtectedRoute requiredType="employee"><ChefCalendar /></ProtectedRoute>} />
-      <Route path="/chef/booking" element={<ProtectedRoute requiredType="employee"><ChefBooking /></ProtectedRoute>} />
       <Route path="/chef/reservations" element={<ProtectedRoute requiredType="employee"><ChefReservations /></ProtectedRoute>} />
       <Route path="/chef/projects" element={<ProtectedRoute requiredType="employee"><ChefProjects /></ProtectedRoute>} />
       <Route path="/chef/alerts" element={<ProtectedRoute requiredType="employee"><ChefAlerts /></ProtectedRoute>} />

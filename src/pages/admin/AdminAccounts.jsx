@@ -164,7 +164,7 @@ export default function AdminAccounts() {
     const result = await sendAccountCreatedEmail({ name: empForm.name, email: empForm.email, token, accountType: 'employee' })
     const ROLE_PERMISSIONS = {
       admin:       ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'accounts', 'sav', 'promo', 'check', 'boarding', 'manual', 'tool'],
-      chef_projet: ['dashboard', 'calendar', 'reservations', 'booking', 'projects', 'rushes', 'messaging', 'alerts', 'library'],
+      chef_projet: ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'alerts', 'library'],
       technicien:  ['dashboard', 'projects', 'messaging', 'check', 'calendar', 'leave', 'alerts', 'rushes'],
     }
     fetch('/api/workers', {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Calendar, ClipboardList, BookOpen, FolderOpen,
+  LayoutDashboard, Calendar, ClipboardList, FolderOpen,
   Bell, HardDrive, MessageSquare, UserCircle, Clock, TrendingUp,
   Users, CheckCircle, AlertCircle, PlusCircle, Headphones
 } from 'lucide-react'
@@ -16,7 +16,6 @@ export const CHEF_NAV = [
   { separator: true },
   { label: 'Calendrier',    path: '/chef/calendar',       icon: <Calendar className="w-4 h-4" /> },
   { label: 'Réservations', path: '/chef/reservations',  icon: <ClipboardList className="w-4 h-4" /> },
-  { label: 'Booking',      path: '/chef/booking',       icon: <BookOpen className="w-4 h-4" /> },
   { label: 'Projets',      path: '/chef/projects',      icon: <FolderOpen className="w-4 h-4" /> },
   { label: 'Alertes',     path: '/chef/alerts',     icon: <Bell className="w-4 h-4" /> },
   { label: 'Rushes',      path: '/chef/rushes',     icon: <HardDrive className="w-4 h-4" /> },
