@@ -28,6 +28,7 @@ import AdminBoarding from './pages/admin/AdminBoarding'
 import AdminManual from './pages/admin/AdminManual'
 import AdminTool from './pages/admin/AdminTool'
 import AdminBeta from './pages/admin/AdminBeta'
+import AdminPerf from './pages/admin/AdminPerf'
 import AdminVersions from './pages/admin/AdminVersions'
 import AdminPricing from './pages/admin/AdminPricing'
 
@@ -101,6 +102,7 @@ function AppRoutes() {
       <Route path="/admin/boarding" element={<ProtectedRoute requiredType="admin"><AdminBoarding /></ProtectedRoute>} />
       <Route path="/admin/manual" element={<ProtectedRoute requiredType="admin"><AdminManual /></ProtectedRoute>} />
       <Route path="/admin/tool" element={<ProtectedRoute requiredType="admin"><AdminTool /></ProtectedRoute>} />
+      <Route path="/admin/perf" element={<ProtectedRoute requiredType="admin"><AdminPerf /></ProtectedRoute>} />
       <Route path="/admin/beta" element={<ProtectedRoute requiredType="admin"><AdminBeta /></ProtectedRoute>} />
       <Route path="/admin/versions" element={<ProtectedRoute requiredType="admin"><AdminVersions /></ProtectedRoute>} />
       <Route path="/admin/pricing" element={<ProtectedRoute requiredType="admin"><AdminPricing /></ProtectedRoute>} />

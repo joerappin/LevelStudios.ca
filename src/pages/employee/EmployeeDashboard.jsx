@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, MessageSquare, Clock, Calendar, Umbrella, UserCircle, Bell, Film, HardDrive } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, MessageSquare, Clock, Calendar, Umbrella, UserCircle, Bell, Film, HardDrive, Medal } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
 import { createPageUrl } from '../../utils'
@@ -30,6 +30,12 @@ export default function EmployeeDashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState({ projects: [], checkIns: [], leaveRequests: [], messages: [] })
 
+  function getGrade(count) {
+    if (count >= 10) return { label: 'Gold',   icon: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30' }
+    if (count >= 4)  return { label: 'Argent', icon: '🥈', color: 'text-zinc-300',   bg: 'bg-zinc-500/10',   border: 'border-zinc-500/30' }
+    return                  { label: 'Bronze', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30' }
+  }
+
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
   const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
@@ -42,12 +48,20 @@ export default function EmployeeDashboard() {
     }
     const projects = Store.getProjects().filter(p => p.assigned_to === user?.email)
     const today = new Date().toISOString().split('T')[0]
+    const now = new Date()
     const checkIns = Store.getCheckIns().filter(c => c.employee_email === user?.email)
     const todayCheck = checkIns.find(c => c.date === today)
     const leaveRequests = Store.getLeaveRequests().filter(l => l.employee_email === user?.email)
     const messages = Store.getInternalMessages().filter(m => m.to_email === user?.email && !m.read)
     const alerts = Store.getAlerts().filter(a => a.to_email === user?.email)
-    setData({ projects, checkIns, todayCheck, leaveRequests, messages, alerts })
+    // Performance du mois
+    const monthProjects = projects.filter(p => {
+      const d = new Date(p.created_at)
+      return (p.status === 'Livré' || p.status === 'Archivé') && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+    const argent = monthProjects.filter(p => p.formule === 'ARGENT' || p.service === 'ARGENT').length
+    const gold   = monthProjects.filter(p => p.formule === 'GOLD'   || p.service === 'GOLD').length
+    setData({ projects, checkIns, todayCheck, leaveRequests, messages, alerts, monthProjects, argent, gold })
   }, [user])
 
   return (
@@ -149,6 +163,36 @@ export default function EmployeeDashboard() {
             </div>
           </div>
         )}
+
+        {/* Performance du mois */}
+        {(() => {
+          const grade = getGrade(data.monthProjects?.length || 0)
+          return (
+            <div className={`border rounded-2xl p-5 ${card}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Medal className="w-4 h-4 text-violet-400" />
+                <h3 className={`font-semibold text-sm ${textPrimary}`}>Performance du mois</h3>
+                <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-md border ${grade.bg} ${grade.color} ${grade.border}`}>
+                  {grade.icon} {grade.label}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className={`rounded-xl p-3 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
+                  <div className={`text-2xl font-black ${textPrimary}`}>{data.monthProjects?.length || 0}</div>
+                  <div className={`text-xs ${textSecondary}`}>Projets livrés</div>
+                </div>
+                <div className={`rounded-xl p-3 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
+                  <div className="text-2xl font-black text-blue-400">{data.argent || 0}</div>
+                  <div className={`text-xs ${textSecondary}`}>Offre Argent</div>
+                </div>
+                <div className={`rounded-xl p-3 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
+                  <div className="text-2xl font-black text-yellow-400">{data.gold || 0}</div>
+                  <div className={`text-xs ${textSecondary}`}>Offre Gold</div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         <div className={`border rounded-2xl p-6 ${card}`}>
           <div className="flex items-center justify-between mb-4">

@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LogOut, Menu, X, Sun, Moon, ChevronDown, ArrowLeftCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
 import { translations } from '../i18n/translations'
 import { cn } from '../utils'
+import { Store } from '../data/store'
 import AdminChatBot from './AdminChatBot'
 import ClientChatBot from './ClientChatBot'
 
@@ -45,6 +46,22 @@ export default function Layout({ children, navItems, title }) {
   const navigate  = useNavigate()
   const location  = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [alertCounts, setAlertCounts] = useState({ Retard: 0, Retour: 0, Urgent: 0 })
+
+  useEffect(() => {
+    if (user?.type !== 'admin') return
+    const compute = () => {
+      const alerts = Store.getAlerts().filter(a => a.status === 'sent')
+      setAlertCounts({
+        Retard: alerts.filter(a => a.type === 'Retard').length,
+        Retour: alerts.filter(a => a.type === 'Retour').length,
+        Urgent: alerts.filter(a => a.type === 'Urgent').length,
+      })
+    }
+    compute()
+    const id = setInterval(compute, 30000)
+    return () => clearInterval(id)
+  }, [user])
 
   const isDark   = theme === 'dark'
   const S        = isDark ? DARK : LIGHT
@@ -236,7 +253,33 @@ export default function Layout({ children, navItems, title }) {
               color: textPrimary, fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.01em',
             }}>{title}</h1>
           </div>
-          <div />
+          {/* Badge global alertes — admin uniquement */}
+          {user?.type === 'admin' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {[
+                { key: 'Retard',  label: 'Retard',  bg: 'rgba(234,179,8,0.15)',  color: '#fbbf24', border: 'rgba(234,179,8,0.3)' },
+                { key: 'Retour',  label: 'Retour',  bg: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: 'rgba(59,130,246,0.3)' },
+                { key: 'Urgent',  label: 'Urgent',  bg: 'rgba(239,68,68,0.15)',  color: '#f87171', border: 'rgba(239,68,68,0.3)' },
+              ].map(({ key, label, bg, color, border }) => (
+                <button key={key} onClick={() => navigate('/admin/alerts')} style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+                  background: alertCounts[key] > 0 ? bg : 'transparent',
+                  color: alertCounts[key] > 0 ? color : isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                  border: `1px solid ${alertCounts[key] > 0 ? border : 'transparent'}`,
+                  cursor: 'pointer', transition: 'all 0.2s',
+                }}>
+                  <span style={{
+                    minWidth: '16px', height: '16px', borderRadius: '50%', fontSize: '10px', fontWeight: 900,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: alertCounts[key] > 0 ? color : 'transparent',
+                    color: alertCounts[key] > 0 ? '#000' : 'inherit',
+                  }}>{alertCounts[key]}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </header>
 
         {impersonatedBy && (

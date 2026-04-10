@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
-import { CheckSquare, Square, ChevronDown, ChevronUp } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { CheckSquare, Square, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
+import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 
 const ONBOARDING_STEPS = [
@@ -37,9 +38,31 @@ const ONBOARDING_STEPS = [
 export default function AdminBoarding() {
   const { theme } = useApp()
   const isDark = theme === 'dark'
+  const [tab, setTab] = useState('checklist')
   const [steps, setSteps] = useState(ONBOARDING_STEPS)
   const [openCategories, setOpenCategories] = useState(['Accueil', 'Outils & Accès', 'Administratif'])
   const [selectedEmployee, setSelectedEmployee] = useState('LVL20001')
+  const [accounts, setAccounts] = useState([])
+  const [visiblePwd, setVisiblePwd] = useState({})
+
+  useEffect(() => {
+    const all = Store.getAccounts()
+    const employees = Store.getEmployees().filter(e => !e.deleted)
+    const merged = employees.map(emp => {
+      const acc = all.find(a => a.id === emp.id) || {}
+      return {
+        id: emp.id,
+        name: emp.name,
+        email: emp.email,
+        role: emp.role,
+        roleKey: emp.roleKey,
+        password: acc.password || '—',
+        active: emp.active !== false,
+        deleted: !!emp.deleted,
+      }
+    })
+    setAccounts(merged)
+  }, [])
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
@@ -68,7 +91,74 @@ export default function AdminBoarding() {
 
   return (
     <Layout navItems={ADMIN_NAV} title="Onboarding">
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-6">
+        {/* Tabs */}
+        <div className="flex gap-2">
+          <button onClick={() => setTab('checklist')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === 'checklist' ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            Checklist intégration
+          </button>
+          <button onClick={() => setTab('comptes')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === 'comptes' ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            Comptes équipe
+          </button>
+        </div>
+
+        {/* ── TABLEAU COMPTES ── */}
+        {tab === 'comptes' && (
+          <div className={`border rounded-2xl overflow-hidden ${card}`}>
+            <table className="w-full">
+              <thead>
+                <tr className={`border-b text-xs font-semibold ${isDark ? 'text-zinc-500 border-zinc-800' : 'text-gray-500 border-gray-200'}`}>
+                  <th className="text-left px-5 py-3">Compte</th>
+                  <th className="text-left px-5 py-3 hidden sm:table-cell">Identifiant</th>
+                  <th className="text-left px-5 py-3 hidden md:table-cell">Mot de passe</th>
+                  <th className="text-left px-5 py-3 hidden lg:table-cell">Rôle</th>
+                  <th className="text-center px-5 py-3">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accounts.length === 0 && (
+                  <tr><td colSpan={5} className={`px-5 py-8 text-center text-sm ${textSecondary}`}>Aucun compte employé.</td></tr>
+                )}
+                {accounts.map(acc => (
+                  <tr key={acc.id} className={`border-b ${isDark ? 'border-zinc-800/60' : 'border-gray-100'}`}>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center text-xs font-bold text-violet-400">{acc.name.charAt(0)}</div>
+                        <span className={`text-sm font-medium ${textPrimary}`}>{acc.name}</span>
+                      </div>
+                    </td>
+                    <td className={`px-5 py-3.5 hidden sm:table-cell text-sm ${textSecondary}`}>{acc.email}</td>
+                    <td className="px-5 py-3.5 hidden md:table-cell">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-mono ${textPrimary}`}>
+                          {visiblePwd[acc.id] ? acc.password : acc.password !== '—' ? '••••••••' : '—'}
+                        </span>
+                        {acc.password !== '—' && (
+                          <button onClick={() => setVisiblePwd(v => ({ ...v, [acc.id]: !v[acc.id] }))} className={`${textSecondary} hover:text-violet-400 transition-colors`}>
+                            {visiblePwd[acc.id] ? <EyeOff size={13} /> : <Eye size={13} />}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className={`px-5 py-3.5 hidden lg:table-cell text-sm ${textSecondary}`}>{acc.role}</td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        acc.deleted ? 'bg-red-500/10 text-red-400' :
+                        acc.active  ? 'bg-green-500/10 text-green-400' :
+                                      'bg-orange-500/10 text-orange-400'
+                      }`}>
+                        {acc.deleted ? 'Supprimé' : acc.active ? 'Actif' : 'Inactif'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── CHECKLIST ── */}
+        {tab === 'checklist' && <div className="space-y-6 max-w-2xl">
         <div className="flex items-center justify-between">
           <div>
             <h2 className={`font-bold text-lg ${textPrimary}`}>Checklist onboarding</h2>
@@ -125,6 +215,7 @@ export default function AdminBoarding() {
             </div>
           )
         })}
+        </div>}
       </div>
     </Layout>
   )

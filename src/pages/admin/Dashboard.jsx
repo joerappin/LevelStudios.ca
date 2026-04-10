@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   LayoutDashboard, Users, Calendar, ClipboardList, FolderOpen, Zap,
   MessageSquare, HeadphonesIcon, Megaphone, Tag, Clock, BookOpen,
   Wrench, UserCheck, TrendingUp, AlertCircle, Bell, Plus, CreditCard,
-  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch,
+  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -28,6 +31,7 @@ const NAV = [
   { labelKey: 'nav_pricing',       path: createPageUrl('AdminPricing'),       icon: <DollarSign className="w-4 h-4" /> },
   { separator: true },
   { labelKey: 'nav_check',         path: createPageUrl('AdminCheck'),         icon: <Clock className="w-4 h-4" /> },
+  { labelKey: 'nav_perf',          path: '/admin/perf',                       icon: <Medal className="w-4 h-4" /> },
   { labelKey: 'nav_boarding',      path: createPageUrl('AdminBoarding'),      icon: <UserCheck className="w-4 h-4" /> },
   { labelKey: 'nav_manual',        path: createPageUrl('AdminManual'),        icon: <BookOpen className="w-4 h-4" /> },
   { labelKey: 'nav_tool',          path: createPageUrl('AdminTool'),          icon: <Wrench className="w-4 h-4" /> },
@@ -82,6 +86,28 @@ function occupancyTextColor(pct) {
   if (pct >= 70) return 'text-green-400'
   if (pct >= BREAKEVEN_PCT) return 'text-yellow-400'
   return 'text-red-400'
+}
+
+function SortableKpiCard({ kpi, cardHover, textSecondary, textPrimary, onNavigate }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kpi.label })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
+  }
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}
+      onClick={onNavigate}
+      className={`border rounded-2xl p-5 transition-all ${cardHover}`}
+    >
+      <div className={`flex items-center gap-2 mb-3 ${kpi.color}`}>
+        {kpi.icon}
+        <span className={`text-xs font-medium ${textSecondary}`}>{kpi.label}</span>
+      </div>
+      <div className={`text-2xl font-black ${textPrimary}`}>{kpi.value}</div>
+    </div>
+  )
 }
 
 export default function AdminDashboard() {
@@ -205,6 +231,21 @@ export default function AdminDashboard() {
     { label: 'Nouvelle communication', icon: <Megaphone className="w-5 h-5" />, path: '/admin/communication', color: 'text-orange-400', bg: isDark ? 'bg-orange-500/10' : 'bg-orange-50' },
   ]
 
+  const [kpiOrder, setKpiOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ls_kpi_order')) || null } catch { return null }
+  })
+  const orderedKpis = kpiOrder ? kpiOrder.map(i => kpis[i]).filter(Boolean) : kpis
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const handleDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const oldIdx = orderedKpis.findIndex(k => k.label === active.id)
+    const newIdx = orderedKpis.findIndex(k => k.label === over.id)
+    const newOrder = arrayMove(orderedKpis, oldIdx, newIdx)
+    const indices = newOrder.map(k => kpis.findIndex(x => x.label === k.label))
+    setKpiOrder(indices)
+    localStorage.setItem('ls_kpi_order', JSON.stringify(indices))
+  }
+
   return (
     <Layout navItems={NAV} title="Dashboard">
       <div className="space-y-6">
@@ -222,18 +263,16 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* KPI grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpis.map((k, i) => (
-            <div key={i} onClick={() => navigate(k.path)} className={`border rounded-2xl p-5 transition-all ${cardHover}`}>
-              <div className={`flex items-center gap-2 mb-3 ${k.color}`}>
-                {k.icon}
-                <span className={`text-xs font-medium ${textSecondary}`}>{k.label}</span>
-              </div>
-              <div className={`text-2xl font-black ${textPrimary}`}>{k.value}</div>
+        {/* KPI grid — draggable */}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={orderedKpis.map(k => k.label)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {orderedKpis.map((k) => (
+                <SortableKpiCard key={k.label} kpi={k} cardHover={cardHover} textSecondary={textSecondary} textPrimary={textPrimary} onNavigate={() => navigate(k.path)} />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Studio breakdown */}
         <div className={`border rounded-2xl p-6 ${card}`}>
