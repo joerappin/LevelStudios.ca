@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Store } from '../data/store'
 import { fsGetAccountByEmail, fsUpdateAccount } from '../lib/firestoreService'
+// type helper: maps stored account type to Firestore collection key
+function typeFor(data) { return data?.type || 'client' }
 
 const TEST_ACCOUNTS = [
   {
@@ -69,7 +71,7 @@ export function AuthProvider({ children }) {
     if (!data) return { success: false, error: 'Lien invalide ou expiré.' }
     Store.updateAccount(data.accountId, { password, pending: false })
     Store.consumePwdToken(token)
-    try { await fsUpdateAccount(data.accountId, { password, pending: false }) } catch {}
+    try { await fsUpdateAccount(data.accountId, data.type || 'client', { password, pending: false }) } catch {}
     return { success: true, accountType: data.type }
   }
 

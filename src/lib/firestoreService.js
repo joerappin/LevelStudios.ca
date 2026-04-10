@@ -1,40 +1,58 @@
 import {
-  collection, doc, getDoc, getDocs, addDoc, setDoc,
+  collection, doc, getDocs, setDoc,
   updateDoc, deleteDoc, query, where,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
-const ACCOUNTS = 'accounts'
+// Collections mirroring the folder structure: customers / workers / admin
+function collectionFor(type) {
+  if (type === 'client')   return 'customers'
+  if (type === 'admin')    return 'admin'
+  return 'workers'
+}
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 export async function fsCreateAccount(account) {
-  await setDoc(doc(db, ACCOUNTS, account.id), account)
+  const col = collectionFor(account.type)
+  await setDoc(doc(db, col, account.id), account)
   return account
 }
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
-export async function fsGetAccounts() {
-  const snap = await getDocs(collection(db, ACCOUNTS))
-  return snap.docs.map(d => d.data())
+export async function fsGetAllAccounts() {
+  const [cusSnap, wrkSnap, admSnap] = await Promise.all([
+    getDocs(collection(db, 'customers')),
+    getDocs(collection(db, 'workers')),
+    getDocs(collection(db, 'admin')),
+  ])
+  return [
+    ...cusSnap.docs.map(d => d.data()),
+    ...wrkSnap.docs.map(d => d.data()),
+    ...admSnap.docs.map(d => d.data()),
+  ]
 }
 
 export async function fsGetAccountByEmail(email) {
-  const q = query(collection(db, ACCOUNTS), where('email', '==', email))
-  const snap = await getDocs(q)
-  if (snap.empty) return null
-  return snap.docs[0].data()
+  for (const col of ['customers', 'workers', 'admin']) {
+    const q = query(collection(db, col), where('email', '==', email))
+    const snap = await getDocs(q)
+    if (!snap.empty) return snap.docs[0].data()
+  }
+  return null
 }
 
 // ─── Update ───────────────────────────────────────────────────────────────────
 
-export async function fsUpdateAccount(id, data) {
-  await updateDoc(doc(db, ACCOUNTS, id), data)
+export async function fsUpdateAccount(id, type, data) {
+  const col = collectionFor(type)
+  await updateDoc(doc(db, col, id), data)
 }
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 
-export async function fsDeleteAccount(id) {
-  await deleteDoc(doc(db, ACCOUNTS, id))
+export async function fsDeleteAccount(id, type) {
+  const col = collectionFor(type)
+  await deleteDoc(doc(db, col, id))
 }
