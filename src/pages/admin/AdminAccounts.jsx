@@ -149,6 +149,20 @@ export default function AdminAccounts() {
     loadTrash()
   }
 
+  const handleEmptyTrash = async () => {
+    const n = trashed.length
+    if (n === 0) return
+    if (!confirm(`Vider définitivement la corbeille (${n} compte${n > 1 ? 's' : ''}) ? Cette action est irréversible.`)) return
+    for (const a of trashed) {
+      await fetch('/api/accounts.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: a.id, _fromTrash: true }),
+      }).catch(() => {})
+    }
+    loadTrash()
+  }
+
   const submitClient = async (e) => {
     e.preventDefault()
     setClientError('')
@@ -340,9 +354,14 @@ export default function AdminAccounts() {
               </div>
             ) : (
               <>
-                <div className={`px-5 py-3 border-b flex items-center gap-2 ${isDark ? 'border-zinc-800 bg-red-500/5' : 'border-gray-200 bg-red-50'}`}>
-                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                  <span className={`text-xs font-medium text-red-400`}>Les comptes en corbeille ne peuvent pas se connecter. Restaurez-les ou supprimez-les définitivement.</span>
+                <div className={`px-5 py-3 border-b flex items-center justify-between gap-2 ${isDark ? 'border-zinc-800 bg-red-500/5' : 'border-gray-200 bg-red-50'}`}>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    <span className="text-xs font-medium text-red-400">Les comptes en corbeille ne peuvent pas se connecter. Restaurez-les ou supprimez-les définitivement.</span>
+                  </div>
+                  <button onClick={handleEmptyTrash} className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
+                    <Trash2 className="w-3 h-3" /> Vider
+                  </button>
                 </div>
                 <table className="w-full">
                   <thead>

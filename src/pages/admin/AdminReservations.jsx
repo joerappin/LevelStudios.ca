@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX } from 'lucide-react'
+import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX, RotateCcw } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -56,6 +56,7 @@ export default function AdminReservations() {
   const [reservations, setReservations] = useState(Store.getReservations())
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Tous')
+  const [view, setView] = useState('list') // 'list' | 'corbeille'
   const [selected, setSelected] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -87,11 +88,14 @@ export default function AdminReservations() {
 
   const refresh = () => setReservations(Store.getReservations())
 
-  const filtered = reservations.filter(r => {
+  const trashedReservations = reservations.filter(r => r.trashed)
+  const activeReservations  = reservations.filter(r => !r.trashed)
+
+  const filtered = (view === 'corbeille' ? trashedReservations : activeReservations).filter(r => {
     const matchSearch = r.client_name.toLowerCase().includes(search.toLowerCase()) ||
       r.studio.toLowerCase().includes(search.toLowerCase()) ||
       r.id.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'Tous' || r.status === statusFilter
+    const matchStatus = view === 'corbeille' || statusFilter === 'Tous' || r.status === statusFilter
     return matchSearch && matchStatus
   })
 
@@ -101,11 +105,34 @@ export default function AdminReservations() {
     if (selected?.id === id) setSelected({ ...selected, status })
   }
 
+  // Soft-delete → corbeille
   const handleDelete = (id) => {
-    if (!confirm('Supprimer définitivement cette réservation ?')) return
+    Store.updateReservation(id, { trashed: true })
+    refresh()
+    if (selected?.id === id) setSelected(null)
+  }
+
+  // Restore from trash
+  const handleRestore = (id) => {
+    Store.updateReservation(id, { trashed: false })
+    refresh()
+  }
+
+  // Permanent delete (from corbeille)
+  const handlePermanentDelete = (id) => {
+    if (!confirm('Supprimer définitivement cette réservation ? Cette action est irréversible.')) return
     Store.deleteReservation(id)
     refresh()
     if (selected?.id === id) setSelected(null)
+  }
+
+  // Empty trash
+  const handleEmptyTrash = () => {
+    const n = trashedReservations.length
+    if (n === 0) return
+    if (!confirm(`Vider la corbeille (${n} réservation${n > 1 ? 's' : ''}) ? Cette action est irréversible.`)) return
+    trashedReservations.forEach(r => Store.deleteReservation(r.id))
+    refresh()
   }
 
   function validate() {
@@ -192,20 +219,47 @@ export default function AdminReservations() {
             <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
             <input value={search} onChange={e => setSearch(e.target.value)} className={`w-full border rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 ${inputCls}`} placeholder="Rechercher..." />
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {STATUS_OPTIONS.map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${statusFilter === s ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                {s === 'Tous' ? 'Tous' : STATUS_MAP[s]?.label_fr || s}
+
+          {view === 'list' ? (
+            <div className="flex gap-2 flex-wrap">
+              {STATUS_OPTIONS.map(s => (
+                <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${statusFilter === s ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                  {s === 'Tous' ? 'Tous' : STATUS_MAP[s]?.label_fr || s}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button onClick={() => setView('list')} className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>← Retour</button>
+              {trashedReservations.length > 0 && (
+                <button onClick={handleEmptyTrash} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors whitespace-nowrap">
+                  <Trash2 size={12} /> Vider la corbeille
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setView(v => v === 'corbeille' ? 'list' : 'corbeille')}
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${view === 'corbeille' ? 'bg-red-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              <Trash2 size={13} />
+              Corbeille
+              {trashedReservations.length > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${view === 'corbeille' ? 'bg-red-500 text-white' : 'bg-red-500/20 text-red-400'}`}>{trashedReservations.length}</span>
+              )}
+            </button>
+            {view === 'list' && (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+              >
+                <Plus size={14} />
+                Créer une réservation
               </button>
-            ))}
+            )}
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
-          >
-            <Plus size={14} />
-            Créer une réservation
-          </button>
         </div>
 
         <div className={`border rounded-2xl overflow-hidden ${card}`}>
@@ -256,17 +310,26 @@ export default function AdminReservations() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1">
-                        <button onClick={() => setSelected(r)} title="Voir le détail" className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}><Eye className="w-3.5 h-3.5" /></button>
-                        {r.status === 'en_attente' && (
-                          <button onClick={() => updateStatus(r.id, 'validee')} title="Valider" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                        {view === 'corbeille' ? (
+                          <>
+                            <button onClick={() => handleRestore(r.id)} title="Restaurer" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><RotateCcw className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => handlePermanentDelete(r.id)} title="Supprimer définitivement" className="p-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => setSelected(r)} title="Voir le détail" className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}><Eye className="w-3.5 h-3.5" /></button>
+                            {r.status === 'en_attente' && (
+                              <button onClick={() => updateStatus(r.id, 'validee')} title="Valider" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                            )}
+                            {r.status !== 'absent' && r.status !== 'annulee' && r.status !== 'rembourse' && (
+                              <button onClick={() => updateStatus(r.id, 'absent')} title="Marquer absent" className="p-1.5 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg text-orange-400 transition-colors"><UserX className="w-3.5 h-3.5" /></button>
+                            )}
+                            {r.status !== 'annulee' && r.status !== 'livree' && r.status !== 'absent' && (
+                              <button onClick={() => updateStatus(r.id, 'annulee')} title="Annuler" className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                            )}
+                            <button onClick={() => handleDelete(r.id)} title="Mettre à la corbeille" className="p-1.5 bg-zinc-500/10 hover:bg-red-500/20 rounded-lg text-zinc-500 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </>
                         )}
-                        {r.status !== 'absent' && r.status !== 'annulee' && r.status !== 'rembourse' && (
-                          <button onClick={() => updateStatus(r.id, 'absent')} title="Marquer absent" className="p-1.5 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg text-orange-400 transition-colors"><UserX className="w-3.5 h-3.5" /></button>
-                        )}
-                        {r.status !== 'annulee' && r.status !== 'livree' && r.status !== 'absent' && (
-                          <button onClick={() => updateStatus(r.id, 'annulee')} title="Annuler" className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
-                        )}
-                        <button onClick={() => handleDelete(r.id)} title="Supprimer définitivement" className="p-1.5 bg-zinc-500/10 hover:bg-red-500/20 rounded-lg text-zinc-500 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -335,7 +398,7 @@ export default function AdminReservations() {
               {selected.status === 'validee' && (
                 <button onClick={() => { updateStatus(selected.id, 'livree'); setSelected({ ...selected, status: 'livree' }) }} className="flex-1 bg-blue-500 text-white font-semibold rounded-xl py-2.5 text-sm hover:bg-blue-400 transition-colors">Marquer livré</button>
               )}
-              <button onClick={() => { handleDelete(selected.id) }} className="p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Supprimer définitivement"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => handleDelete(selected.id)} className="p-2.5 rounded-xl bg-zinc-500/10 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors" title="Mettre à la corbeille"><Trash2 className="w-4 h-4" /></button>
               <button onClick={() => setSelected(null)} className={`flex-1 border rounded-xl py-2.5 text-sm transition-colors ${btnSecondary}`}>Fermer</button>
             </div>
           </div>
