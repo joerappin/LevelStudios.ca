@@ -72,9 +72,17 @@ function readReservations(publicDir) {
 }
 
 function writeReservation(reservation, publicDir) {
+  // Central reservations folder
   const dir = path.join(publicDir, 'reservations', String(reservation.id))
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, 'reservation.json'), JSON.stringify(reservation, null, 2))
+
+  // Mirror inside the client's folder
+  if (reservation.client_email) {
+    const clientDir = path.join(publicDir, 'customers', sanitizeEmail(reservation.client_email), String(reservation.id))
+    fs.mkdirSync(clientDir, { recursive: true })
+    fs.writeFileSync(path.join(clientDir, 'reservation.json'), JSON.stringify(reservation, null, 2))
+  }
 }
 
 // ─── Local Accounts API plugin ────────────────────────────────────────────────
@@ -218,8 +226,20 @@ function localReservationsPlugin() {
               if (!data.id) { res.statusCode = 400; res.end(JSON.stringify({ error: 'id required' })); return }
               const dir = path.join(publicDir, 'reservations', String(data.id))
               const file = path.join(dir, 'reservation.json')
-              if (fs.existsSync(file)) fs.unlinkSync(file)
+              let existing = null
+              if (fs.existsSync(file)) {
+                try { existing = JSON.parse(fs.readFileSync(file, 'utf8')) } catch {}
+                fs.unlinkSync(file)
+              }
               try { fs.rmdirSync(dir) } catch {}
+              // Also remove from client's folder
+              const email = existing?.client_email || data.client_email
+              if (email) {
+                const clientDir = path.join(publicDir, 'customers', sanitizeEmail(email), String(data.id))
+                const clientFile = path.join(clientDir, 'reservation.json')
+                if (fs.existsSync(clientFile)) fs.unlinkSync(clientFile)
+                try { fs.rmdirSync(clientDir) } catch {}
+              }
               res.end(JSON.stringify({ success: true })); return
             }
 
