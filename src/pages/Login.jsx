@@ -29,11 +29,11 @@ export default function Login() {
     // clients: stay on page — they shouldn't be here
   }, [authLoading, user]) // eslint-disable-line
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
-    const result = login(email, password)
+    const result = await login(email, password)
 
     if (!result.success) {
       setError('Email ou mot de passe incorrect.')

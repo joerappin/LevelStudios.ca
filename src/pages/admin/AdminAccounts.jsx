@@ -7,6 +7,7 @@ import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { sendAccountCreatedEmail } from '../../utils/emailService'
+import { fsCreateAccount } from '../../lib/firestoreService'
 
 
 const EMPLOYEE_ROLES = [
@@ -122,6 +123,7 @@ export default function AdminAccounts() {
     })
     const token = Store.createPwdToken(account.id, clientForm.email, name, 'client')
     const result = await sendAccountCreatedEmail({ name, email: clientForm.email, token, accountType: 'client' })
+    fsCreateAccount({ ...account, pending: true }).catch(() => {})
     fetch('/api/clients', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -168,6 +170,7 @@ export default function AdminAccounts() {
     })
     const token = Store.createPwdToken(emp.id, empForm.email, empForm.name, 'employee')
     const result = await sendAccountCreatedEmail({ name: empForm.name, email: empForm.email, token, accountType: 'employee' })
+    fsCreateAccount({ id: emp.id, email: empForm.email, name: empForm.name, type: empForm.role === 'admin' ? 'admin' : 'employee', role: roleName, roleKey: empForm.role, pending: true }).catch(() => {})
     const ROLE_PERMISSIONS = {
       admin:       ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'accounts', 'sav', 'promo', 'check', 'boarding', 'manual', 'tool'],
       chef_projet: ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'alerts', 'library'],

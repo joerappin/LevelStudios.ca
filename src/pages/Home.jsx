@@ -76,10 +76,10 @@ function LoginModal({ onClose, initialTab = 'login' }) {
     return () => clearTimeout(timer)
   }, [tab])
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError('')
-    const result = login(loginForm.email, loginForm.password)
+    const result = await login(loginForm.email, loginForm.password)
     if (result.success) {
       onClose()
       if (result.user.type === 'admin') navigate('/admin/dashboard')

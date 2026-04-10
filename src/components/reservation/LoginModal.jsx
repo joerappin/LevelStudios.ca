@@ -19,7 +19,7 @@ export default function LoginModal({ onClose, mode = 'login', onLoginSuccess }) 
     e.preventDefault()
     setError('')
     setLoading(true)
-    const result = login(loginForm.email, loginForm.password)
+    const result = await login(loginForm.email, loginForm.password)
     setLoading(false)
     if (result.success) {
       if (onLoginSuccess) { onLoginSuccess(result.user); return }

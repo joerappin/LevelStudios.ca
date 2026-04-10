@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Store } from '../data/store'
+import { fsGetAccountByEmail, fsUpdateAccount } from '../lib/firestoreService'
 
 const TEST_ACCOUNTS = [
   {
@@ -30,7 +31,7 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = (email, password) => {
+  const login = async (email, password) => {
     // Check hardcoded test accounts first
     const account = TEST_ACCOUNTS.find(a => a.email === email && a.password === password)
     if (account) {
@@ -40,7 +41,18 @@ export function AuthProvider({ children }) {
       localStorage.setItem('level_studio_user', JSON.stringify(userData))
       return { success: true, user: userData }
     }
-    // Check admin-created accounts in localStorage
+    // Check Firestore first
+    try {
+      const fsAccount = await fsGetAccountByEmail(email)
+      if (fsAccount && fsAccount.password === password && !fsAccount.pending) {
+        const userData = { ...fsAccount }
+        delete userData.password
+        setUser(userData)
+        localStorage.setItem('level_studio_user', JSON.stringify(userData))
+        return { success: true, user: userData }
+      }
+    } catch {}
+    // Fallback: localStorage
     const stored = Store.findAccountByEmailAndPassword(email, password)
     if (stored) {
       const userData = { ...stored }
@@ -52,11 +64,12 @@ export function AuthProvider({ children }) {
     return { success: false, error: 'Email ou mot de passe incorrect' }
   }
 
-  const setAccountPassword = (token, password) => {
+  const setAccountPassword = async (token, password) => {
     const data = Store.validatePwdToken(token)
     if (!data) return { success: false, error: 'Lien invalide ou expiré.' }
     Store.updateAccount(data.accountId, { password, pending: false })
     Store.consumePwdToken(token)
+    try { await fsUpdateAccount(data.accountId, { password, pending: false }) } catch {}
     return { success: true, accountType: data.type }
   }
 

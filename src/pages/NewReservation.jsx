@@ -1090,8 +1090,8 @@ export default function NewReservation() {
 
               {quickLoginError && <p className="text-red-400 text-xs font-medium">{quickLoginError}</p>}
 
-              <button onClick={() => {
-                  const res = login(quickLoginForm.email, quickLoginForm.password)
+              <button onClick={async () => {
+                  const res = await login(quickLoginForm.email, quickLoginForm.password)
                   if (res.success) { setQuickLoginOpen(false); setForm(f => ({ ...f, name: res.user.name, email: res.user.email })); setQuickLoginForm({ email: '', password: '' }) }
                   else setQuickLoginError(res.error)
                 }}
