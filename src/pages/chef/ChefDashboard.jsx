@@ -83,20 +83,21 @@ export default function ChefDashboard() {
     return true
   })
 
-  const totalHours = filtered.reduce((s, r) => s + (r.duration || 0), 0)
-  const totalRevenue = filtered.reduce((s, r) => s + (r.price || 0), 0)
-  const paid = filtered.filter(r => r.status === 'validee' || r.status === 'livree').length
-  const pending = filtered.filter(r => r.status === 'en_attente' || r.status === 'pending').length
+  // Countable = exclude cancelled/refunded
+  const countable = filtered.filter(r => r.status !== 'annulee' && r.status !== 'rembourse')
+  const totalHours = countable.reduce((s, r) => s + (r.duration || 0), 0)
+  const paid = countable.filter(r => r.status === 'validee' || r.status === 'livree').length
+  const pending = countable.filter(r => r.status === 'a_payer' || r.status === 'en_attente').length
 
   const studioStats = STUDIOS.map(studio => {
-    const studioRes = filtered.filter(r => r.studio === studio)
+    const studioRes = countable.filter(r => r.studio === studio)
     const hours = studioRes.reduce((s, r) => s + (r.duration || 0), 0)
     const totalPossible = period === 'jour' ? 12 : period === 'mois' ? 12 * 30 : 12 * 365
     const rate = totalPossible > 0 ? Math.min(100, Math.round((hours / totalPossible) * 100)) : 0
     return { studio, hours, rate, count: studioRes.length }
   })
 
-  const uniqueClients = new Set(filtered.map(r => r.client_email)).size
+  const uniqueClients = new Set(countable.map(r => r.client_email)).size
 
   // Week calendar uses activeRes (not just filtered period)
   const weekDays = getWeekDays()

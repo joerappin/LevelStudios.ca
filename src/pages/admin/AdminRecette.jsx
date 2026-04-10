@@ -10,6 +10,7 @@ import { useApp } from '../../contexts/AppContext'
 import { formatPrice } from '../../utils'
 
 const PAID = ['validee', 'livree', 'tournee', 'post-prod']
+const SKIP = ['annulee'] // excluded from hours + session count (cancelled = didn't happen)
 const STUDIOS = ['Studio A', 'Studio B', 'Studio C']
 const STUDIO_COLORS = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500']
 const STUDIO_TEXT   = ['text-violet-400', 'text-blue-400', 'text-emerald-400']
@@ -114,14 +115,16 @@ export default function AdminRecette() {
   }
 
   const filtered  = activeRes.filter(r => inPeriod(r))
-  const paid      = filtered.filter(r => PAID.includes(r.status))
+  // Countable = exclude cancelled reservations from hours + session counts
+  const countable = filtered.filter(r => !SKIP.includes(r.status))
+  const paid      = countable.filter(r => PAID.includes(r.status))
   const ca        = paid.reduce((s, r) => s + (r.price || 0), 0)
-  const sessions  = filtered.length
-  const hours     = filtered.reduce((s, r) => s + (r.duration || 0), 0)
+  const sessions  = countable.length
+  const hours     = countable.reduce((s, r) => s + (r.duration || 0), 0)
 
   // ─── By studio ──────────────────────────────────────────────────────────────
   const studioStats = STUDIOS.map((s, si) => {
-    const sRes  = filtered.filter(r => r.studio === s)
+    const sRes  = countable.filter(r => r.studio === s)
     const sPaid = sRes.filter(r => PAID.includes(r.status))
     return {
       name: s,
@@ -174,8 +177,8 @@ export default function AdminRecette() {
     }))
   }, [activeRes, period, chartYear, chartMonth])
 
-  // ─── All-time totals (for summary row) ─────────────────────────────────────
-  const allPaid = activeRes.filter(r => PAID.includes(r.status))
+  // ─── All-time totals (for summary row, also exclude cancelled) ─────────────
+  const allPaid = activeRes.filter(r => !SKIP.includes(r.status) && PAID.includes(r.status))
   const caTotal = allPaid.reduce((s, r) => s + (r.price || 0), 0)
 
   // ─── Remboursements (all-time) ──────────────────────────────────────────────

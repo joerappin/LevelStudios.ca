@@ -20,6 +20,7 @@ const NAV = [
   { labelKey: 'nav_accounts',      path: createPageUrl('AdminAccounts'),      icon: <Users className="w-4 h-4" /> },
   { labelKey: 'nav_calendar',      path: createPageUrl('AdminCalendar'),      icon: <Calendar className="w-4 h-4" /> },
   { labelKey: 'nav_reservations',  path: createPageUrl('AdminReservations'),  icon: <ClipboardList className="w-4 h-4" /> },
+  { labelKey: 'nav_recette',       path: '/admin/recette',                    icon: <Receipt className="w-4 h-4" /> },
   { labelKey: 'nav_projects',      path: createPageUrl('AdminProjects'),      icon: <FolderOpen className="w-4 h-4" /> },
   { labelKey: 'nav_rushes',        path: createPageUrl('AdminRushes'),        icon: <Zap className="w-4 h-4" /> },
   { labelKey: 'nav_alerts',        path: '/admin/alerts',                     icon: <Bell className="w-4 h-4" /> },
@@ -29,7 +30,6 @@ const NAV = [
   { labelKey: 'nav_communication', path: createPageUrl('AdminCommunication'), icon: <Megaphone className="w-4 h-4" /> },
   { labelKey: 'nav_promo',         path: createPageUrl('AdminPromo'),         icon: <Tag className="w-4 h-4" /> },
   { labelKey: 'nav_pricing',       path: createPageUrl('AdminPricing'),       icon: <DollarSign className="w-4 h-4" /> },
-  { labelKey: 'nav_recette',       path: '/admin/recette',                    icon: <Receipt className="w-4 h-4" /> },
   { separator: true },
   { labelKey: 'nav_check',         path: createPageUrl('AdminCheck'),         icon: <Clock className="w-4 h-4" /> },
   { labelKey: 'nav_perf',          path: '/admin/perf',                       icon: <Medal className="w-4 h-4" /> },
@@ -45,6 +45,7 @@ const STUDIOS = ['Studio A', 'Studio B', 'Studio C']
 const DAILY_HOURS = 12        // available hours per studio per day
 const BREAKEVEN_PCT = 35      // % occupancy = break-even threshold
 const PAID_STATUSES = ['validee', 'livree', 'tournee', 'post-prod']
+const SKIP_STATUSES = ['annulee', 'rembourse'] // excluded from hours + total count
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -142,19 +143,21 @@ export default function AdminDashboard() {
       .catch(() => {})
   }, [])
 
-  // ─── filtered data (exclude trashed account reservations) ─────────────────
+  // ─── filtered data (exclude trashed accounts + cancelled reservations) ──────
   const activeRes  = allRes.filter(r => !trashedEmails.has(r.client_email))
   const filtered   = filterByPeriod(activeRes, period)
-  const paid       = filtered.filter(r => PAID_STATUSES.includes(r.status))
-  const pending    = filtered.filter(r => r.status === 'a_payer')
+  // Countable = not cancelled/refunded (these don't occupy studio time)
+  const countable  = filtered.filter(r => !SKIP_STATUSES.includes(r.status))
+  const paid       = countable.filter(r => PAID_STATUSES.includes(r.status))
+  const pending    = countable.filter(r => r.status === 'a_payer')
   const ca         = paid.reduce((s, r) => s + (r.price || 0), 0)
-  const totalHours = filtered.reduce((s, r) => s + (r.duration || 0), 0)
+  const totalHours = countable.reduce((s, r) => s + (r.duration || 0), 0)
   const activeClients = accounts.filter(a => a.type === 'client' && !a.suspended && !trashedEmails.has(a.email)).length
     || [...new Set(activeRes.map(r => r.client_email))].length
 
   // ─── studio breakdown ───────────────────────────────────────────────────────
   const studioStats = STUDIOS.map(studio => {
-    const res = filtered.filter(r => r.studio === studio)
+    const res = countable.filter(r => r.studio === studio)
     const hours = res.reduce((s, r) => s + (r.duration || 0), 0)
     const revenue = res.filter(r => PAID_STATUSES.includes(r.status)).reduce((s, r) => s + (r.price || 0), 0)
     const avail = availableHours(period)
@@ -224,7 +227,7 @@ export default function AdminDashboard() {
     },
     {
       label: 'Total réservations',
-      value: filtered.length,
+      value: countable.length,
       icon: <ClipboardList className="w-5 h-5" />,
       color: 'text-cyan-400',
       path: createPageUrl('AdminReservations'),
