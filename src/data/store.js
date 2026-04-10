@@ -318,6 +318,26 @@ export const Store = {
     localStorage.setItem(KEYS.pwdTokens, JSON.stringify(tokens))
   },
 
+  // Employee profiles (état civil, RH)
+  getEmployeeProfile: (id) => {
+    try { return JSON.parse(localStorage.getItem('ls_emp_profiles') || '{}')[id] || {} } catch { return {} }
+  },
+  saveEmployeeProfile: (id, data) => {
+    const all = (() => { try { return JSON.parse(localStorage.getItem('ls_emp_profiles') || '{}') } catch { return {} } })()
+    all[id] = { ...(all[id] || {}), ...data }
+    localStorage.setItem('ls_emp_profiles', JSON.stringify(all))
+  },
+
+  // Employee software/tools licenses
+  getEmployeeSoftware: (id) => {
+    try { return JSON.parse(localStorage.getItem('ls_emp_software') || '{}')[id] || [] } catch { return [] }
+  },
+  saveEmployeeSoftware: (id, entries) => {
+    const all = (() => { try { return JSON.parse(localStorage.getItem('ls_emp_software') || '{}') } catch { return {} } })()
+    all[id] = entries
+    localStorage.setItem('ls_emp_software', JSON.stringify(all))
+  },
+
   // Pricing — persists independently of seed version
   getPrices: () => {
     try {

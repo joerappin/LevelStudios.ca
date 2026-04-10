@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Calendar, ClipboardList, FolderOpen,
   Bell, HardDrive, MessageSquare, UserCircle, Clock, TrendingUp,
-  Users, CheckCircle, AlertCircle, PlusCircle, Headphones
+  Users, CheckCircle, AlertCircle, PlusCircle, Headphones, Medal
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -12,17 +12,18 @@ import { useApp } from '../../contexts/AppContext'
 import { cn } from '../../utils'
 
 export const CHEF_NAV = [
-  { label: 'Accueil',     path: '/chef/dashboard',  icon: <LayoutDashboard className="w-4 h-4" /> },
+  { label: 'Accueil',      path: '/chef/dashboard',    icon: <LayoutDashboard className="w-4 h-4" /> },
   { separator: true },
-  { label: 'Calendrier',    path: '/chef/calendar',       icon: <Calendar className="w-4 h-4" /> },
-  { label: 'Réservations', path: '/chef/reservations',  icon: <ClipboardList className="w-4 h-4" /> },
-  { label: 'Projets',      path: '/chef/projects',      icon: <FolderOpen className="w-4 h-4" /> },
-  { label: 'Alertes',     path: '/chef/alerts',     icon: <Bell className="w-4 h-4" /> },
-  { label: 'Rushes',      path: '/chef/rushes',     icon: <HardDrive className="w-4 h-4" /> },
-  { label: 'Messagerie',  path: '/chef/messaging',  icon: <MessageSquare className="w-4 h-4" /> },
-  { label: 'SAV',         path: '/chef/sav',        icon: <Headphones className="w-4 h-4" /> },
+  { label: 'Calendrier',   path: '/chef/calendar',     icon: <Calendar className="w-4 h-4" /> },
+  { label: 'Réservations', path: '/chef/reservations', icon: <ClipboardList className="w-4 h-4" /> },
+  { label: 'Projets',      path: '/chef/projects',     icon: <FolderOpen className="w-4 h-4" /> },
+  { label: 'Alertes',      path: '/chef/alerts',       icon: <Bell className="w-4 h-4" /> },
+  { label: 'Rushes',       path: '/chef/rushes',       icon: <HardDrive className="w-4 h-4" /> },
+  { label: 'Messagerie',   path: '/chef/messaging',    icon: <MessageSquare className="w-4 h-4" /> },
+  { label: 'Performance',  path: '/chef/perf',         icon: <Medal className="w-4 h-4" /> },
+  { label: 'SAV',          path: '/chef/sav',          icon: <Headphones className="w-4 h-4" /> },
   { separator: true },
-  { label: 'Profil',      path: '/chef/account',    icon: <UserCircle className="w-4 h-4" /> },
+  { label: 'Profil',       path: '/chef/account',      icon: <UserCircle className="w-4 h-4" /> },
 ]
 
 const STUDIOS = ['Studio A', 'Studio B', 'Studio C']
@@ -47,6 +48,7 @@ export default function ChefDashboard() {
   const [period, setPeriod] = useState('mois')
   const [reservations, setReservations] = useState([])
   const [checkIns, setCheckIns] = useState([])
+  const [alertCount, setAlertCount] = useState(0)
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
@@ -56,6 +58,8 @@ export default function ChefDashboard() {
   useEffect(() => {
     setReservations(Store.getReservations())
     setCheckIns(Store.getCheckIns())
+    const unread = Store.getAlerts().filter(a => a.status === 'sent').length
+    setAlertCount(unread)
   }, [])
 
   const today = new Date().toISOString().split('T')[0]
@@ -101,21 +105,36 @@ export default function ChefDashboard() {
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
-          <div className="flex gap-1.5">
-            {['jour', 'mois', 'annee'].map(p => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize',
-                  period === p
-                    ? 'bg-violet-600 text-white'
-                    : isDark ? 'bg-zinc-800 text-zinc-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-gray-900'
-                )}
-              >
-                {p === 'annee' ? 'Année' : p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            {/* Alert badge */}
+            <button
+              onClick={() => navigate('/chef/alerts')}
+              className={cn('relative p-2 rounded-xl transition-colors', isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-100 hover:bg-gray-200')}
+            >
+              <Bell className={cn('w-4 h-4', alertCount > 0 ? 'text-red-400' : textSecondary)} />
+              {alertCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1">
+                  {alertCount}
+                </span>
+              )}
+            </button>
+            {/* Period selector */}
+            <div className="flex gap-1.5">
+              {['jour', 'mois', 'annee'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize',
+                    period === p
+                      ? 'bg-violet-600 text-white'
+                      : isDark ? 'bg-zinc-800 text-zinc-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-gray-900'
+                  )}
+                >
+                  {p === 'annee' ? 'Année' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -185,19 +204,13 @@ export default function ChefDashboard() {
         </div>
 
         {/* Total hours */}
-        <div className={cn('border rounded-2xl p-5 flex items-center justify-between', card)}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-violet-400" />
-            </div>
-            <div>
-              <div className={cn('text-xs font-semibold', textSecondary)}>Heures réservées (total période)</div>
-              <div className={cn('text-2xl font-black', textPrimary)}>{totalHours}h</div>
-            </div>
+        <div className={cn('border rounded-2xl p-5 flex items-center gap-4', card)}>
+          <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-5 h-5 text-violet-400" />
           </div>
-          <div className="text-right">
-            <div className={cn('text-xs', textSecondary)}>Revenus estimés</div>
-            <div className={cn('text-lg font-bold', textPrimary)}>{totalRevenue.toLocaleString('fr-CA')} CAD</div>
+          <div>
+            <div className={cn('text-xs font-semibold', textSecondary)}>Heures réservées — total période</div>
+            <div className={cn('text-2xl font-black', textPrimary)}>{totalHours}h</div>
           </div>
         </div>
 

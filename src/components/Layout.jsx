@@ -49,7 +49,7 @@ export default function Layout({ children, navItems, title }) {
   const [alertCounts, setAlertCounts] = useState({ Retard: 0, Retour: 0, Urgent: 0 })
 
   useEffect(() => {
-    if (user?.type !== 'admin') return
+    if (user?.type !== 'admin' && user?.roleKey !== 'chef_projet') return
     const compute = () => {
       const alerts = Store.getAlerts().filter(a => a.status === 'sent')
       setAlertCounts({

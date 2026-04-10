@@ -53,6 +53,7 @@ import ChefRushes from './pages/chef/ChefRushes'
 import ChefMessaging from './pages/chef/ChefMessaging'
 import ChefAccount from './pages/chef/ChefAccount'
 import ChefSav from './pages/chef/ChefSav'
+import ChefPerf from './pages/chef/ChefPerf'
 
 // Rushes pages
 import EmployeeRushes from './pages/employee/EmployeeRushes'
@@ -127,6 +128,7 @@ function AppRoutes() {
       <Route path="/chef/messaging" element={<ProtectedRoute requiredType="employee"><ChefMessaging /></ProtectedRoute>} />
       <Route path="/chef/account" element={<ProtectedRoute requiredType="employee"><ChefAccount /></ProtectedRoute>} />
       <Route path="/chef/sav" element={<ProtectedRoute requiredType="employee"><ChefSav /></ProtectedRoute>} />
+      <Route path="/chef/perf" element={<ProtectedRoute requiredType="employee"><ChefPerf /></ProtectedRoute>} />
 
       <Route path="/client/dashboard" element={<ProtectedRoute requiredType="client"><ClientDashboard /></ProtectedRoute>} />
       <Route path="/client/account" element={<ProtectedRoute requiredType="client"><ClientAccount /></ProtectedRoute>} />
