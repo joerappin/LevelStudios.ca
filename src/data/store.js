@@ -88,17 +88,22 @@ export const Store = {
     const item = { id: generateResId(), created_at: new Date().toISOString(), ...data }
     items.unshift(item)
     saveAll(KEYS.reservations, items)
+    // Persist to file (Mac → git → Hostinger) — fire and forget
+    fetch('/api/reservations.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).catch(() => {})
     return item
   },
   updateReservation: (id, data) => {
     const items = getAll(KEYS.reservations)
     const idx = items.findIndex(i => i.id === id)
     if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.reservations, items) }
-    return items[idx]
+    const updated = items[idx]
+    if (updated) fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }).catch(() => {})
+    return updated
   },
   deleteReservation: (id) => {
     const items = getAll(KEYS.reservations).filter(i => i.id !== id)
     saveAll(KEYS.reservations, items)
+    fetch('/api/reservations.php', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {})
   },
 
   // Projects

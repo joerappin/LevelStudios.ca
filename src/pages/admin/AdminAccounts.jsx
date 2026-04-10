@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck } from 'lucide-react'
+import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -48,6 +48,7 @@ export default function AdminAccounts() {
   const [search, setSearch] = useState('')
   const [clients, setClients] = useState([])
   const [employees, setEmployees] = useState([])
+  const [trashed, setTrashed] = useState([])
 
   // Charger les comptes depuis les fichiers JSON
   const loadAccounts = () => {
@@ -56,17 +57,22 @@ export default function AdminAccounts() {
       .then(accounts => {
         setClients(accounts.filter(a => a.type === 'client'))
         setEmployees(accounts.filter(a => a.type !== 'client'))
-        // Populate localStorage cache for other parts of the app
         localStorage.setItem('ls_accounts', JSON.stringify(accounts))
       })
       .catch(() => {
-        // Fallback localStorage
         setClients(Store.getAccounts().filter(a => a.type === 'client'))
         setEmployees(Store.getEmployees().filter(e => !e.deleted))
       })
   }
 
-  useEffect(() => { loadAccounts() }, [])
+  const loadTrash = () => {
+    fetch('/api/accounts.php?trash=1')
+      .then(r => r.json())
+      .then(accounts => setTrashed(accounts))
+      .catch(() => setTrashed([]))
+  }
+
+  useEffect(() => { loadAccounts(); loadTrash() }, [])
 
   // Modal state
   const [modal, setModal] = useState(null) // null | 'choice' | 'client' | 'employee' | 'success'
@@ -111,16 +117,36 @@ export default function AdminAccounts() {
     loadAccounts()
   }
 
-  const handleDelete = async (id, isEmployee) => {
-    if (!confirm('Supprimer ce compte définitivement ?')) return
+  const handleTrash = async (id, isEmployee) => {
     await fetch('/api/accounts.php', {
-      method: 'DELETE',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id, _action: 'trash' }),
     }).catch(() => {})
     Store.deleteAccount(id)
     if (isEmployee) Store.updateEmployee(id, { active: false, deleted: true })
     loadAccounts()
+    loadTrash()
+  }
+
+  const handleRestore = async (id) => {
+    await fetch('/api/accounts.php', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, _action: 'restore' }),
+    }).catch(() => {})
+    loadAccounts()
+    loadTrash()
+  }
+
+  const handlePermanentDelete = async (id) => {
+    if (!confirm('Supprimer définitivement ce compte ? Cette action est irréversible.')) return
+    await fetch('/api/accounts.php', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, _fromTrash: true }),
+    }).catch(() => {})
+    loadTrash()
   }
 
   const submitClient = async (e) => {
@@ -228,12 +254,15 @@ export default function AdminAccounts() {
 
         {/* Top bar */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button onClick={() => setTab('clients')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === 'clients' ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               Clients ({clients.length})
             </button>
             <button onClick={() => setTab('employees')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === 'employees' ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               Employés ({employees.length})
+            </button>
+            <button onClick={() => setTab('corbeille')} className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 ${tab === 'corbeille' ? 'bg-red-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              <Trash2 className="w-3.5 h-3.5" /> Corbeille {trashed.length > 0 && <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === 'corbeille' ? 'bg-red-500 text-white' : 'bg-red-500/20 text-red-400'}`}>{trashed.length}</span>}
             </button>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
@@ -291,13 +320,76 @@ export default function AdminAccounts() {
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => handleImpersonate(c)} title="Voir en tant que" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Eye size={15} /></button>
                         <button onClick={() => toggleSuspend(c.id, false)} title={c.suspended ? 'Réactiver' : 'Suspendre'} className={`p-1.5 rounded-lg transition-colors ${c.suspended ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
-                        <button onClick={() => handleDelete(c.id, false)} title="Supprimer" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
+                        <button onClick={() => handleTrash(c.id, false)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Corbeille */}
+        {tab === 'corbeille' && (
+          <div className={`border rounded-2xl overflow-hidden ${card}`}>
+            {trashed.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Trash2 className={`w-10 h-10 ${textSecondary} opacity-30`} />
+                <p className={`text-sm ${textSecondary}`}>La corbeille est vide</p>
+              </div>
+            ) : (
+              <>
+                <div className={`px-5 py-3 border-b flex items-center gap-2 ${isDark ? 'border-zinc-800 bg-red-500/5' : 'border-gray-200 bg-red-50'}`}>
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                  <span className={`text-xs font-medium text-red-400`}>Les comptes en corbeille ne peuvent pas se connecter. Restaurez-les ou supprimez-les définitivement.</span>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className={`border-b text-xs font-semibold ${tableHead}`}>
+                      <th className="text-left px-5 py-3">Nom</th>
+                      <th className="text-left px-5 py-3 hidden sm:table-cell">Email</th>
+                      <th className="text-left px-5 py-3 hidden md:table-cell">Type</th>
+                      <th className="text-left px-5 py-3 hidden lg:table-cell">ID</th>
+                      <th className="text-right px-5 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trashed.map(a => {
+                      const isEmp = a.type !== 'client'
+                      const RC = { admin: { bg: 'bg-red-500/20', text: 'text-red-400' }, chef_projet: { bg: 'bg-violet-500/20', text: 'text-violet-400' }, technicien: { bg: 'bg-green-500/20', text: 'text-green-400' } }
+                      const rc = isEmp ? (RC[a.roleKey] || { bg: 'bg-zinc-500/20', text: 'text-zinc-400' }) : { bg: 'bg-blue-500/20', text: 'text-blue-400' }
+                      return (
+                        <tr key={a.id} className={`border-b transition-colors opacity-60 ${tableRow}`}>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${rc.bg} ${rc.text}`}>{(a.name || '?').charAt(0)}</div>
+                              <div>
+                                <div className={`text-sm font-medium ${textPrimary}`}>{a.name}</div>
+                                <div className={`text-xs sm:hidden ${textSecondary}`}>{a.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className={`px-5 py-3.5 hidden sm:table-cell text-sm ${isDark ? 'text-zinc-300' : 'text-gray-600'}`}>{a.email}</td>
+                          <td className="px-5 py-3.5 hidden md:table-cell">
+                            <span className={`text-xs px-2 py-1 rounded-md font-medium ${isDark ? 'bg-zinc-700 text-zinc-400' : 'bg-gray-100 text-gray-500'}`}>
+                              {isEmp ? (a.role || a.roleKey) : (a.clientType === 'pro' ? 'Professionnel' : 'Particulier')}
+                            </span>
+                          </td>
+                          <td className={`px-5 py-3.5 hidden lg:table-cell text-xs font-mono ${textSecondary}`}>{a.id}</td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center justify-end gap-1">
+                              <button onClick={() => handleRestore(a.id)} title="Restaurer" className="p-1.5 rounded-lg transition-colors text-green-400 hover:bg-green-500/10"><RotateCcw size={15} /></button>
+                              <button onClick={() => handlePermanentDelete(a.id)} title="Supprimer définitivement" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><X size={15} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         )}
 
@@ -339,7 +431,7 @@ export default function AdminAccounts() {
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => handleImpersonate(e)} title="Voir en tant que" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Eye size={15} /></button>
                         <button onClick={() => toggleSuspend(e.id, true)} title={e.active ? 'Suspendre' : 'Réactiver'} className={`p-1.5 rounded-lg transition-colors ${!e.active ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
-                        <button onClick={() => handleDelete(e.id, true)} title="Supprimer" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
+                        <button onClick={() => handleTrash(e.id, true)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>

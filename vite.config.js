@@ -3,12 +3,12 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Account helpers ───────────────────────────────────────────────────────────
 function sanitizeEmail(email) {
   return email.toLowerCase().trim().replace(/[^a-z0-9._@-]/g, '_')
 }
 
-function accountFolder(account, publicDir) {
+function activeFolder(account, publicDir) {
   if (account.type === 'client') {
     return path.join(publicDir, 'customers', sanitizeEmail(account.email))
   }
@@ -18,10 +18,21 @@ function accountFolder(account, publicDir) {
   return path.join(publicDir, 'workers', account.id)
 }
 
-function readAllAccounts(publicDir) {
+function trashFolder(account, publicDir) {
+  if (account.type === 'client') {
+    return path.join(publicDir, 'trash', 'customers', sanitizeEmail(account.email))
+  }
+  if (account.roleKey === 'admin' || account.type === 'admin') {
+    return path.join(publicDir, 'trash', 'admin', account.id)
+  }
+  return path.join(publicDir, 'trash', 'workers', account.id)
+}
+
+function readAccounts(publicDir, fromTrash = false) {
   const accounts = []
+  const base = fromTrash ? path.join(publicDir, 'trash') : publicDir
   for (const folder of ['customers', 'workers', 'admin']) {
-    const dir = path.join(publicDir, folder)
+    const dir = path.join(base, folder)
     if (!fs.existsSync(dir)) continue
     for (const entry of fs.readdirSync(dir)) {
       const file = path.join(dir, entry, 'account.json')
@@ -33,13 +44,40 @@ function readAllAccounts(publicDir) {
   return accounts
 }
 
-function writeAccount(account, publicDir) {
-  const folder = accountFolder(account, publicDir)
+function writeAccount(account, publicDir, inTrash = false) {
+  const folder = inTrash ? trashFolder(account, publicDir) : activeFolder(account, publicDir)
   fs.mkdirSync(folder, { recursive: true })
   fs.writeFileSync(path.join(folder, 'account.json'), JSON.stringify(account, null, 2))
 }
 
-// ─── Vite plugin — local account API ──────────────────────────────────────────
+function deleteAccountFile(account, publicDir, fromTrash = false) {
+  const folder = fromTrash ? trashFolder(account, publicDir) : activeFolder(account, publicDir)
+  const file = path.join(folder, 'account.json')
+  if (fs.existsSync(file)) fs.unlinkSync(file)
+  try { fs.rmdirSync(folder) } catch {}
+}
+
+// ─── Reservation helpers ───────────────────────────────────────────────────────
+function readReservations(publicDir) {
+  const resDir = path.join(publicDir, 'reservations')
+  if (!fs.existsSync(resDir)) return []
+  const reservations = []
+  for (const entry of fs.readdirSync(resDir)) {
+    const file = path.join(resDir, entry, 'reservation.json')
+    if (fs.existsSync(file)) {
+      try { reservations.push(JSON.parse(fs.readFileSync(file, 'utf8'))) } catch {}
+    }
+  }
+  return reservations
+}
+
+function writeReservation(reservation, publicDir) {
+  const dir = path.join(publicDir, 'reservations', String(reservation.id))
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, 'reservation.json'), JSON.stringify(reservation, null, 2))
+}
+
+// ─── Local Accounts API plugin ────────────────────────────────────────────────
 function localAccountsPlugin() {
   const publicDir = path.resolve(__dirname, 'public')
 
@@ -52,25 +90,24 @@ function localAccountsPlugin() {
 
         if (req.method === 'OPTIONS') { res.statusCode = 204; res.end(); return }
 
-        // GET — list all accounts
+        const url = new URL(req.url, 'http://localhost')
+        const wantTrash = url.searchParams.get('trash') === '1'
+
         if (req.method === 'GET') {
-          res.end(JSON.stringify(readAllAccounts(publicDir)))
+          res.end(JSON.stringify(readAccounts(publicDir, wantTrash)))
           return
         }
 
-        // POST — create account / PATCH — update fields
         if (req.method === 'DELETE') {
           let body = ''
           req.on('data', c => { body += c })
           req.on('end', () => {
             try {
-              const { id } = JSON.parse(body)
-              const all = readAllAccounts(publicDir)
+              const { id, _fromTrash } = JSON.parse(body)
+              const all = readAccounts(publicDir, !!_fromTrash)
               const account = all.find(a => a.id === id)
               if (!account) { res.statusCode = 404; res.end(JSON.stringify({ error: 'Not found' })); return }
-              const folder = accountFolder(account, publicDir)
-              const file = path.join(folder, 'account.json')
-              if (fs.existsSync(file)) fs.unlinkSync(file)
+              deleteAccountFile(account, publicDir, !!_fromTrash)
               res.end(JSON.stringify({ success: true }))
             } catch (e) {
               res.statusCode = 400; res.end(JSON.stringify({ error: e.message }))
@@ -87,13 +124,33 @@ function localAccountsPlugin() {
               const data = JSON.parse(body)
 
               if (req.method === 'PATCH') {
-                // Merge with existing account
-                const all = readAllAccounts(publicDir)
-                const existing = all.find(a => a.id === data.id)
+                const { _action, ...patch } = data
+
+                if (_action === 'trash') {
+                  // Move account from active → trash
+                  const account = readAccounts(publicDir, false).find(a => a.id === patch.id)
+                  if (!account) { res.statusCode = 404; res.end(JSON.stringify({ error: 'Not found' })); return }
+                  writeAccount({ ...account, trashed_at: new Date().toISOString() }, publicDir, true)
+                  deleteAccountFile(account, publicDir, false)
+                  res.end(JSON.stringify({ success: true })); return
+                }
+
+                if (_action === 'restore') {
+                  // Move account from trash → active
+                  const account = readAccounts(publicDir, true).find(a => a.id === patch.id)
+                  if (!account) { res.statusCode = 404; res.end(JSON.stringify({ error: 'Not found' })); return }
+                  const { trashed_at, ...restored } = account
+                  writeAccount(restored, publicDir, false)
+                  deleteAccountFile(account, publicDir, true)
+                  res.end(JSON.stringify({ success: true })); return
+                }
+
+                // Normal PATCH — merge fields
+                const existing = readAccounts(publicDir, false).find(a => a.id === patch.id)
                 if (!existing) { res.statusCode = 404; res.end(JSON.stringify({ error: 'Not found' })); return }
-                writeAccount({ ...existing, ...data }, publicDir)
+                writeAccount({ ...existing, ...patch }, publicDir, false)
               } else {
-                writeAccount(data, publicDir)
+                writeAccount(data, publicDir, false)
               }
 
               res.end(JSON.stringify({ success: true }))
@@ -112,9 +169,75 @@ function localAccountsPlugin() {
   }
 }
 
+// ─── Local Reservations API plugin ───────────────────────────────────────────
+function localReservationsPlugin() {
+  const publicDir = path.resolve(__dirname, 'public')
+
+  return {
+    name: 'local-reservations-api',
+    configureServer(server) {
+      server.middlewares.use('/api/reservations.php', (req, res) => {
+        res.setHeader('Content-Type', 'application/json')
+        res.setHeader('Access-Control-Allow-Origin', '*')
+
+        if (req.method === 'OPTIONS') { res.statusCode = 204; res.end(); return }
+
+        const url = new URL(req.url, 'http://localhost')
+        const filterEmail = url.searchParams.get('client_email')
+
+        if (req.method === 'GET') {
+          let all = readReservations(publicDir)
+          if (filterEmail) all = all.filter(r => r.client_email === filterEmail)
+          all.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+          res.end(JSON.stringify(all))
+          return
+        }
+
+        let body = ''
+        req.on('data', c => { body += c })
+        req.on('end', () => {
+          try {
+            const data = JSON.parse(body)
+
+            if (req.method === 'POST') {
+              if (!data.id) { res.statusCode = 400; res.end(JSON.stringify({ error: 'id required' })); return }
+              writeReservation(data, publicDir)
+              res.end(JSON.stringify({ success: true })); return
+            }
+
+            if (req.method === 'PATCH') {
+              if (!data.id) { res.statusCode = 400; res.end(JSON.stringify({ error: 'id required' })); return }
+              const all = readReservations(publicDir)
+              const existing = all.find(r => String(r.id) === String(data.id))
+              if (!existing) { res.statusCode = 404; res.end(JSON.stringify({ error: 'Not found' })); return }
+              writeReservation({ ...existing, ...data }, publicDir)
+              res.end(JSON.stringify({ success: true })); return
+            }
+
+            if (req.method === 'DELETE') {
+              if (!data.id) { res.statusCode = 400; res.end(JSON.stringify({ error: 'id required' })); return }
+              const dir = path.join(publicDir, 'reservations', String(data.id))
+              const file = path.join(dir, 'reservation.json')
+              if (fs.existsSync(file)) fs.unlinkSync(file)
+              try { fs.rmdirSync(dir) } catch {}
+              res.end(JSON.stringify({ success: true })); return
+            }
+
+            res.statusCode = 405
+            res.end(JSON.stringify({ error: 'Method not allowed' }))
+          } catch (e) {
+            res.statusCode = 400
+            res.end(JSON.stringify({ error: e.message }))
+          }
+        })
+      })
+    },
+  }
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 export default defineConfig({
-  plugins: [react(), localAccountsPlugin()],
+  plugins: [react(), localAccountsPlugin(), localReservationsPlugin()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
