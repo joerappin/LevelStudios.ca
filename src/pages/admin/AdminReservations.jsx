@@ -6,7 +6,7 @@ import { Store } from '../../data/store'
 import { formatPrice, cn, STATUS_CONFIG, getTierConfig } from '../../utils'
 import { useApp } from '../../contexts/AppContext'
 
-const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee']
+const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse']
 const STATUS_MAP = STATUS_CONFIG
 
 const STUDIOS = ['Studio A', 'Studio B', 'Studio C']

@@ -49,6 +49,7 @@ export default function ChefDashboard() {
   const [reservations, setReservations] = useState([])
   const [checkIns, setCheckIns] = useState([])
   const [alertCount, setAlertCount] = useState(0)
+  const [trashedEmails, setTrashedEmails] = useState(new Set())
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
@@ -60,14 +61,21 @@ export default function ChefDashboard() {
     setCheckIns(Store.getCheckIns())
     const unread = Store.getAlerts().filter(a => a.status === 'sent').length
     setAlertCount(unread)
+    fetch('/api/accounts.php?trash=1')
+      .then(r => r.json())
+      .then(trashed => setTrashedEmails(new Set(trashed.map(a => a.email))))
+      .catch(() => {})
   }, [])
 
   const today = new Date().toISOString().split('T')[0]
   const todayCheck = checkIns.find(c => c.employee_email === user?.email && c.date === today)
 
+  // Exclude trashed accounts' reservations
+  const activeRes = reservations.filter(r => !trashedEmails.has(r.client_email))
+
   // Filter by period
   const now = new Date()
-  const filtered = reservations.filter(r => {
+  const filtered = activeRes.filter(r => {
     const d = new Date(r.date)
     if (period === 'jour') return r.date === today
     if (period === 'mois') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
@@ -90,7 +98,7 @@ export default function ChefDashboard() {
 
   const uniqueClients = new Set(filtered.map(r => r.client_email)).size
 
-  // Week calendar
+  // Week calendar uses activeRes (not just filtered period)
   const weekDays = getWeekDays()
   const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
@@ -228,7 +236,7 @@ export default function ChefDashboard() {
           <div className="grid grid-cols-7 gap-1">
             {weekDays.map((day, i) => {
               const dateStr = day.toISOString().split('T')[0]
-              const dayRes = reservations.filter(r => r.date === dateStr)
+              const dayRes = activeRes.filter(r => r.date === dateStr)
               const isToday = dateStr === today
               return (
                 <div key={i} className={cn('rounded-xl p-2 text-center', isToday ? 'bg-violet-600' : isDark ? 'bg-zinc-800' : 'bg-gray-100')}>

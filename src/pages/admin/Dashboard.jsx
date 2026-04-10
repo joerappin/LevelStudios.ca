@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList, FolderOpen, Zap,
   MessageSquare, HeadphonesIcon, Megaphone, Tag, Clock, BookOpen,
   Wrench, UserCheck, TrendingUp, AlertCircle, Bell, Plus, CreditCard,
-  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal,
+  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -29,6 +29,7 @@ const NAV = [
   { labelKey: 'nav_communication', path: createPageUrl('AdminCommunication'), icon: <Megaphone className="w-4 h-4" /> },
   { labelKey: 'nav_promo',         path: createPageUrl('AdminPromo'),         icon: <Tag className="w-4 h-4" /> },
   { labelKey: 'nav_pricing',       path: createPageUrl('AdminPricing'),       icon: <DollarSign className="w-4 h-4" /> },
+  { labelKey: 'nav_recette',       path: '/admin/recette',                    icon: <Receipt className="w-4 h-4" /> },
   { separator: true },
   { labelKey: 'nav_check',         path: createPageUrl('AdminCheck'),         icon: <Clock className="w-4 h-4" /> },
   { labelKey: 'nav_perf',          path: '/admin/perf',                       icon: <Medal className="w-4 h-4" /> },
@@ -119,6 +120,7 @@ export default function AdminDashboard() {
   const [accounts, setAccounts] = useState([])
   const [checkIns, setCheckIns] = useState([])
   const [employees, setEmployees] = useState([])
+  const [trashedEmails, setTrashedEmails] = useState(new Set())
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const cardHover = isDark ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-600 cursor-pointer' : 'bg-white border-gray-200 shadow-sm hover:border-violet-300 cursor-pointer'
@@ -134,16 +136,21 @@ export default function AdminDashboard() {
     setAccounts(Store.getAccounts())
     setCheckIns(Store.getCheckIns())
     setEmployees(Store.getEmployees())
+    fetch('/api/accounts.php?trash=1')
+      .then(r => r.json())
+      .then(trashed => setTrashedEmails(new Set(trashed.map(a => a.email))))
+      .catch(() => {})
   }, [])
 
-  // ─── filtered data ──────────────────────────────────────────────────────────
-  const filtered = filterByPeriod(allRes, period)
-  const paid      = filtered.filter(r => PAID_STATUSES.includes(r.status))
-  const pending   = filtered.filter(r => r.status === 'a_payer')
-  const ca        = paid.reduce((s, r) => s + (r.price || 0), 0)
+  // ─── filtered data (exclude trashed account reservations) ─────────────────
+  const activeRes  = allRes.filter(r => !trashedEmails.has(r.client_email))
+  const filtered   = filterByPeriod(activeRes, period)
+  const paid       = filtered.filter(r => PAID_STATUSES.includes(r.status))
+  const pending    = filtered.filter(r => r.status === 'a_payer')
+  const ca         = paid.reduce((s, r) => s + (r.price || 0), 0)
   const totalHours = filtered.reduce((s, r) => s + (r.duration || 0), 0)
-  const activeClients = accounts.filter(a => a.type === 'client' && !a.suspended).length
-    || [...new Set(allRes.map(r => r.client_email))].length
+  const activeClients = accounts.filter(a => a.type === 'client' && !a.suspended && !trashedEmails.has(a.email)).length
+    || [...new Set(activeRes.map(r => r.client_email))].length
 
   // ─── studio breakdown ───────────────────────────────────────────────────────
   const studioStats = STUDIOS.map(studio => {
@@ -156,7 +163,7 @@ export default function AdminDashboard() {
   })
 
   // ─── ratings ────────────────────────────────────────────────────────────────
-  const ratedRes = allRes.filter(r => r.rating)
+  const ratedRes = activeRes.filter(r => r.rating)
   const avgRating = ratedRes.length > 0
     ? (ratedRes.reduce((s, r) => s + r.rating, 0) / ratedRes.length)
     : 0
@@ -167,12 +174,12 @@ export default function AdminDashboard() {
   const recentReviews = [...ratedRes]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 4)
-  const ratingPct = allRes.length > 0 ? Math.round((ratedRes.length / allRes.length) * 100) : 0
+  const ratingPct = activeRes.length > 0 ? Math.round((ratedRes.length / activeRes.length) * 100) : 0
 
   // ─── week calendar ──────────────────────────────────────────────────────────
   const weekDates = getWeekDates()
   const weekMap = {}
-  allRes.forEach(r => { weekMap[r.date] = (weekMap[r.date] || []).concat(r) })
+  activeRes.forEach(r => { weekMap[r.date] = (weekMap[r.date] || []).concat(r) })
   const today = toYMD(new Date())
 
   // ─── today check-ins ────────────────────────────────────────────────────────

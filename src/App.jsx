@@ -31,6 +31,7 @@ import AdminBeta from './pages/admin/AdminBeta'
 import AdminPerf from './pages/admin/AdminPerf'
 import AdminVersions from './pages/admin/AdminVersions'
 import AdminPricing from './pages/admin/AdminPricing'
+import AdminRecette from './pages/admin/AdminRecette'
 
 // Employee pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard'
@@ -107,6 +108,7 @@ function AppRoutes() {
       <Route path="/admin/beta" element={<ProtectedRoute requiredType="admin"><AdminBeta /></ProtectedRoute>} />
       <Route path="/admin/versions" element={<ProtectedRoute requiredType="admin"><AdminVersions /></ProtectedRoute>} />
       <Route path="/admin/pricing" element={<ProtectedRoute requiredType="admin"><AdminPricing /></ProtectedRoute>} />
+      <Route path="/admin/recette" element={<ProtectedRoute requiredType="admin"><AdminRecette /></ProtectedRoute>} />
 
       <Route path="/employee/dashboard" element={<ProtectedRoute requiredType="employee"><EmployeeDashboard /></ProtectedRoute>} />
       <Route path="/employee/projects" element={<ProtectedRoute requiredType="employee"><EmployeeProjects /></ProtectedRoute>} />
