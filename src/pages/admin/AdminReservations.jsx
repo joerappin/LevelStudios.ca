@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star } from 'lucide-react'
+import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
 import { formatPrice, cn, STATUS_CONFIG, getTierConfig } from '../../utils'
 import { useApp } from '../../contexts/AppContext'
 
-const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse']
+const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse', 'absent']
 const STATUS_MAP = STATUS_CONFIG
 
 const STUDIOS = ['Studio A', 'Studio B', 'Studio C']
@@ -99,6 +99,13 @@ export default function AdminReservations() {
     Store.updateReservation(id, { status })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
+  }
+
+  const handleDelete = (id) => {
+    if (!confirm('Supprimer définitivement cette réservation ?')) return
+    Store.deleteReservation(id)
+    refresh()
+    if (selected?.id === id) setSelected(null)
   }
 
   function validate() {
@@ -248,14 +255,18 @@ export default function AdminReservations() {
                       )}
                     </td>
                     <td className="px-5 py-3.5">
-                      <div className="flex gap-1.5">
-                        <button onClick={() => setSelected(r)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}><Eye className="w-3.5 h-3.5" /></button>
+                      <div className="flex gap-1">
+                        <button onClick={() => setSelected(r)} title="Voir le détail" className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}><Eye className="w-3.5 h-3.5" /></button>
                         {r.status === 'en_attente' && (
-                          <button onClick={() => updateStatus(r.id, 'validee')} className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => updateStatus(r.id, 'validee')} title="Valider" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
                         )}
-                        {r.status !== 'annulee' && r.status !== 'livree' && (
-                          <button onClick={() => updateStatus(r.id, 'annulee')} className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                        {r.status !== 'absent' && r.status !== 'annulee' && r.status !== 'rembourse' && (
+                          <button onClick={() => updateStatus(r.id, 'absent')} title="Marquer absent" className="p-1.5 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg text-orange-400 transition-colors"><UserX className="w-3.5 h-3.5" /></button>
                         )}
+                        {r.status !== 'annulee' && r.status !== 'livree' && r.status !== 'absent' && (
+                          <button onClick={() => updateStatus(r.id, 'annulee')} title="Annuler" className="p-1.5 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                        )}
+                        <button onClick={() => handleDelete(r.id)} title="Supprimer définitivement" className="p-1.5 bg-zinc-500/10 hover:bg-red-500/20 rounded-lg text-zinc-500 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -317,13 +328,14 @@ export default function AdminReservations() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-2 mt-6 flex-wrap">
               {selected.status === 'en_attente' && (
                 <button onClick={() => { updateStatus(selected.id, 'validee'); setSelected({ ...selected, status: 'validee' }) }} className="flex-1 bg-green-500 text-white font-semibold rounded-xl py-2.5 text-sm hover:bg-green-400 transition-colors">Valider</button>
               )}
               {selected.status === 'validee' && (
                 <button onClick={() => { updateStatus(selected.id, 'livree'); setSelected({ ...selected, status: 'livree' }) }} className="flex-1 bg-blue-500 text-white font-semibold rounded-xl py-2.5 text-sm hover:bg-blue-400 transition-colors">Marquer livré</button>
               )}
+              <button onClick={() => { handleDelete(selected.id) }} className="p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Supprimer définitivement"><Trash2 className="w-4 h-4" /></button>
               <button onClick={() => setSelected(null)} className={`flex-1 border rounded-xl py-2.5 text-sm transition-colors ${btnSecondary}`}>Fermer</button>
             </div>
           </div>

@@ -134,13 +134,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     setAllRes(Store.getReservations())
-    setAccounts(Store.getAccounts())
     setCheckIns(Store.getCheckIns())
     setEmployees(Store.getEmployees())
-    fetch('/api/accounts.php?trash=1')
-      .then(r => r.json())
-      .then(trashed => setTrashedEmails(new Set(trashed.map(a => a.email))))
-      .catch(() => {})
+    // Load accounts from file API (source of truth) + trash in parallel
+    Promise.all([
+      fetch('/api/accounts.php').then(r => r.json()).catch(() => Store.getAccounts()),
+      fetch('/api/accounts.php?trash=1').then(r => r.json()).catch(() => []),
+    ]).then(([active, trashed]) => {
+      setAccounts(active)
+      setTrashedEmails(new Set(trashed.map(a => a.email)))
+    })
   }, [])
 
   // ─── filtered data (exclude trashed accounts + cancelled reservations) ──────

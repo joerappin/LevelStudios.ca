@@ -84,4 +84,5 @@ export const STATUS_CONFIG = {
   livree:      { label_fr: 'Livrée',      label_en: 'Delivered',   cls: 'bg-cyan-500/20 text-cyan-400' },
   annulee:     { label_fr: 'Annulée',     label_en: 'Cancelled',   cls: 'bg-red-500/20 text-red-400' },
   rembourse:   { label_fr: 'Remboursée',  label_en: 'Refunded',    cls: 'bg-pink-500/20 text-pink-400' },
+  absent:      { label_fr: 'Absent',      label_en: 'No-show',     cls: 'bg-orange-500/20 text-orange-400' },
 }

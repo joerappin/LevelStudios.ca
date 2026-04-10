@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import {
   Receipt, TrendingUp, ChevronLeft, ChevronRight,
   RotateCcw, Tag, BarChart2, Building2, CalendarDays,
+  CheckCircle2, CreditCard,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -118,6 +119,7 @@ export default function AdminRecette() {
   // Countable = exclude cancelled reservations from hours + session counts
   const countable = filtered.filter(r => !SKIP.includes(r.status))
   const paid      = countable.filter(r => PAID.includes(r.status))
+  const pending   = countable.filter(r => r.status === 'a_payer' || r.status === 'en_attente')
   const ca        = paid.reduce((s, r) => s + (r.price || 0), 0)
   const sessions  = countable.length
   const hours     = countable.reduce((s, r) => s + (r.duration || 0), 0)
@@ -269,8 +271,8 @@ export default function AdminRecette() {
         </div>
 
         {/* ── Summary KPIs ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className={`border rounded-2xl p-5 lg:col-span-1 ${card}`}>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`border rounded-2xl p-5 ${card}`}>
             <div className={`flex items-center gap-1.5 mb-2 text-xs font-semibold ${textSecondary}`}>
               <TrendingUp className="w-3.5 h-3.5 text-green-400" /> CA période
             </div>
@@ -279,9 +281,23 @@ export default function AdminRecette() {
               <div className={`text-xs mt-1 ${textSecondary}`}>Total : {formatPrice(caTotal)}</div>
             )}
           </div>
-          <StatCard label="Sessions" value={sessions} icon={<CalendarDays className="w-3.5 h-3.5" />} color="text-blue-400" card={card} textPrimary={textPrimary} textSecondary={textSecondary} />
-          <StatCard label="Heures réservées" value={`${hours}h`} icon={<BarChart2 className="w-3.5 h-3.5" />} color="text-violet-400" card={card} textPrimary={textPrimary} textSecondary={textSecondary} />
-          <StatCard label="CA moyen/session" value={paid.length > 0 ? formatPrice(ca / paid.length) : '—'} icon={<Receipt className="w-3.5 h-3.5" />} color="text-amber-400" card={card} textPrimary={textPrimary} textSecondary={textSecondary} />
+          <div className={`border rounded-2xl p-5 ${card}`}>
+            <div className={`flex items-center gap-1.5 mb-2 text-xs font-semibold ${textSecondary}`}>
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" /> Sessions payées
+            </div>
+            <div className="text-2xl font-black text-blue-400">{paid.length}</div>
+            <div className={`text-xs mt-1 ${textSecondary}`}>{sessions > 0 ? ((paid.length / sessions) * 100).toFixed(0) : 0}% des sessions</div>
+          </div>
+          <div className={`border rounded-2xl p-5 ${card}`}>
+            <div className={`flex items-center gap-1.5 mb-2 text-xs font-semibold ${textSecondary}`}>
+              <CreditCard className="w-3.5 h-3.5 text-amber-400" /> En attente paiement
+            </div>
+            <div className="text-2xl font-black text-amber-400">{pending.length}</div>
+            <div className={`text-xs mt-1 ${textSecondary}`}>{pending.length > 0 ? formatPrice(pending.reduce((s, r) => s + (r.price || 0), 0)) : '—'} à encaisser</div>
+          </div>
+          <StatCard label="Total sessions" value={sessions} icon={<CalendarDays className="w-3.5 h-3.5" />} color="text-violet-400" card={card} textPrimary={textPrimary} textSecondary={textSecondary} />
+          <StatCard label="Heures réservées" value={`${hours}h`} icon={<BarChart2 className="w-3.5 h-3.5" />} color="text-cyan-400" card={card} textPrimary={textPrimary} textSecondary={textSecondary} />
+          <StatCard label="CA moyen/session" value={paid.length > 0 ? formatPrice(ca / paid.length) : '—'} icon={<Receipt className="w-3.5 h-3.5" />} color="text-emerald-400" card={card} textPrimary={textPrimary} textSecondary={textSecondary} />
         </div>
 
         {/* ── CA par studio ── */}
