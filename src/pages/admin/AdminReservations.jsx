@@ -10,19 +10,29 @@ const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', '
 const STATUS_MAP = STATUS_CONFIG
 
 const STUDIOS = ['Studio A', 'Studio B', 'Studio C']
-const SERVICES = [
-  { key: 'ARGENT', label: 'ARGENT — 221 CAD/h', rate: 221 },
-  { key: 'GOLD',   label: 'GOLD — 587 CAD/h',   rate: 587 },
-]
-const OPTIONS_LIST = [
-  { key: 'Photo',     label: 'Photo',            price: 44 },
-  { key: 'Short',     label: 'Short vidéo',       price: 44 },
-  { key: 'Miniature', label: 'Miniature',         price: 44 },
-  { key: 'Live',      label: 'Live stream',       price: 662 },
-  { key: 'Replay',    label: 'Replay',            price: 74 },
-  { key: 'CM',        label: 'Community manager', price: 147 },
-  { key: 'Coaching',  label: 'Coaching',          price: 588 },
-]
+
+function buildServices() {
+  const p = Store.getPrices()
+  const priceOf = (id, fb) => p.services.find(s => s.id === id)?.price ?? fb
+  const a = priceOf('ARGENT', 221), g = priceOf('GOLD', 587)
+  return [
+    { key: 'ARGENT', label: `ARGENT — ${a} CAD/h`, rate: a },
+    { key: 'GOLD',   label: `GOLD — ${g} CAD/h`,   rate: g },
+  ]
+}
+function buildOptionsList() {
+  const p = Store.getPrices()
+  const priceOf = (id, fb) => p.options.find(o => o.id === id)?.price ?? fb
+  return [
+    { key: 'Photo',     label: 'Photo',            price: priceOf('Photo', 44) },
+    { key: 'Short',     label: 'Short vidéo',       price: priceOf('Short', 44) },
+    { key: 'Miniature', label: 'Miniature',         price: priceOf('Miniature', 44) },
+    { key: 'Live',      label: 'Live stream',       price: priceOf('Live', 662) },
+    { key: 'Replay',    label: 'Replay',            price: priceOf('Replay', 74) },
+    { key: 'CM',        label: 'Community manager', price: priceOf('CommunityManager', 147) },
+    { key: 'Coaching',  label: 'Coaching',          price: priceOf('Coaching', 588) },
+  ]
+}
 const DURATIONS = [1, 2, 3, 4, 5, 6, 8, 10]
 const TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
 
@@ -62,12 +72,15 @@ export default function AdminReservations() {
   const btnSecondary = isDark ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
   const divider = isDark ? 'border-zinc-800' : 'border-gray-100'
 
+  const SERVICES = buildServices()
+  const OPTIONS_LIST = buildOptionsList()
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const toggleOption = key => setForm(f => ({
     ...f, options: f.options.includes(key) ? f.options.filter(o => o !== key) : [...f.options, key]
   }))
 
-  const serviceRate = SERVICES.find(s => s.key === form.service)?.rate || 221
+  const serviceRate = SERVICES.find(s => s.key === form.service)?.rate || SERVICES[0]?.rate || 221
   const basePrice = serviceRate * Number(form.duration)
   const optionsPrice = form.options.reduce((sum, key) => sum + (OPTIONS_LIST.find(o => o.key === key)?.price || 0), 0)
   const total = basePrice + optionsPrice

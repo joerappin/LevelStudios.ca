@@ -2,25 +2,25 @@
 
 // ─── Brand palette ──────────────────────────────────────────────────────────
 const BRAND = {
-  navy:  '#01154B',
-  blue:  '#0A4C99',
-  teal:  '#3C9FA9',
-  cyan:  '#4DB0C7',
+  navy:  '#006978',
+  blue:  '#00BCD4',
+  teal:  '#00ACC1',
+  cyan:  '#26C6DA',
 }
 
 // Shared brand scale — replaces both violet and purple
 const brandScale = {
-  50:  '#E8EDF8',
-  100: '#C5D2EE',
-  200: '#9DB3E3',
-  300: BRAND.cyan,    // #4DB0C7
-  400: BRAND.teal,    // #3C9FA9
-  500: BRAND.teal,    // #3C9FA9  — focus rings
-  600: BRAND.blue,    // #0A4C99  ← PRIMARY CTA
-  700: '#083D7D',     // hover on primary
-  800: '#052B5C',
-  900: BRAND.navy,    // #01154B  — brand navy
-  950: '#010E35',
+  50:  '#E0F7FA',
+  100: '#B2EBF2',
+  200: '#80DEEA',
+  300: '#26C6DA',
+  400: '#00BCD4',
+  500: '#00ACC1',   // focus rings
+  600: '#00BCD4',   // ← PRIMARY CTA
+  700: '#0097A7',   // hover on primary
+  800: '#00838F',
+  900: '#006064',
+  950: '#004D52',
 }
 
 export default {
@@ -58,19 +58,19 @@ export default {
         950: '#01071E',
       },
 
-      // zinc → navy-tinted dark scale (used in dark mode only)
+      // zinc → neutral dark scale — noir profond (dark mode)
       zinc: {
-        50:  '#F3F6FB',
-        100: '#E6EDF6',
-        200: '#D0DCEC',
-        300: '#B0C4D8',
-        400: '#8EA7C2',  // muted blue-gray — tertiary text
-        500: '#6B87A8',  // secondary text
-        600: '#1E4080',
-        700: '#133070',
-        800: '#0A1D5A',  // inputs / secondary surfaces
-        900: BRAND.navy, // #01154B — cards / sidebar
-        950: '#010A2A',  // page background
+        50:  '#fafafa',
+        100: '#f4f4f5',
+        200: '#e4e4e7',
+        300: '#d4d4d8',
+        400: '#a1a1aa',  // muted text
+        500: '#71717a',  // secondary text
+        600: '#3f3f46',
+        700: '#27272a',
+        800: '#171717',  // inputs / secondary surfaces
+        900: '#0d0d0d',  // cards / sidebar
+        950: '#060606',  // page background
       },
 
       // brand helpers

@@ -1,31 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Home, CalendarDays, FolderOpen, CreditCard, MessageSquare,
+  Home, CalendarDays, FolderOpen, CreditCard,
   User, LogOut, Menu, Sun, Moon, ChevronDown, ArrowLeftCircle,
-  KeyRound, Receipt, Headphones, ChevronUp,
+  KeyRound, Headphones, ChevronUp,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
 import { translations } from '../i18n/translations'
-import { createPageUrl, cn } from '../utils'
+import { createPageUrl } from '../utils'
 import { Store } from '../data/store'
+
+// ── DESIGN.md tokens ──────────────────────────────────────────────────────────
+const D = {
+  tertiary:    '#88ebff',
+  primary:     '#ff89ac',
+  secondary:   '#ea73fb',
+  muted:       '#adaaaa',
+  gradFull:    'linear-gradient(135deg, #ff89ac 0%, #ea73fb 50%, #88ebff 100%)',
+  gradActive:  'linear-gradient(135deg, #88ebff 0%, #ea73fb 100%)',
+}
+
+const DARK = {
+  page:    '#060606',
+  sidebar: '#080808',
+  header:  'rgba(6,6,6,0.90)',
+  divider: 'rgba(255,255,255,0.05)',
+  hover:   'rgba(136,235,255,0.06)',
+}
+
+const LIGHT = {
+  page:    '#f4f4f8',
+  sidebar: '#ffffff',
+  header:  'rgba(255,255,255,0.92)',
+  divider: 'rgba(0,0,0,0.06)',
+  hover:   'rgba(136,235,255,0.08)',
+}
 
 export default function ClientLayout({ children, title }) {
   const { user, logout, impersonatedBy, stopImpersonating } = useAuth()
   const { theme, lang, toggleTheme, toggleLang } = useApp()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef(null)
   const handleStopImpersonating = () => { stopImpersonating(); navigate('/admin/accounts') }
 
   useEffect(() => {
     function handleClick(e) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
-        setUserMenuOpen(false)
-      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -33,10 +57,11 @@ export default function ClientLayout({ children, title }) {
 
   const t = (k) => translations[lang]?.[k] || k
   const isDark = theme === 'dark'
+  const S      = isDark ? DARK : LIGHT
   const handleLogout = () => { logout(); navigate('/') }
 
   const pendingCount = user ? Store.getReservations().filter(r => r.client_email === user.email && r.status === 'a_payer').length : 0
-  const flags = Store.getFeatureFlags()
+  const flags        = Store.getFeatureFlags()
 
   const navItems = [
     { key: 'nav_dashboard',     path: createPageUrl('ClientDashboard'),    icon: Home },
@@ -45,56 +70,81 @@ export default function ClientLayout({ children, title }) {
     flags.subscription_tab && { key: 'nav_subscription', path: createPageUrl('ClientSubscription'), icon: CreditCard },
   ].filter(Boolean)
 
-  const SidebarContent = () => (
-    <div className={cn('flex flex-col h-full', isDark ? 'bg-zinc-900' : 'bg-white')}>
+  const textPrimary  = isDark ? '#ffffff' : '#0d0d1a'
+  const textMuted    = isDark ? D.muted   : '#888'
+  const navInactive  = isDark ? 'rgba(173,170,170,0.65)' : '#888'
+  const navHoverText = isDark ? '#ffffff' : D.tertiary
 
-      {/* Logo row */}
-      <div className={cn('h-16 flex items-center justify-between px-5 border-b flex-shrink-0', isDark ? 'border-zinc-800' : 'border-gray-100')}>
-        <div className="flex items-center gap-2">
-          <img src="/logo.jpg" className="w-7 h-7 object-contain rounded-lg flex-shrink-0" alt="Level Studios" />
-          <div className="leading-none">
-            <span className={cn('font-bold text-sm tracking-tight block', isDark ? 'text-white' : 'text-gray-900')}>
-              Level Studios
-            </span>
-            <span className={cn('text-[10px] font-semibold px-1 py-0.5 rounded uppercase tracking-wide', isDark ? 'text-violet-400 bg-violet-950/50' : 'text-violet-600 bg-violet-50')}>
-              Beta
-            </span>
+  const SidebarContent = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: S.sidebar }}>
+
+      {/* Logo */}
+      <div style={{
+        height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 18px', flexShrink: 0,
+        background: isDark ? DARK.page : 'rgba(136,235,255,0.03)',
+        borderBottom: `1px solid ${S.divider}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src="/logo.png" style={{ width: '56px', height: '56px', objectFit: 'contain', flexShrink: 0, filter: isDark ? 'brightness(0) invert(1)' : 'brightness(0)' }} alt="Level Studios" />
+          <div style={{ lineHeight: 1.2 }}>
+            <span style={{
+              fontWeight: 800, fontSize: '13px', letterSpacing: '-0.01em', display: 'block',
+              color: textPrimary, fontFamily: 'Montserrat, sans-serif',
+            }}>Level Studios</span>
+            {/* Badge client — tertiary */}
+            <span style={{
+              fontSize: '9px', fontWeight: 700, padding: '1px 7px', borderRadius: '4px',
+              textTransform: 'uppercase', letterSpacing: '0.08em', display: 'inline-block',
+              background: `${D.tertiary}14`, color: D.tertiary, border: `1px solid ${D.tertiary}28`,
+            }}>Client</span>
           </div>
         </div>
-        {/* Theme toggle */}
-        <button onClick={toggleTheme} className={cn('p-1.5 rounded-lg transition-colors', isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100')}>
+        <button onClick={toggleTheme} style={{
+          padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+          background: 'transparent', color: navInactive, transition: 'color 0.2s',
+        }}
+          onMouseEnter={e => e.currentTarget.style.color = D.tertiary}
+          onMouseLeave={e => e.currentTarget.style.color = navInactive}
+        >
           {isDark ? <Sun size={15} /> : <Moon size={15} />}
         </button>
       </div>
 
+      {/* Accent line */}
+      <div style={{ height: '2px', background: D.gradFull, flexShrink: 0, opacity: 0.8 }} />
+
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
+      <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {navItems.map(({ key, path, icon: Icon }) => {
           const isActive = location.pathname === path
-          const badge = key === 'nav_reservations' && pendingCount > 0 ? pendingCount : null
-          const label = key === 'nav_reservations' ? 'Réservations' : t(key)
+          const badge    = key === 'nav_reservations' && pendingCount > 0 ? pendingCount : null
+          const label    = key === 'nav_reservations' ? 'Réservations' : t(key)
           return (
-            <button
-              key={key}
+            <button key={key}
               onClick={() => { navigate(path); setSidebarOpen(false) }}
-              className={cn(
-                'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-                isActive
-                  ? 'bg-violet-600 text-white shadow-sm shadow-violet-900/30'
-                  : isDark
-                    ? 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-              )}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: '10px', padding: '9px 12px', borderRadius: '10px',
+                fontSize: '13px', fontWeight: isActive ? 600 : 500,
+                border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s',
+                background: isActive ? D.gradActive : 'transparent',
+                color: isActive ? '#060606' : navInactive,
+                boxShadow: isActive ? `0 2px 18px rgba(136,235,255,0.28)` : 'none',
+              }}
+              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = S.hover; e.currentTarget.style.color = navHoverText } }}
+              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = navInactive } }}
             >
-              <div className="flex items-center gap-3">
-                <Icon size={16} className="flex-shrink-0" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Icon size={15} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.7 }} />
                 {label}
               </div>
               {badge && (
-                <span className={cn('text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center',
-                  isActive ? 'bg-white/20 text-white' : 'bg-violet-600 text-white')}>
-                  {badge}
-                </span>
+                <span style={{
+                  fontSize: '10px', padding: '1px 6px', borderRadius: '999px', fontWeight: 700,
+                  background: isActive ? 'rgba(6,6,6,0.2)' : D.tertiary,
+                  color: '#060606', minWidth: '18px', textAlign: 'center',
+                }}>{badge}</span>
               )}
             </button>
           )
@@ -102,125 +152,158 @@ export default function ClientLayout({ children, title }) {
       </nav>
 
       {/* Bottom */}
-      <div className={cn('p-3 border-t space-y-1.5 flex-shrink-0', isDark ? 'border-zinc-800' : 'border-gray-100')}>
+      <div style={{
+        padding: '10px 8px', flexShrink: 0,
+        borderTop: `1px solid ${S.divider}`,
+        display: 'flex', flexDirection: 'column', gap: '4px',
+        background: isDark ? DARK.page : 'rgba(136,235,255,0.02)',
+      }}>
         {/* Language */}
-        <button onClick={toggleLang} className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors', isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50')}>
-          <span className="text-base">{lang === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
-          <span className="font-medium">{lang === 'fr' ? 'Français' : 'English'}</span>
-          <ChevronDown size={13} className="ml-auto" />
+        <button onClick={toggleLang} style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 12px', borderRadius: '10px', fontSize: '13px',
+          border: 'none', cursor: 'pointer', background: 'transparent', color: navInactive, transition: 'all 0.18s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = S.hover; e.currentTarget.style.color = navHoverText }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = navInactive }}
+        >
+          <span>{lang === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
+          <span style={{ fontWeight: 500 }}>{lang === 'fr' ? 'Français' : 'English'}</span>
+          <ChevronDown size={12} style={{ marginLeft: 'auto' }} />
         </button>
 
-        {/* User card + dropdown */}
-        <div ref={userMenuRef} className="relative">
-          {/* Dropdown menu — opens upward */}
+        {/* User dropdown */}
+        <div ref={userMenuRef} style={{ position: 'relative' }}>
           {userMenuOpen && (
-            <div className={cn(
-              'absolute bottom-full left-0 right-0 mb-2 rounded-xl border overflow-hidden shadow-xl',
-              isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'
-            )}>
+            <div style={{
+              position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: '8px',
+              borderRadius: '12px', overflow: 'hidden',
+              background: isDark ? '#0a0a0a' : '#fff',
+              boxShadow: isDark ? `0 -8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(136,235,255,0.1)` : '0 -8px 24px rgba(0,0,0,0.08)',
+            }}>
               {[
                 { icon: User,       label: 'Informations personnelles', path: createPageUrl('ClientAccount') },
                 { icon: KeyRound,   label: 'Mot de passe',              path: createPageUrl('ClientAccount') },
                 { icon: Headphones, label: 'Contact SAV',               path: createPageUrl('ClientContact') },
               ].map(({ icon: Icon, label, path }) => (
-                <button
-                  key={label}
+                <button key={label}
                   onClick={() => { navigate(path); setUserMenuOpen(false); setSidebarOpen(false) }}
-                  className={cn(
-                    'w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-medium transition-colors text-left',
-                    isDark ? 'text-zinc-300 hover:bg-zinc-700 hover:text-white' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  )}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '10px 14px', fontSize: '12px', fontWeight: 500,
+                    border: 'none', cursor: 'pointer', textAlign: 'left',
+                    background: 'transparent', color: textPrimary, transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = S.hover }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                 >
-                  <Icon size={13} className={isDark ? 'text-zinc-500' : 'text-gray-400'} />
+                  <Icon size={13} style={{ color: D.tertiary }} />
                   {label}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Trigger button */}
-          <button
-            onClick={() => setUserMenuOpen(o => !o)}
-            className={cn(
-              'w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-colors',
-              userMenuOpen
-                ? isDark ? 'bg-zinc-700' : 'bg-gray-100'
-                : isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'
-            )}
-          >
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#0A4C99' }}>
-              <span className="text-white text-xs font-bold">{user?.name?.charAt(0) || 'U'}</span>
+          {/* Trigger — fond noir profond + tertiary */}
+          <button onClick={() => setUserMenuOpen(o => !o)} style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '10px 12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+            transition: 'background 0.18s',
+            background: isDark ? '#050505' : `${D.tertiary}0a`,
+            outline: `1px solid ${D.tertiary}1e`,
+          }}>
+            <div style={{
+              width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
+              background: D.gradActive,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 2px 12px rgba(136,235,255,0.28)`,
+            }}>
+              <span style={{ color: '#060606', fontSize: '12px', fontWeight: 900 }}>{user?.name?.charAt(0) || 'U'}</span>
             </div>
-            <span className={cn('text-xs font-medium flex-1 truncate text-left', isDark ? 'text-zinc-300' : 'text-gray-700')}>
-              {user?.name || 'User'}
+            <span style={{ fontSize: '12px', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left', color: textPrimary }}>
+              {user?.name || 'Client'}
             </span>
             {userMenuOpen
-              ? <ChevronUp size={13} className={isDark ? 'text-zinc-500' : 'text-gray-400'} />
-              : <ChevronDown size={13} className={isDark ? 'text-zinc-500' : 'text-gray-400'} />
+              ? <ChevronUp size={12} style={{ color: textMuted }} />
+              : <ChevronDown size={12} style={{ color: textMuted }} />
             }
           </button>
         </div>
 
-        {/* Logout button */}
-        <button
-          onClick={handleLogout}
-          className={cn(
-            'w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors',
-            isDark ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-          )}
+        {/* Logout */}
+        <button onClick={handleLogout} style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '8px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: 500,
+          border: 'none', cursor: 'pointer', background: 'transparent', color: textMuted, transition: 'all 0.18s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = D.primary; e.currentTarget.style.background = `${D.primary}0d` }}
+          onMouseLeave={e => { e.currentTarget.style.color = textMuted; e.currentTarget.style.background = 'transparent' }}
         >
-          <LogOut size={14} />
-          {t('logout')}
+          <LogOut size={14} />{t('logout')}
         </button>
       </div>
     </div>
   )
 
   return (
-    <div className={cn('min-h-screen flex', isDark ? 'bg-zinc-950' : 'bg-gray-50')}>
-      {/* Mobile overlay */}
+    <div style={{ minHeight: '100vh', display: 'flex', background: S.page }}>
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 40, backdropFilter: 'blur(4px)' }}
+          className="lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <aside className={cn(
-        'fixed top-0 left-0 h-full w-56 z-50 border-r transition-transform duration-300',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        'lg:translate-x-0',
-        isDark ? 'border-zinc-800' : 'border-gray-200'
-      )}>
+      <aside style={{
+        position: 'fixed', top: 0, left: 0, height: '100%', width: '256px', zIndex: 50,
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+        boxShadow: isDark ? `4px 0 32px rgba(0,0,0,0.6)` : '4px 0 24px rgba(0,0,0,0.08)',
+      }} className={sidebarOpen ? '' : '-translate-x-full lg:translate-x-0'}>
         <SidebarContent />
       </aside>
 
-      {/* Main */}
-      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <header className={cn(
-          'h-16 flex items-center justify-between px-4 sm:px-6 border-b sticky top-0 z-30',
-          isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-100'
-        )}>
-          <div className="flex items-center gap-3">
-            <button className={cn('lg:hidden p-2 rounded-lg', isDark ? 'text-zinc-400 hover:bg-zinc-800' : 'text-gray-400 hover:bg-gray-100')} onClick={() => setSidebarOpen(true)}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }} className="lg:ml-64">
+        <header style={{
+          height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 24px', position: 'sticky', top: 0, zIndex: 30,
+          background: S.header,
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: `1px solid ${S.divider}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className="lg:hidden" onClick={() => setSidebarOpen(true)} style={{
+              padding: '8px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+              background: 'transparent', color: navInactive,
+            }}>
               <Menu size={20} />
             </button>
-            <h1 className={cn('font-bold text-lg', isDark ? 'text-white' : 'text-gray-900')}>{title}</h1>
+            <h1 style={{
+              fontWeight: 800, fontSize: '17px', margin: 0,
+              color: textPrimary, fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.01em',
+            }}>{title}</h1>
           </div>
-
-          <div className="flex items-center gap-2" />
+          <div />
         </header>
 
         {impersonatedBy && (
-          <div className="sticky top-16 z-20 flex items-center justify-between px-4 sm:px-6 py-2.5" style={{ background: 'rgba(234,179,8,0.12)', borderBottom: '1px solid rgba(234,179,8,0.3)' }}>
-            <span className="text-xs font-semibold" style={{ color: '#fbbf24' }}>
+          <div style={{
+            position: 'sticky', top: '64px', zIndex: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 24px',
+            background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)',
+          }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#fbbf24' }}>
               👁 Vue en tant que <strong>{user?.name}</strong> — connecté en tant que {impersonatedBy.name}
             </span>
-            <button onClick={handleStopImpersonating} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors" style={{ background: 'rgba(234,179,8,0.2)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.4)' }}>
+            <button onClick={handleStopImpersonating} style={{
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700,
+              padding: '6px 14px', borderRadius: '8px', background: 'rgba(234,179,8,0.15)',
+              color: '#fbbf24', border: '1px solid rgba(234,179,8,0.3)', cursor: 'pointer',
+            }}>
               <ArrowLeftCircle size={13} /> Retour Admin
             </button>
           </div>
         )}
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
+
+        <main style={{ flex: 1, padding: '24px', overflowX: 'hidden', color: textPrimary }}>
           {children}
         </main>
       </div>

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList, FolderOpen, Zap,
   MessageSquare, HeadphonesIcon, Megaphone, Tag, Clock, BookOpen,
   Wrench, UserCheck, TrendingUp, AlertCircle, Bell, Plus, CreditCard,
-  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star,
+  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -25,6 +25,7 @@ const NAV = [
   { labelKey: 'nav_sav',           path: createPageUrl('AdminSAV'),           icon: <HeadphonesIcon className="w-4 h-4" /> },
   { labelKey: 'nav_communication', path: createPageUrl('AdminCommunication'), icon: <Megaphone className="w-4 h-4" /> },
   { labelKey: 'nav_promo',         path: createPageUrl('AdminPromo'),         icon: <Tag className="w-4 h-4" /> },
+  { labelKey: 'nav_pricing',       path: createPageUrl('AdminPricing'),       icon: <DollarSign className="w-4 h-4" /> },
   { separator: true },
   { labelKey: 'nav_check',         path: createPageUrl('AdminCheck'),         icon: <Clock className="w-4 h-4" /> },
   { labelKey: 'nav_boarding',      path: createPageUrl('AdminBoarding'),      icon: <UserCheck className="w-4 h-4" /> },

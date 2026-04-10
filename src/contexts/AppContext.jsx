@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem('ls_theme') || 'light')
+  const [theme, setTheme] = useState(() => localStorage.getItem('ls_theme') || 'dark')
   const [lang, setLang] = useState(() => localStorage.getItem('ls_lang') || 'fr')
 
   useEffect(() => {

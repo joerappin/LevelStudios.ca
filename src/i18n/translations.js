@@ -24,6 +24,7 @@ export const translations = {
     nav_manual: 'Manuel',
     nav_tool: 'Outils',
     nav_beta: 'Beta',
+    nav_pricing: 'Tarifs',
     // Employee nav
     nav_leave: 'Congés',
     // Common
@@ -144,6 +145,7 @@ export const translations = {
     nav_manual: 'Manual',
     nav_tool: 'Tools',
     nav_beta: 'Beta',
+    nav_pricing: 'Pricing',
     // Employee nav
     nav_leave: 'Leave',
     // Common

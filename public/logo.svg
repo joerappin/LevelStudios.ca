@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Triangle 1: upper-left, white frame, bigger -->
+  <path
+    fill="white"
+    fill-rule="evenodd"
+    d="M75,5 L2,132 L148,132 Z M75,26 L20,121 L130,121 Z"
+  />
+  <!-- Triangle 2: lower-right, white frame, bigger -->
+  <path
+    fill="white"
+    fill-rule="evenodd"
+    d="M125,68 L52,195 L198,195 Z M125,89 L70,184 L180,184 Z"
+  />
+</svg>

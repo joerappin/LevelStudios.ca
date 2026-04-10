@@ -1,0 +1,17 @@
+{
+  "_note": "Ce fichier est la référence des tarifs par défaut. Mettez-le à jour manuellement après avoir modifié les prix via l'interface admin pour les ancrer définitivement.",
+  "services": [
+    { "id": "ARGENT", "label": "Offre Argent (/ heure)", "price": 221 },
+    { "id": "GOLD",   "label": "Offre Gold (/ heure)",   "price": 587 }
+  ],
+  "options": [
+    { "id": "Photo",            "label": "Photo",                       "group": "Base",           "price": 44  },
+    { "id": "Short",            "label": "Short vidéo",                 "group": "Base",           "price": 44  },
+    { "id": "Miniature",        "label": "Miniature",                   "group": "Base",           "price": 44  },
+    { "id": "Live",             "label": "Live stream",                 "group": "Live",           "price": 662 },
+    { "id": "BriefingLive",     "label": "Briefing live (obligatoire)", "group": "Live",           "price": 118 },
+    { "id": "Replay",           "label": "Replay",                      "group": "Live",           "price": 74  },
+    { "id": "CommunityManager", "label": "Community manager",           "group": "Accompagnement", "price": 147 },
+    { "id": "Coaching",         "label": "Coaching",                    "group": "Accompagnement", "price": 588 }
+  ]
+}

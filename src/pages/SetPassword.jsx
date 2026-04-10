@@ -64,7 +64,7 @@ export default function SetPassword() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo.jpg" className="w-12 h-12 object-contain rounded-xl mx-auto mb-3" alt="Level Studios" />
+          <img src="/logo.png" className="w-24 h-24 object-contain mx-auto mb-3" alt="Level Studios" style={{ filter: isDark ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
           <div className={cn('text-xs font-bold tracking-widest uppercase', textSecondary)}>Level Studios</div>
         </div>
 

@@ -20,12 +20,17 @@ const STUDIO_PHOTOS = {
 }
 
 
-const ARGENT_PACKS = [
-  { hours: 1,  pricePerHour: 221, total: 221,  discount: null },
-  { hours: 4,  pricePerHour: 198, total: 794,  discount: 10 },
-  { hours: 10, pricePerHour: 187, total: 1874, discount: 15, popular: true },
-  { hours: 20, pricePerHour: 176, total: 3528, discount: 20 },
-]
+function buildArgentPacks() {
+  const p = Store.getPrices()
+  const a = p.services.find(s => s.id === 'ARGENT')?.price ?? 221
+  const round = v => Math.round(v)
+  return [
+    { hours: 1,  pricePerHour: a,              total: a * 1,               discount: null },
+    { hours: 4,  pricePerHour: round(a * 0.9),  total: round(a * 0.9) * 4,  discount: 10 },
+    { hours: 10, pricePerHour: round(a * 0.85), total: round(a * 0.85) * 10, discount: 15, popular: true },
+    { hours: 20, pricePerHour: round(a * 0.8),  total: round(a * 0.8) * 20,  discount: 20 },
+  ]
+}
 
 export default function ClientDashboard() {
   const { user } = useAuth()
@@ -33,6 +38,8 @@ export default function ClientDashboard() {
   const t = (k) => translations[lang]?.[k] || k
   const isDark = theme === 'dark'
   const navigate = useNavigate()
+
+  const ARGENT_PACKS = buildArgentPacks()
 
   const [reservations, setReservations] = useState([])
   const [packs, setPacks]               = useState([])
@@ -84,12 +91,18 @@ export default function ClientDashboard() {
   // Stats
   const PAID_STATUSES = ['validee', 'tournee', 'post-prod', 'livree']
   const paidResas = reservations.filter(r => PAID_STATUSES.includes(r.status))
-  const OPTION_PRICES = { photo: 44, short: 44, thumbnail: 44, live: 662, briefing: 118, replay: 74, cm: 147, coaching: 588 }
   const getResaPrice = (r) => {
-    const pph = (r.service || '').toUpperCase().includes('GOLD') ? 587 : 221
+    const p = Store.getPrices()
+    const svc = (id, fb) => p.services.find(s => s.id === id)?.price ?? fb
+    const opt = (id, fb) => p.options.find(o => o.id === id)?.price ?? fb
+    const pph = (r.service || '').toUpperCase().includes('GOLD') ? svc('GOLD', 587) : svc('ARGENT', 221)
     const base = (Number(r.duration) || 1) * pph
-    const optTotal = Object.entries(r.options || {}).reduce((s, [k, v]) => v ? s + (OPTION_PRICES[k] || 0) : s, 0)
-    return base + optTotal
+    const OPTION_PRICES = {
+      photo: opt('Photo', 44), short: opt('Short', 44), thumbnail: opt('Miniature', 44),
+      live: opt('Live', 662), briefing: opt('BriefingLive', 118), replay: opt('Replay', 74),
+      cm: opt('CommunityManager', 147), coaching: opt('Coaching', 588),
+    }
+    return base + Object.entries(r.options || {}).reduce((s, [k, v]) => v ? s + (OPTION_PRICES[k] || 0) : s, 0)
   }
   const totalSpent = paidResas.reduce((s, r) => s + getResaPrice(r), 0)
   const now = new Date()
@@ -355,7 +368,7 @@ export default function ClientDashboard() {
               <p className={`text-xs font-semibold uppercase tracking-wide ${textSecondary}`}>Acheter un pack</p>
             </div>
             <p className={`text-sm font-semibold ${textPrimary}`}>Packs ARGENT</p>
-            <p className={`text-xs mt-1 ${textSecondary}`}>À partir de 221 CAD/h · Jusqu'à −20%</p>
+            <p className={`text-xs mt-1 ${textSecondary}`}>À partir de {ARGENT_PACKS[0]?.pricePerHour} CAD/h · Jusqu'à −20%</p>
             <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-violet-400 group-hover:text-violet-300 transition-colors">
               Voir les packs <ArrowRight size={12} />
             </div>

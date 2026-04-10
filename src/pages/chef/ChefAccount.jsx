@@ -49,7 +49,7 @@ export default function ChefAccount() {
 
         {/* Info card */}
         <div className={cn(card, 'p-5 flex items-center gap-4')}>
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style={{ background: '#0A4C99' }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg" style={{ background: '#00BCD4' }}>
             {user?.name?.charAt(0) || '?'}
           </div>
           <div>

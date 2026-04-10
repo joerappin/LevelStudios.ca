@@ -1,73 +1,226 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Menu, X, Users, Star, Check, ChevronDown, ArrowRight,
-  Zap, Shield, Award, Camera, Mic, Sun
+  Zap, Shield, Award, Camera, Mic, Sun, CheckCircle
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { createPageUrl } from '../utils'
+import { sendWelcomeEmail } from '../utils/emailService'
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+
+const GOOGLE_ICON = (
+  <svg width="18" height="18" viewBox="0 0 18 18">
+    <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+    <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+    <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+  </svg>
+)
 
 /* ─── LOGIN MODAL ──────────────────────────────────────────── */
-function LoginModal({ onClose }) {
-  const { login } = useAuth()
+function LoginModal({ onClose, initialTab = 'login' }) {
+  const { login, register } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+
+  const [tab, setTab] = useState(initialTab)
+  // Login
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  const [loginError, setLoginError] = useState('')
+  // Register
+  const [reg, setReg] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', company: '', tps: '', tvq: '', cgu: false })
+  const [regError, setRegError] = useState('')
+
+  const googleBtnRef = useRef(null)
+
+  const handleGoogleCredential = (response) => {
+    try {
+      const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+      const { given_name, family_name, email, name } = payload
+      const firstName = given_name || name?.split(' ')[0] || ''
+      const lastName  = family_name || name?.split(' ').slice(1).join(' ') || ''
+      const result = register({ firstName, lastName, email, password: `google_${Date.now()}`, googleAuth: true, clientType: 'particulier' })
+      if (result.success) {
+        onClose()
+        sendWelcomeEmail({ firstName, lastName, email, clientType: 'particulier' })
+        navigate(createPageUrl('ClientDashboard'))
+      }
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = () => {
+      window.google?.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential, auto_select: false })
+    }
+    document.head.appendChild(script)
+    return () => { try { document.head.removeChild(script) } catch {} }
+  }, []) // eslint-disable-line
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return
+    const timer = setTimeout(() => {
+      if (googleBtnRef.current && window.google?.accounts.id) {
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'filled_black', size: 'large',
+          width: googleBtnRef.current.offsetWidth || 400,
+          text: 'continue_with', shape: 'rectangular', logo_alignment: 'center',
+        })
+      }
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [tab])
 
   const handleLogin = (e) => {
     e.preventDefault()
-    const result = login(email, password)
+    setLoginError('')
+    const result = login(loginForm.email, loginForm.password)
     if (result.success) {
       onClose()
-      if (result.user.type === 'admin') navigate(createPageUrl('Dashboard'))
+      if (result.user.type === 'admin') navigate('/admin/dashboard')
       else if (result.user.type === 'employee') {
-        if (result.user.roleKey === 'chef_projet') navigate(createPageUrl('ChefDashboard'))
-        else navigate(createPageUrl('EmployeeDashboard'))
+        navigate(result.user.roleKey === 'chef_projet' ? '/chef/dashboard' : '/employee/dashboard')
       } else navigate(createPageUrl('ClientDashboard'))
-    } else {
-      setError(result.error)
-    }
+    } else setLoginError(result.error)
   }
+
+  const handleRegister = () => {
+    setRegError('')
+    const { firstName, lastName, email, password, confirmPassword, cgu, tps, tvq, company } = reg
+    if (!firstName || !lastName || !email || !password) { setRegError('Veuillez remplir tous les champs obligatoires.'); return }
+    if (password.length < 6) { setRegError('Le mot de passe doit faire au moins 6 caractères.'); return }
+    if (password !== confirmPassword) { setRegError('Les mots de passe ne correspondent pas.'); return }
+    if (!cgu) { setRegError('Veuillez accepter les conditions générales.'); return }
+    const clientType = (tps || tvq) ? 'pro' : 'particulier'
+    const result = register({ firstName, lastName, email, password, company, tps, tvq, clientType })
+    if (result.success) {
+      onClose()
+      sendWelcomeEmail({ firstName, lastName, email, clientType })
+      navigate(createPageUrl('ClientDashboard'))
+    } else setRegError(result.error || 'Erreur lors de la création du compte.')
+  }
+
+  const inputCls = "w-full border rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 text-sm transition-colors"
+  const inputStyle = { background: '#1a1a1a', borderColor: '#2a2a2a' }
+  const labelCls = "block text-zinc-400 text-sm mb-1.5"
+
+  const GoogleSection = () => (
+    <>
+      {GOOGLE_CLIENT_ID ? (
+        <div ref={googleBtnRef} className="w-full overflow-hidden rounded-xl" />
+      ) : (
+        <button disabled className="w-full flex items-center justify-center gap-3 rounded-xl py-3 border text-sm font-medium opacity-40 cursor-not-allowed"
+          style={{ borderColor: '#2a2a2a', background: '#1a1a1a', color: '#666' }}>
+          {GOOGLE_ICON} Continuer avec Google
+        </button>
+      )}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-zinc-800" />
+        <span className="text-xs text-zinc-600 font-medium">ou</span>
+        <div className="flex-1 h-px bg-zinc-800" />
+      </div>
+    </>
+  )
 
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="border rounded-2xl w-full max-w-md p-8 relative shadow-2xl" style={{ background: '#111', borderColor: 'rgba(232,23,93,0.2)' }}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-white">
-          <X className="w-5 h-5" />
-        </button>
-        <div className="flex items-center gap-3 mb-8">
-          <img src="/logo-brand.jpg" className="h-10 w-10 object-contain" alt="Level Studios" style={{ mixBlendMode: 'screen', filter: 'drop-shadow(0 0 5px #0A5399)' }} />
-          <span className="text-white font-bold text-xl">Level Studios</span>
-        </div>
-        <h2 className="text-white text-2xl font-bold mb-2">Connexion</h2>
-        <p className="text-zinc-400 text-sm mb-6">Accédez à votre espace personnel</p>
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>
-        )}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-zinc-400 text-sm mb-1.5">Email</label>
-            <input
-              type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              className="w-full border rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 text-sm transition-colors"
-              style={{ background: '#1a1a1a', borderColor: '#2a2a2a' }}
-              placeholder="votre@email.com"
-            />
-          </div>
-          <div>
-            <label className="block text-zinc-400 text-sm mb-1.5">Mot de passe</label>
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              className="w-full border rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500 text-sm transition-colors"
-              style={{ background: '#1a1a1a', borderColor: '#2a2a2a' }}
-              placeholder="••••••••"
-            />
-          </div>
-          <button type="submit" className="w-full text-white font-bold rounded-xl py-3 transition-all mt-2 hover:opacity-85" style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', boxShadow: '0 4px 20px rgba(232,23,93,0.35)' }}>
-            Se connecter
+      <div className="border rounded-2xl w-full max-w-md relative shadow-2xl overflow-y-auto" style={{ background: '#111', borderColor: 'rgba(232,23,93,0.2)', maxHeight: '90vh' }}>
+        <div className="p-8">
+          <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-white">
+            <X className="w-5 h-5" />
           </button>
-        </form>
+
+          {/* Brand */}
+          <div className="flex items-center gap-3 mb-6">
+            <img src="/logo.png" style={{ width: 56, height: 56, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} alt="Level Studios" />
+            <span className="text-white font-bold text-xl">Level Studios</span>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex rounded-xl overflow-hidden mb-6 border" style={{ borderColor: '#222', background: '#161616' }}>
+            {[['login', 'Se connecter'], ['register', 'Créer un compte']].map(([key, label]) => (
+              <button key={key} onClick={() => setTab(key)}
+                className="flex-1 py-2.5 text-sm font-semibold transition-all"
+                style={{ background: tab === key ? '#e8175d' : 'transparent', color: tab === key ? '#fff' : '#555' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'login' ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <GoogleSection />
+              <div>
+                <label className={labelCls}>Email</label>
+                <input type="email" value={loginForm.email} placeholder="votre@email.com" required
+                  onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))}
+                  className={inputCls} style={inputStyle} />
+              </div>
+              <div>
+                <label className={labelCls}>Mot de passe</label>
+                <input type="password" value={loginForm.password} placeholder="••••••••" required
+                  onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
+                  className={inputCls} style={inputStyle} />
+              </div>
+              {loginError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg px-4 py-3">{loginError}</div>}
+              <button type="submit" className="w-full text-white font-bold rounded-xl py-3 transition-all hover:opacity-85"
+                style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', boxShadow: '0 4px 20px rgba(232,23,93,0.35)' }}>
+                Se connecter
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <GoogleSection />
+              <div className="grid grid-cols-2 gap-3">
+                {[{ key: 'firstName', label: 'Prénom *' }, { key: 'lastName', label: 'Nom *' }].map(f => (
+                  <div key={f.key}>
+                    <label className={labelCls}>{f.label}</label>
+                    <input type="text" value={reg[f.key]} onChange={e => setReg(p => ({ ...p, [f.key]: e.target.value }))}
+                      className={inputCls} style={inputStyle} />
+                  </div>
+                ))}
+              </div>
+              {[
+                { key: 'email',           label: 'Email *',                    type: 'email' },
+                { key: 'password',        label: 'Mot de passe *',             type: 'password' },
+                { key: 'confirmPassword', label: 'Confirmer le mot de passe *', type: 'password' },
+                { key: 'company',         label: 'Entreprise',                 type: 'text', opt: true },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className={labelCls}>{f.label}{f.opt && <span className="ml-1 text-xs text-zinc-600">(optionnel)</span>}</label>
+                  <input type={f.type} value={reg[f.key]} onChange={e => setReg(p => ({ ...p, [f.key]: e.target.value }))}
+                    className={inputCls} style={inputStyle} />
+                </div>
+              ))}
+              <div className="grid grid-cols-2 gap-3">
+                {[{ key: 'tps', label: 'TPS' }, { key: 'tvq', label: 'TVQ' }].map(f => (
+                  <div key={f.key}>
+                    <label className={labelCls}>{f.label} <span className="text-xs text-zinc-600">(optionnel)</span></label>
+                    <input type="text" value={reg[f.key]} onChange={e => setReg(p => ({ ...p, [f.key]: e.target.value }))}
+                      className={inputCls} style={inputStyle} />
+                  </div>
+                ))}
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={reg.cgu} onChange={e => setReg(p => ({ ...p, cgu: e.target.checked }))}
+                  className="mt-0.5 w-4 h-4 accent-pink-500 flex-shrink-0" />
+                <span className="text-xs text-zinc-500 leading-relaxed">
+                  J'accepte les <span className="underline text-pink-500">Conditions Générales</span> et la <span className="underline text-pink-500">Politique de Confidentialité</span>
+                </span>
+              </label>
+              {regError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg px-4 py-3">{regError}</div>}
+              <button onClick={handleRegister} className="w-full text-white font-bold rounded-xl py-3 transition-all hover:opacity-85"
+                style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', boxShadow: '0 4px 20px rgba(232,23,93,0.35)' }}>
+                Créer mon compte
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -113,6 +266,20 @@ export default function Home() {
   useEffect(() => {
     const timer = setInterval(() => setSlideIndex(i => (i + 1) % slideImages.length), 4000)
     return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          io.unobserve(entry.target)
+        }
+      }),
+      { threshold: 0.1 }
+    )
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el))
+    return () => io.disconnect()
   }, [])
 
   const handleDashboard = () => {
@@ -166,6 +333,7 @@ export default function Home() {
   ]
 
   // Dégradé signature : orange → rose → violet → cyan (comme la ref)
+  // display:inline-block + padding évite le clipping des lettres par WebkitBackgroundClip
   const G = {
     backgroundImage: 'linear-gradient(90deg, #ff9a3c, #e8175d, #c879ff, #38d9f5)',
     WebkitBackgroundClip: 'text',
@@ -173,6 +341,11 @@ export default function Home() {
     backgroundClip: 'text',
     fontStyle: 'italic',
     fontWeight: 900,
+    display: 'inline-block',
+    paddingBottom: '0.22em',
+    paddingRight: '0.28em',
+    paddingLeft: '0.04em',
+    lineHeight: 1.1,
   }
 
   return (
@@ -203,7 +376,7 @@ export default function Home() {
           <div
             className="flex items-center justify-between"
             style={{
-              height:       scrolled ? '60px' : '78px',
+              height:       scrolled ? '84px' : '100px',
               paddingLeft:  scrolled ? '22px' : '32px',
               paddingRight: scrolled ? '22px' : '32px',
               maxWidth: '1280px',
@@ -214,14 +387,13 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center gap-2.5 flex-shrink-0">
               <img
-                src="/logo-brand.jpg"
+                src="/logo.png"
                 alt="Level Studios"
-                className="object-contain rounded-lg"
+                className="object-contain"
                 style={{
-                  height: scrolled ? '36px' : '44px',
-                  width:  scrolled ? '36px' : '44px',
-                  mixBlendMode: 'screen',
-                  filter: 'drop-shadow(0 0 8px rgba(232,23,93,0.5))',
+                  height: scrolled ? '72px' : '88px',
+                  width:  scrolled ? '72px' : '88px',
+                  filter: 'brightness(0) invert(1)',
                   transition: 'height 0.45s, width 0.45s',
                 }}
               />
@@ -245,8 +417,9 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-3">
               {!user && (
                 <button onClick={() => setLoginOpen(true)}
-                  className="text-zinc-400 hover:text-white transition-colors text-sm font-medium">
-                  Connexion
+                  className="text-zinc-400 hover:text-white transition-colors text-center leading-tight">
+                  <div className="text-sm font-medium">Connexion</div>
+                  <div className="text-[10px] opacity-50 font-normal">Créer son compte</div>
                 </button>
               )}
               <button
@@ -322,6 +495,21 @@ export default function Home() {
         .btn-rainbow:hover {
           opacity: 1;
         }
+
+        /* ── Scroll reveal ── */
+        .reveal {
+          opacity: 0;
+          transform: translateY(36px);
+          transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1), transform 0.7s cubic-bezier(0.4,0,0.2,1);
+        }
+        .reveal.is-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .reveal-d1 { transition-delay: 0.10s; }
+        .reveal-d2 { transition-delay: 0.20s; }
+        .reveal-d3 { transition-delay: 0.30s; }
+        .reveal-d4 { transition-delay: 0.40s; }
       `}</style>
 
       <section style={{ background: '#080808', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -422,12 +610,12 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
           {/* Header */}
-          <div style={{ marginBottom: '40px' }}>
+          <div className="reveal" style={{ marginBottom: '40px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Nos Studios</p>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
               <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em', margin: 0 }}>
-                À votre <span style={G}>image.</span><br />
-                <span style={{ fontStyle: 'italic', color: '#333' }}>Vos studios.</span>
+                Vos studios.<br />
+                À votre <span style={G}>image.</span>
               </h2>
               <button onClick={() => navigate(createPageUrl('Reservation'))}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#555', fontSize: '14px', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
@@ -444,6 +632,7 @@ export default function Home() {
             {studios.map((s, i) => (
               <div key={i}
                 onClick={() => navigate(createPageUrl('Reservation'))}
+                className={`reveal reveal-d${i + 1}`}
                 style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', cursor: 'pointer', aspectRatio: '4/3', background: '#111' }}
                 onMouseEnter={e => {
                   e.currentTarget.querySelector('img').style.transform = 'scale(1.05)'
@@ -491,21 +680,21 @@ export default function Home() {
       <section id="tarifs" style={{ padding: '100px 24px', background: '#0d0d0d' }}>
         <div style={{ maxWidth: '1160px', margin: '0 auto' }}>
 
-          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: '64px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Nos Services</p>
             <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em', marginBottom: '16px' }}>
               Le point commun entre<br />
-              <span style={G}>Beyoncé</span>{' '}
-              <span style={{ fontStyle: 'italic', color: '#333' }}>et vous ?</span>
+              <span style={G}>Joe Rogan</span>{' '}
+              <span style={{ fontStyle: 'italic', color: '#fff' }}>et vous ?</span>
             </h2>
-            <p style={{ fontSize: '1.1rem', color: '#555' }}>C'est vous ! — Choisissez votre formule.</p>
+            <p style={{ fontSize: '1.1rem', color: '#555' }}>Choisissez votre formule.</p>
           </div>
 
           {/* 3-column pricing cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px', alignItems: 'stretch' }}>
 
             {/* ── ARGENT ── */}
-            <div style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
+            <div className="reveal reveal-d1" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: '24px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Argent</span>
                 <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>La référence pour vos productions.</p>
@@ -561,7 +750,7 @@ export default function Home() {
             </div>
 
             {/* ── GOLD (featured) ── */}
-            <div style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)' }}>
+            <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)' }}>
               {/* Rainbow badge */}
               <div style={{ position: 'absolute', top: '-1px', left: '50%', transform: 'translateX(-50%)', borderRadius: '0 0 14px 14px', padding: '7px 22px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                 background: 'linear-gradient(90deg, #ff0040, #ff6a00, #ffe000, #00e676, #00b0ff, #7c4dff, #e91e63, #ff4d8d, #ff0040)',
@@ -571,7 +760,7 @@ export default function Home() {
 
               <div style={{ marginBottom: '24px', marginTop: '20px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#e8175d', background: 'rgba(232,23,93,0.08)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(232,23,93,0.2)' }}>Gold</span>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Comme une star à Hollywood.</p>
+                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Entrez dans un <span style={{ color: '#e8175d', fontWeight: 800 }}>studio</span> équipé.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
@@ -619,7 +808,7 @@ export default function Home() {
             </div>
 
             {/* ── SUR-MESURE ── */}
-            <div style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
+            <div className="reveal reveal-d3" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: '24px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Sur-Mesure</span>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
@@ -673,7 +862,7 @@ export default function Home() {
           </div>
 
           {/* Options strip */}
-          <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '28px 32px', marginTop: '16px' }}>
+          <div className="reveal" style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '28px 32px', marginTop: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
               <Zap size={15} style={{ color: '#e8175d' }} />
               <span style={{ color: '#fff', fontWeight: 700, fontSize: '14px' }}>Options supplémentaires</span>
@@ -685,7 +874,12 @@ export default function Home() {
                 { label: 'Accompagnement', items: ['Community manager', 'Coaching'] },
               ].map(g => (
                 <div key={g.label}>
-                  <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', marginBottom: '10px' }}>{g.label}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', margin: 0 }}>{g.label}</p>
+                    {g.label === 'Accompagnement' && (
+                      <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'rgba(232,23,93,0.12)', color: '#e8175d', border: '1px solid rgba(232,23,93,0.3)', borderRadius: '999px', padding: '2px 8px' }}>Bientôt</span>
+                    )}
+                  </div>
                   {g.items.map(item => (
                     <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px' }}>
                       <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#e8175d', flexShrink: 0 }} />
@@ -702,17 +896,18 @@ export default function Home() {
       {/* ── MATÉRIEL ────────────────────────────────────────── */}
       <section id="materiel" style={{ padding: '100px 24px', background: '#080808' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '56px' }}>
+          <div className="reveal" style={{ marginBottom: '56px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Équipement</p>
             <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
-              Comme une <span style={G}>star</span><br />
-              <span style={{ fontStyle: 'italic', color: '#333' }}>à Hollywood.</span>
+              Entrez dans un{' '}
+              <span style={G}>studio</span>{' '}
+              <span style={{ fontStyle: 'italic', color: '#fff' }}>équipé.</span>
             </h2>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px', marginBottom: '24px' }}>
             {equipment.map((item, i) => (
-              <div key={i} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.2s' }}
+              <div key={i} className={`reveal reveal-d${i + 1}`} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(232,23,93,0.3)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
               >
@@ -728,7 +923,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <div className="reveal" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
             {[
               { icon: Shield, title: 'Studio acoustique', desc: 'Isolation phonique professionnelle.' },
               { icon: Zap, title: 'Livraison 24h', desc: 'Fichiers montés dans les 24h suivant la session.' },
@@ -751,17 +946,17 @@ export default function Home() {
       {/* ── AVIS ────────────────────────────────────────────── */}
       <section id="avis" style={{ padding: '100px 24px', background: '#0d0d0d' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '60px' }}>
+          <div className="reveal" style={{ marginBottom: '60px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Témoignages clients</p>
             <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
-              Ils ont <span style={G}>choisi</span><br />
-              <span style={{ fontStyle: 'italic', color: '#333' }}>Level Studios.</span>
+              Ils ont <span style={G}>choisi</span>{' '}
+              <span style={{ fontStyle: 'italic', color: '#fff' }}>Level Studios.</span>
             </h2>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
             {reviews.map((r, i) => (
-              <div key={i} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'border-color 0.2s' }}
+              <div key={i} className={`reveal reveal-d${i + 1}`} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'border-color 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(232,23,93,0.25)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
               >
@@ -789,11 +984,11 @@ export default function Home() {
       {/* ── FAQ ─────────────────────────────────────────────── */}
       <section style={{ padding: '100px 24px', background: '#080808' }}>
         <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: '56px' }}>
             <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>FAQ</p>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>Vos questions.</h2>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="reveal" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {faqs.map((faq, i) => <FAQItem key={i} {...faq} />)}
           </div>
         </div>
@@ -802,7 +997,7 @@ export default function Home() {
       {/* ── CTA ─────────────────────────────────────────────── */}
       <section style={{ padding: '80px 24px 100px', background: '#0d0d0d' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div style={{ position: 'relative', borderRadius: '24px', padding: 'clamp(48px,6vw,80px) 40px', textAlign: 'center', overflow: 'hidden', border: '1px solid rgba(232,23,93,0.2)', background: 'linear-gradient(135deg, rgba(232,23,93,0.08) 0%, rgba(8,8,8,0.95) 60%)' }}>
+          <div className="reveal" style={{ position: 'relative', borderRadius: '24px', padding: 'clamp(48px,6vw,80px) 40px', textAlign: 'center', overflow: 'hidden', border: '1px solid rgba(232,23,93,0.2)', background: 'linear-gradient(135deg, rgba(232,23,93,0.08) 0%, rgba(8,8,8,0.95) 60%)' }}>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '500px', height: '300px', background: 'radial-gradient(ellipse, rgba(232,23,93,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '20px' }}>Prêt à tourner ?</p>
@@ -830,7 +1025,7 @@ export default function Home() {
       <footer style={{ padding: '40px 24px', background: '#080808', borderTop: '1px solid #111' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/logo.jpg" style={{ height: '28px', width: '28px', objectFit: 'contain', borderRadius: '6px' }} alt="Level Studios" />
+            <img src="/logo.png" style={{ height: '56px', width: '56px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} alt="Level Studios" />
             <span style={{ color: '#fff', fontWeight: 800, fontSize: '14px' }}>Level Studios</span>
           </div>
           <p style={{ color: '#333', fontSize: '12px' }}>© 2026 Level Studios — Tous droits réservés.</p>

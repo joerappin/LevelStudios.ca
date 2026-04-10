@@ -12,10 +12,17 @@ const PAID_STATUSES = ['validee', 'tournee', 'post-prod', 'livree']
 const ALL_STATUSES  = ['a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee']
 
 function getPrice(r) {
-  const pricePerHour = (r.service || '').toUpperCase().includes('GOLD') ? 587 : 221
+  const p = Store.getPrices()
+  const svc = (id, fb) => p.services.find(s => s.id === id)?.price ?? fb
+  const opt = (id, fb) => p.options.find(o => o.id === id)?.price ?? fb
+  const pricePerHour = (r.service || '').toUpperCase().includes('GOLD') ? svc('GOLD', 587) : svc('ARGENT', 221)
   const base = (Number(r.duration) || 1) * pricePerHour
   const opts = r.options || {}
-  const OPTION_PRICES = { photo: 44, short: 44, thumbnail: 44, live: 662, briefing: 118, replay: 74, cm: 147, coaching: 588 }
+  const OPTION_PRICES = {
+    photo: opt('Photo', 44), short: opt('Short', 44), thumbnail: opt('Miniature', 44),
+    live: opt('Live', 662), briefing: opt('BriefingLive', 118), replay: opt('Replay', 74),
+    cm: opt('CommunityManager', 147), coaching: opt('Coaching', 588),
+  }
   return base + Object.entries(opts).reduce((s, [k, v]) => v ? s + (OPTION_PRICES[k] || 0) : s, 0)
 }
 

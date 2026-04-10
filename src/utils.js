@@ -18,6 +18,7 @@ export function createPageUrl(pageName) {
     'AdminBoarding': '/admin/boarding',
     'AdminManual': '/admin/manual',
     'AdminTool': '/admin/tool',
+    'AdminPricing': '/admin/pricing',
     'EmployeeDashboard': '/employee/dashboard',
     'EmployeeProjects': '/employee/projects',
     'EmployeeMessaging': '/employee/messaging',

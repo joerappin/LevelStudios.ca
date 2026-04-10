@@ -8,81 +8,137 @@ import { cn } from '../utils'
 import AdminChatBot from './AdminChatBot'
 import ClientChatBot from './ClientChatBot'
 
+// ── DESIGN.md tokens ──────────────────────────────────────────────────────────
+const D = {
+  // Tertiary = couleur principale des éléments en dark mode
+  tertiary:    '#88ebff',
+  primary:     '#ff89ac',
+  secondary:   '#ea73fb',
+  muted:       '#adaaaa',
+  gradFull:    'linear-gradient(135deg, #ff89ac 0%, #ea73fb 50%, #88ebff 100%)',
+  gradActive:  'linear-gradient(135deg, #88ebff 0%, #ea73fb 100%)',
+}
+
+// ── Surface palette dark — noir profond ───────────────────────────────────────
+const DARK = {
+  page:    '#060606',   // fond page
+  sidebar: '#080808',   // sidebar (légèrement plus clair)
+  card:    '#0d0d0d',   // cartes / sections
+  header:  'rgba(6,6,6,0.90)',
+  divider: 'rgba(255,255,255,0.05)',
+  hover:   'rgba(136,235,255,0.06)',
+}
+
+// ── Surface palette light ─────────────────────────────────────────────────────
+const LIGHT = {
+  page:    '#f4f4f8',
+  sidebar: '#ffffff',
+  card:    '#ffffff',
+  header:  'rgba(255,255,255,0.92)',
+  divider: 'rgba(0,0,0,0.06)',
+  hover:   'rgba(136,235,255,0.08)',
+}
+
 export default function Layout({ children, navItems, title }) {
   const { user, logout, impersonatedBy, stopImpersonating } = useAuth()
   const { theme, lang, toggleTheme, toggleLang } = useApp()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate  = useNavigate()
+  const location  = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const isDark = theme === 'dark'
-  const t = (k) => translations[lang]?.[k] || k
-  const handleLogout = () => { logout(); navigate('/') }
-  const handleStopImpersonating = () => { stopImpersonating(); navigate('/admin/accounts') }
+  const isDark   = theme === 'dark'
+  const S        = isDark ? DARK : LIGHT
+  const t        = (k) => translations[lang]?.[k] || k
+  const handleLogout             = () => { logout(); navigate('/') }
+  const handleStopImpersonating  = () => { stopImpersonating(); navigate('/admin/accounts') }
 
-  // Role badge color
-  const roleBadge = {
-    admin:    isDark ? 'bg-violet-900/50 text-violet-300 border border-violet-800' : 'bg-violet-100 text-violet-700',
-    employee: isDark ? 'bg-blue-900/50 text-blue-300 border border-blue-800'       : 'bg-blue-100 text-blue-700',
-    client:   isDark ? 'bg-green-900/50 text-green-300 border border-green-800'    : 'bg-green-100 text-green-700',
-  }
+  const textPrimary  = isDark ? '#ffffff'  : '#0d0d1a'
+  const textMuted    = isDark ? D.muted    : '#888'
+  const navInactive  = isDark ? 'rgba(173,170,170,0.65)' : '#888'
+  const navHoverText = isDark ? '#ffffff'  : D.tertiary
 
   const SidebarContent = () => (
-    <div className={cn('flex flex-col h-full', isDark ? 'bg-zinc-900' : 'bg-white')}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: S.sidebar }}>
 
       {/* Logo row */}
-      <div className={cn('h-16 flex items-center justify-between px-5 border-b flex-shrink-0', isDark ? 'border-zinc-800' : 'border-gray-100')}>
-        <div className="flex items-center gap-2 min-w-0">
-          <img src="/logo.jpg" className="w-7 h-7 object-contain rounded-lg flex-shrink-0" alt="Level Studios" />
-          <div className="leading-none min-w-0">
-            <span className={cn('font-bold text-sm tracking-tight block truncate', isDark ? 'text-white' : 'text-gray-900')}>
-              Level Studios
-            </span>
-            <span className={cn('text-[10px] font-semibold px-1 py-0.5 rounded uppercase tracking-wide', isDark ? 'text-violet-400 bg-violet-950/50' : 'text-violet-600 bg-violet-50')}>
-              {user?.type === 'admin' ? 'Admin' : user?.type === 'employee' ? 'Employé' : 'Beta'}
+      <div style={{
+        height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 18px', flexShrink: 0,
+        background: isDark ? DARK.page : 'rgba(136,235,255,0.03)',
+        borderBottom: `1px solid ${S.divider}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <img src="/logo.png" style={{ width: '56px', height: '56px', objectFit: 'contain', flexShrink: 0, filter: isDark ? 'brightness(0) invert(1)' : 'brightness(0)' }} alt="Level Studios" />
+          <div style={{ lineHeight: 1.2, minWidth: 0 }}>
+            <span style={{
+              fontWeight: 800, fontSize: '13px', letterSpacing: '-0.01em', display: 'block',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              color: textPrimary, fontFamily: 'Montserrat, sans-serif',
+            }}>Level Studios</span>
+            {/* Badge rôle — tertiary */}
+            <span style={{
+              fontSize: '9px', fontWeight: 700, padding: '1px 7px', borderRadius: '4px',
+              textTransform: 'uppercase', letterSpacing: '0.08em', display: 'inline-block',
+              background: `${D.tertiary}14`, color: D.tertiary, border: `1px solid ${D.tertiary}28`,
+            }}>
+              {user?.type === 'admin' ? 'Admin' : user?.type === 'employee' ? 'Employé' : 'Studio'}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Theme toggle */}
-          <button onClick={toggleTheme} className={cn('p-1.5 rounded-lg transition-colors', isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+          <button onClick={toggleTheme} style={{
+            padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+            background: 'transparent', color: navInactive, transition: 'color 0.2s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = D.tertiary}
+            onMouseLeave={e => e.currentTarget.style.color = navInactive}
+          >
             {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
-          <button className={cn('lg:hidden p-1.5 rounded-lg', isDark ? 'text-zinc-400 hover:bg-zinc-800' : 'text-gray-400 hover:bg-gray-100')} onClick={() => setSidebarOpen(false)}>
+          <button className="lg:hidden" onClick={() => setSidebarOpen(false)} style={{
+            padding: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+            background: 'transparent', color: navInactive,
+          }}>
             <X size={16} />
           </button>
         </div>
       </div>
 
+      {/* Accent line — dégradé complet */}
+      <div style={{ height: '2px', background: D.gradFull, flexShrink: 0, opacity: 0.8 }} />
+
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {navItems.map((item, i) => {
           if (item.separator) {
-            return <div key={i} className={cn('my-2 border-t', isDark ? 'border-zinc-800/70' : 'border-gray-100')} />
+            return <div key={i} style={{ height: '1px', background: S.divider, margin: '6px 4px' }} />
           }
           const isActive = location.pathname === item.path
           return (
-            <button
-              key={i}
+            <button key={i}
               onClick={() => { navigate(item.path); setSidebarOpen(false) }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-0.5',
-                isActive
-                  ? 'bg-violet-600 text-white shadow-sm shadow-violet-900/30'
-                  : isDark
-                    ? 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-              )}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '9px 12px', borderRadius: '10px',
+                fontSize: '13px', fontWeight: isActive ? 600 : 500,
+                border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all 0.18s',
+                // Actif : dégradé tertiary → secondary (conserve le dégradé)
+                background: isActive ? D.gradActive : 'transparent',
+                color: isActive ? '#060606' : navInactive,
+                boxShadow: isActive ? `0 2px 18px rgba(136,235,255,0.28)` : 'none',
+              }}
+              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = S.hover; e.currentTarget.style.color = navHoverText } }}
+              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = navInactive } }}
             >
-              <span className="flex-shrink-0">{item.icon}</span>
-              <span className="flex-1 text-left">{item.labelKey ? t(item.labelKey) : item.label}</span>
+              <span style={{ flexShrink: 0, opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
+              <span style={{ flex: 1 }}>{item.labelKey ? t(item.labelKey) : item.label}</span>
               {item.badge && (
-                <span className={cn(
-                  'text-xs px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center',
-                  isActive ? 'bg-white/20 text-white' : 'bg-red-500 text-white'
-                )}>
-                  {item.badge}
-                </span>
+                <span style={{
+                  fontSize: '10px', padding: '1px 6px', borderRadius: '999px', fontWeight: 700,
+                  background: isActive ? 'rgba(6,6,6,0.2)' : D.tertiary,
+                  color: isActive ? '#060606' : '#060606',
+                  minWidth: '18px', textAlign: 'center',
+                }}>{item.badge}</span>
               )}
             </button>
           )
@@ -90,24 +146,53 @@ export default function Layout({ children, navItems, title }) {
       </nav>
 
       {/* Bottom */}
-      <div className={cn('p-3 border-t space-y-1.5 flex-shrink-0', isDark ? 'border-zinc-800' : 'border-gray-100')}>
-        {/* Language toggle */}
-        <button onClick={toggleLang} className={cn('w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors', isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50')}>
-          <span className="text-base">{lang === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
-          <span className="font-medium">{lang === 'fr' ? 'Français' : 'English'}</span>
-          <ChevronDown size={13} className="ml-auto" />
+      <div style={{
+        padding: '10px 8px', flexShrink: 0,
+        borderTop: `1px solid ${S.divider}`,
+        display: 'flex', flexDirection: 'column', gap: '4px',
+        background: isDark ? DARK.page : 'rgba(136,235,255,0.02)',
+      }}>
+        {/* Language */}
+        <button onClick={toggleLang} style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 12px', borderRadius: '10px', fontSize: '13px',
+          border: 'none', cursor: 'pointer', background: 'transparent', color: navInactive, transition: 'all 0.18s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = S.hover; e.currentTarget.style.color = navHoverText }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = navInactive }}
+        >
+          <span>{lang === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
+          <span style={{ fontWeight: 500 }}>{lang === 'fr' ? 'Français' : 'English'}</span>
+          <ChevronDown size={12} style={{ marginLeft: 'auto' }} />
         </button>
 
-        {/* User card */}
-        <div className={cn('flex items-center gap-3 px-3 py-2 rounded-xl', isDark ? 'bg-zinc-800' : 'bg-gray-50')}>
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#0A4C99' }}>
-            <span className="text-white text-xs font-bold">{user?.name?.charAt(0) || '?'}</span>
+        {/* User card — fond noir profond + tertiary accent */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '10px 12px', borderRadius: '10px',
+          background: isDark ? '#050505' : `${D.tertiary}0a`,
+          border: `1px solid ${D.tertiary}1e`,
+        }}>
+          {/* Avatar — dégradé tertiary → secondary */}
+          <div style={{
+            width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
+            background: D.gradActive,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 2px 12px rgba(136,235,255,0.28)`,
+          }}>
+            <span style={{ color: '#060606', fontSize: '12px', fontWeight: 900 }}>{user?.name?.charAt(0) || '?'}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className={cn('text-xs font-semibold truncate', isDark ? 'text-zinc-200' : 'text-gray-800')}>{user?.name}</p>
-            <p className={cn('text-[10px] truncate', isDark ? 'text-zinc-500' : 'text-gray-400')}>{user?.email}</p>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: '12px', fontWeight: 700, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: textPrimary }}>{user?.name}</p>
+            <p style={{ fontSize: '10px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: textMuted }}>{user?.email}</p>
           </div>
-          <button onClick={handleLogout} title={t('logout')} className={cn('p-1 rounded-lg transition-colors flex-shrink-0', isDark ? 'text-zinc-500 hover:text-white' : 'text-gray-400 hover:text-gray-700')}>
+          <button onClick={handleLogout} title={t('logout')} style={{
+            padding: '4px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+            background: 'transparent', color: textMuted, flexShrink: 0, transition: 'color 0.2s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = D.primary}
+            onMouseLeave={e => e.currentTarget.style.color = textMuted}
+          >
             <LogOut size={14} />
           </button>
         </div>
@@ -116,50 +201,65 @@ export default function Layout({ children, navItems, title }) {
   )
 
   return (
-    <div className={cn('min-h-screen flex', isDark ? 'bg-zinc-950' : 'bg-gray-50')}>
-      {/* Mobile overlay */}
+    <div style={{ minHeight: '100vh', display: 'flex', background: S.page }}>
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 40, backdropFilter: 'blur(4px)' }}
+          className="lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <aside className={cn(
-        'fixed top-0 left-0 h-full w-64 z-50 border-r transition-transform duration-300',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        'lg:translate-x-0',
-        isDark ? 'border-zinc-800' : 'border-gray-200'
-      )}>
+      <aside style={{
+        position: 'fixed', top: 0, left: 0, height: '100%', width: '256px', zIndex: 50,
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+        boxShadow: isDark ? `4px 0 32px rgba(0,0,0,0.6)` : '4px 0 24px rgba(0,0,0,0.08)',
+      }} className={sidebarOpen ? '' : '-translate-x-full lg:translate-x-0'}>
         <SidebarContent />
       </aside>
 
-      {/* Main */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <header className={cn(
-          'h-16 flex items-center justify-between px-4 sm:px-6 border-b sticky top-0 z-30',
-          isDark ? 'bg-zinc-950/95 border-zinc-800 backdrop-blur' : 'bg-white border-gray-100'
-        )}>
-          <div className="flex items-center gap-3">
-            <button className={cn('lg:hidden p-2 rounded-lg', isDark ? 'text-zinc-400 hover:bg-zinc-800' : 'text-gray-400 hover:bg-gray-100')} onClick={() => setSidebarOpen(true)}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }} className="lg:ml-64">
+        {/* Glassmorphism header */}
+        <header style={{
+          height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 24px', position: 'sticky', top: 0, zIndex: 30,
+          background: S.header,
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: `1px solid ${S.divider}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className="lg:hidden" onClick={() => setSidebarOpen(true)} style={{
+              padding: '8px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+              background: 'transparent', color: navInactive,
+            }}>
               <Menu size={20} />
             </button>
-            <h1 className={cn('font-bold text-lg', isDark ? 'text-white' : 'text-gray-900')}>{title}</h1>
+            <h1 style={{
+              fontWeight: 800, fontSize: '17px', margin: 0,
+              color: textPrimary, fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.01em',
+            }}>{title}</h1>
           </div>
-
-          <div className="flex items-center gap-2" />
+          <div />
         </header>
 
         {impersonatedBy && (
-          <div className="sticky top-16 z-20 flex items-center justify-between px-4 sm:px-6 py-2.5" style={{ background: 'rgba(234,179,8,0.12)', borderBottom: '1px solid rgba(234,179,8,0.3)' }}>
-            <span className="text-xs font-semibold" style={{ color: '#fbbf24' }}>
+          <div style={{
+            position: 'sticky', top: '64px', zIndex: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 24px',
+            background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)',
+          }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#fbbf24' }}>
               👁 Vue en tant que <strong>{user?.name}</strong> — connecté en tant que {impersonatedBy.name}
             </span>
-            <button onClick={handleStopImpersonating} className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors" style={{ background: 'rgba(234,179,8,0.2)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.4)' }}>
+            <button onClick={handleStopImpersonating} style={{
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700,
+              padding: '6px 14px', borderRadius: '8px', background: 'rgba(234,179,8,0.15)',
+              color: '#fbbf24', border: '1px solid rgba(234,179,8,0.3)', cursor: 'pointer',
+            }}>
               <ArrowLeftCircle size={13} /> Retour Admin
             </button>
           </div>
         )}
-        <main className={cn('flex-1 p-4 sm:p-6 overflow-auto', isDark ? 'text-white' : 'text-gray-900')}>
+
+        <main style={{ flex: 1, padding: '24px', overflowX: 'hidden', color: textPrimary }}>
           {children}
         </main>
       </div>

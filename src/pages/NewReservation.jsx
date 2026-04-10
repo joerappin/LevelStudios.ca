@@ -24,9 +24,13 @@ const STUDIOS = [
   { id: 'Studio C', name: 'Studio C', desc: 'Tech & moderne · éclairage néon · table conférence', capacity: 6, address: '456 Ave du Mont-Royal', city: 'Montréal', img: '/studios/studio-c.png' },
 ]
 
-const SERVICES = [
+// ─── Prices are read from Store (admin-configurable, persists across builds) ─
+function buildServices() {
+  const p = Store.getPrices()
+  const priceOf = (id, fallback) => p.services.find(s => s.id === id)?.price ?? fallback
+  return [
   {
-    id: 'ARGENT', name: 'ARGENT', price: 221, badge: 'ARGENT',
+    id: 'ARGENT', name: 'ARGENT', price: priceOf('ARGENT', 221), badge: 'ARGENT',
     features: [
       'Opérateur sur place',
       "Jusqu'à 4 caméras 4K",
@@ -40,7 +44,7 @@ const SERVICES = [
     ],
   },
   {
-    id: 'GOLD', name: 'GOLD', price: 587, badge: 'GOLD',
+    id: 'GOLD', name: 'GOLD', price: priceOf('GOLD', 587), badge: 'GOLD',
     features: [
       'Formule Argent (tournage, livraison rushes instantanées, synchro audio)',
       'Introduction dynamique',
@@ -51,13 +55,18 @@ const SERVICES = [
       'Sauvegarde des fichiers pendant 2 mois',
     ],
   },
-]
+  ]
+}
 
-const ADDITIONAL_GROUPS = [
-  { group: 'Base',             items: [{ id: 'Photo', name: 'Photo', price: 44 }, { id: 'Short', name: 'Short vidéo', price: 44 }, { id: 'Miniature', name: 'Miniature', price: 44 }] },
-  { group: 'Live',             items: [{ id: 'Live', name: 'Live stream', price: 662 }, { id: 'BriefingLive', name: 'Briefing live (obligatoire)', price: 118 }, { id: 'Replay', name: 'Replay', price: 74 }] },
-  { group: 'Accompagnement',   items: [{ id: 'CommunityManager', name: 'Community manager', price: 147 }, { id: 'Coaching', name: 'Coaching', price: 588 }] },
-]
+function buildAdditionalGroups() {
+  const p = Store.getPrices()
+  const priceOf = (id, fallback) => p.options.find(o => o.id === id)?.price ?? fallback
+  return [
+    { group: 'Base',           items: [{ id: 'Photo', name: 'Photo', price: priceOf('Photo', 44) }, { id: 'Short', name: 'Short vidéo', price: priceOf('Short', 44) }, { id: 'Miniature', name: 'Miniature', price: priceOf('Miniature', 44) }] },
+    { group: 'Live',           items: [{ id: 'Live', name: 'Live stream', price: priceOf('Live', 662) }, { id: 'BriefingLive', name: 'Briefing live (obligatoire)', price: priceOf('BriefingLive', 118) }, { id: 'Replay', name: 'Replay', price: priceOf('Replay', 74) }] },
+    { group: 'Accompagnement', items: [{ id: 'CommunityManager', name: 'Community manager', price: priceOf('CommunityManager', 147) }, { id: 'Coaching', name: 'Coaching', price: priceOf('Coaching', 588) }] },
+  ]
+}
 
 const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00']
 const MONTH_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
@@ -77,6 +86,10 @@ export default function NewReservation() {
   const { theme, lang, toggleLang } = useApp()
   const isDark = theme === 'dark'
   const t = (k) => translations[lang]?.[k] || k
+
+  // Read prices from Store (admin-configurable)
+  const SERVICES          = buildServices()
+  const ADDITIONAL_GROUPS = buildAdditionalGroups()
 
   const [step, setStep]     = useState(1)
   const [done, setDone]     = useState(false)
@@ -189,7 +202,7 @@ export default function NewReservation() {
       price: Math.round(totalPrice * 100) / 100,
       date: form.date, start_time: form.start_time, end_time: endTime(),
       duration: form.duration, persons: form.persons,
-      status: 'en_attente',
+      status: 'a_payer',
       additional_services: form.additional_services,
       promo_code: promoResult ? form.promo_code : null,
     })
@@ -221,8 +234,8 @@ export default function NewReservation() {
           <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto mb-5">
             <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
-          <h2 className={cn('text-2xl font-black mb-2', isDark ? 'text-white' : 'text-gray-900')}>Réservation envoyée !</h2>
-          <p className={cn('text-sm mb-6', isDark ? 'text-zinc-400' : 'text-gray-500')}>Notre équipe vous confirmera votre créneau par email sous 24h.</p>
+          <h2 className={cn('text-2xl font-black mb-2', isDark ? 'text-white' : 'text-gray-900')}>Réservation validée !</h2>
+          <p className={cn('text-sm mb-6', isDark ? 'text-zinc-400' : 'text-gray-500')}>Votre réservation est enregistrée et en attente de paiement. Notre équipe vous contactera sous 24h.</p>
           <div className={cn('rounded-xl p-5 mb-6 text-left space-y-2.5 text-sm', isDark ? 'bg-zinc-800' : 'bg-gray-50')}>
             {[
               ['Studio', form.studio],
@@ -356,7 +369,7 @@ export default function NewReservation() {
         {/* Center — Level Studios (reset + retour accueil) */}
         <button onClick={() => { setStep(1); setForm(INITIAL_FORM); setPromoResult(null); setPromoError(''); navigate('/') }}
           className="flex items-center gap-2 hover:opacity-75 transition-opacity">
-          <img src="/logo.jpg" className="w-7 h-7 object-contain rounded-lg" alt="Level Studios" />
+          <img src="/logo.png" className="w-14 h-14 object-contain" alt="Level Studios" style={{ filter: isDark ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
           <span className={cn('font-bold text-sm hidden sm:block', isDark ? 'text-white' : 'text-gray-900')}>Level Studios</span>
         </button>
 
@@ -831,8 +844,8 @@ export default function NewReservation() {
                 </div>
               ) : (
                 <div className={cn('rounded-2xl border p-6 text-center', isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-gray-50 border-gray-200')}>
-                  <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(10,76,153,0.15)', border: '1px solid rgba(10,76,153,0.3)' }}>
-                    <Users className="w-5 h-5" style={{ color: '#3C9FA9' }} />
+                  <div className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(0,188,212,0.15)', border: '1px solid rgba(0,188,212,0.3)' }}>
+                    <Users className="w-5 h-5" style={{ color: '#00BCD4' }} />
                   </div>
                   <h4 className={cn('font-black text-base mb-1', isDark ? 'text-white' : 'text-gray-900')}>Connectez-vous pour confirmer</h4>
                   <p className={cn('text-xs mb-5', isDark ? 'text-zinc-400' : 'text-gray-500')}>Un compte est nécessaire pour finaliser votre réservation.</p>
@@ -843,11 +856,23 @@ export default function NewReservation() {
                     </button>
                     <button onClick={() => { setQuickRegisterOpen(true); setQuickRegisterError('') }}
                       className="py-3 rounded-xl font-bold text-sm text-white transition-all"
-                      style={{ background: '#0A4C99', boxShadow: '0 4px 16px rgba(10,76,153,0.4)' }}>
+                      style={{ background: '#00BCD4', boxShadow: '0 4px 16px rgba(0,188,212,0.4)' }}>
                       Créer mon compte
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* Validation button — visible when logged in */}
+              {user && (
+                <button
+                  onClick={handleSubmit}
+                  className="w-full mt-4 py-4 rounded-2xl font-black text-white text-base flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', boxShadow: '0 8px 30px rgba(232,23,93,0.4)' }}
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  Valider ma réservation
+                </button>
               )}
             </div>
           )}
@@ -885,8 +910,9 @@ export default function NewReservation() {
                 </button>
               ) : (
                 <button onClick={handleSubmit} disabled={!canNext()}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-violet-900/20 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" /> Confirmer
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-violet-900/20 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center gap-1.5"
+                  style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)' }}>
+                  <CheckCircle className="w-3.5 h-3.5" /> Valider
                 </button>
               )
             )}
@@ -906,7 +932,7 @@ export default function NewReservation() {
             </button>
 
             <div className="flex flex-col items-center mb-6">
-              <img src="/logo-brand.jpg" alt="Level Studios" className="w-10 h-10 object-contain rounded-lg mb-3" style={{ mixBlendMode: isDark ? 'screen' : 'normal' }} />
+              <img src="/logo.png" alt="Level Studios" className="w-20 h-20 object-contain mb-3" style={{ filter: isDark ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
               <h2 className={cn('text-2xl font-black', isDark ? 'text-white' : 'text-gray-900')}>Créez votre compte</h2>
               <p className={cn('text-sm mt-1', isDark ? 'text-zinc-400' : 'text-gray-500')}>Entrez vos informations pour commencer.</p>
             </div>
@@ -1026,7 +1052,7 @@ export default function NewReservation() {
             </button>
 
             <div className="flex flex-col items-center mb-6">
-              <img src="/logo-brand.jpg" alt="Level Studios" className="w-10 h-10 object-contain rounded-lg mb-3" style={{ mixBlendMode: isDark ? 'screen' : 'normal' }} />
+              <img src="/logo.png" alt="Level Studios" className="w-20 h-20 object-contain mb-3" style={{ filter: isDark ? 'brightness(0) invert(1)' : 'brightness(0)' }} />
               <h2 className={cn('text-2xl font-black', isDark ? 'text-white' : 'text-gray-900')}>Bienvenue</h2>
               <p className={cn('text-sm mt-1', isDark ? 'text-zinc-400' : 'text-gray-500')}>Connectez-vous à votre compte Level Studios.</p>
             </div>

@@ -1,78 +1,144 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, MapPin, Send, CheckCircle, Sun, Moon } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
-import { useApp } from '../contexts/AppContext'
-import { cn } from '../utils'
+
+// ── DESIGN.md tokens — dark only ─────────────────────────────────────────────
+const D = {
+  surface:     '#080808',
+  surfaceLow:  '#111111',
+  primary:     '#ff89ac',
+  secondary:   '#ea73fb',
+  tertiary:    '#88ebff',
+  muted:       '#adaaaa',
+  gradPrimary: 'linear-gradient(135deg, #ff89ac 0%, #ea73fb 100%)',
+  gradFull:    'linear-gradient(135deg, #ff89ac 0%, #ea73fb 50%, #88ebff 100%)',
+}
+
+const border = 'rgba(255,255,255,0.06)'
+const text   = '#f0eef8'
 
 export default function Contact() {
-  const navigate = useNavigate()
-  const { user } = useAuth()
-  const { theme, toggleTheme } = useApp()
-  const isDark = theme === 'dark'
+  const navigate  = useNavigate()
+  const { user }  = useAuth()
 
-  const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', subject: '', message: '' })
-  const [sent, setSent] = useState(false)
+  const [form, setForm]       = useState({ name: user?.name || '', email: user?.email || '', subject: '', message: '' })
+  const [sent, setSent]       = useState(false)
+  const [focused, setFocused] = useState(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    Store.addMessage({
-      from_email: form.email,
-      from_name: form.name,
-      subject: form.subject,
-      body: form.message,
-      type: 'contact',
-    })
+    Store.addMessage({ from_email: form.email, from_name: form.name, subject: form.subject, body: form.message, type: 'contact' })
     setSent(true)
   }
 
-  const input = cn(
-    'w-full px-4 py-3 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors',
-    isDark
-      ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
-      : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
-  )
+  const inputStyle = (name) => ({
+    width: '100%',
+    background: '#060606',
+    border: 'none',
+    borderBottom: `2px solid ${focused === name ? D.tertiary : 'rgba(255,255,255,0.1)'}`,
+    borderRadius: '0',
+    color: text,
+    fontSize: '14px',
+    padding: '10px 4px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+    boxSizing: 'border-box',
+    fontFamily: 'Inter, sans-serif',
+  })
+
+  const infos = [
+    { icon: Mail,   title: 'Email',     lines: ['contact@levelstudio.fr'],                              accent: D.primary,   glow: 'rgba(255,137,172,0.14)' },
+    { icon: Phone,  title: 'Téléphone', lines: ['+1 514 123-4567', 'Lun–Ven 9h–18h'],                  accent: D.secondary, glow: 'rgba(234,115,251,0.14)' },
+    { icon: MapPin, title: 'Adresse',   lines: ['123 Rue Saint-Laurent', 'Montréal, QC H2Y 1N7'],      accent: D.tertiary,  glow: 'rgba(136,235,255,0.14)' },
+  ]
+
+  const labelColor = (key) => {
+    if (focused !== key) return D.muted
+    const map = { name: D.primary, email: D.primary, subject: D.secondary, message: D.tertiary }
+    return map[key] || D.tertiary
+  }
+
+  const focusBorder = (key) => {
+    const map = { name: D.primary, email: D.primary, subject: D.secondary, message: D.tertiary }
+    return focused === key ? map[key] : 'rgba(255,255,255,0.1)'
+  }
 
   return (
-    <div className={cn('min-h-screen', isDark ? 'bg-zinc-950 text-white' : 'bg-gray-50 text-gray-900')}>
+    <div style={{ minHeight: '100vh', background: D.surface, color: text, fontFamily: 'Inter, sans-serif' }}>
 
       {/* Nav */}
-      <nav className={cn('border-b h-16 px-4 sm:px-6 flex items-center justify-between', isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-gray-200')}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className={cn('transition-colors', isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-900')}>
-            <ArrowLeft className="w-5 h-5" />
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 40,
+        height: '64px', display: 'flex', alignItems: 'center',
+        padding: '0 32px',
+        background: 'rgba(8,8,8,0.88)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: `1px solid ${border}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button onClick={() => navigate('/')} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: D.muted, padding: '6px', borderRadius: '8px', transition: 'color 0.2s',
+            display: 'flex', alignItems: 'center',
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = text}
+            onMouseLeave={e => e.currentTarget.style.color = D.muted}
+          >
+            <ArrowLeft size={20} />
           </button>
-          <img src="/logo.jpg" className="w-7 h-7 object-contain rounded-lg" alt="Level Studios" />
-          <span className={cn('font-bold', isDark ? 'text-white' : 'text-gray-900')}>Level Studios</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" style={{ width: '56px', height: '56px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} alt="Level Studios" />
+            <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.01em', fontFamily: 'Montserrat, sans-serif', color: text }}>
+              Level Studios
+            </span>
+          </div>
         </div>
-        <button onClick={toggleTheme} className={cn('p-2 rounded-lg transition-colors', isDark ? 'text-zinc-400 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100')}>
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
-        <div className="mb-12">
-          <h1 className={cn('text-4xl font-black mb-3', isDark ? 'text-white' : 'text-gray-900')}>Nous contacter</h1>
-          <p className={cn('text-lg', isDark ? 'text-zinc-400' : 'text-gray-500')}>Une question ? Un projet ? Notre équipe vous répond rapidement.</p>
+      <div style={{ maxWidth: '1080px', margin: '0 auto', padding: '72px 24px 80px' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: '64px' }}>
+          <p style={{
+            fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase',
+            marginBottom: '16px', backgroundImage: D.gradFull,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', display: 'inline-block',
+          }}>Contact</p>
+          <h1 style={{
+            fontSize: 'clamp(2.4rem, 5vw, 4rem)', fontWeight: 900,
+            letterSpacing: '-0.03em', lineHeight: 1.05, margin: '0 0 16px',
+            fontFamily: 'Montserrat, sans-serif', color: text,
+          }}>Nous contacter</h1>
+          <p style={{ fontSize: '1.05rem', color: D.muted, maxWidth: '480px', lineHeight: 1.7 }}>
+            Une question, un projet, une idée ? Notre équipe vous répond rapidement.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-5 gap-10">
-          {/* Contact info cards */}
-          <div className="md:col-span-2 space-y-4">
-            {[
-              { icon: Mail,  title: 'Email',    lines: ['contact@levelstudio.fr'] },
-              { icon: Phone, title: 'Téléphone', lines: ['+1 514 123-4567', 'Lun–Ven 9h–18h'] },
-              { icon: MapPin,title: 'Adresse',   lines: ['123 Rue Saint-Laurent', 'Montréal, QC H2Y 1N7'] },
-            ].map(({ icon: Icon, title, lines }) => (
-              <div key={title} className={cn('rounded-2xl p-5 border flex items-start gap-4', isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm')}>
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', isDark ? 'bg-zinc-800' : 'bg-violet-50')}>
-                  <Icon className={cn('w-5 h-5', isDark ? 'text-zinc-300' : 'text-violet-600')} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '40px', alignItems: 'start' }}>
+
+          {/* Info cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {infos.map(({ icon: Icon, title, lines, accent, glow }) => (
+              <div key={title} style={{
+                background: D.surfaceLow, borderRadius: '16px', padding: '20px 22px',
+                display: 'flex', alignItems: 'flex-start', gap: '16px',
+                boxShadow: `0 0 0 1px ${border}, 0 4px 24px ${glow}`,
+              }}>
+                <div style={{
+                  width: '42px', height: '42px', borderRadius: '12px', flexShrink: 0,
+                  background: glow, border: `1px solid ${accent}30`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: `0 0 16px ${glow}`,
+                }}>
+                  <Icon size={18} style={{ color: accent }} />
                 </div>
                 <div>
-                  <div className={cn('font-semibold mb-1', isDark ? 'text-white' : 'text-gray-900')}>{title}</div>
+                  <p style={{ fontWeight: 700, fontSize: '13px', margin: '0 0 6px', color: text }}>{title}</p>
                   {lines.map((l, i) => (
-                    <div key={i} className={cn('text-sm', i === 0 ? (isDark ? 'text-zinc-400' : 'text-gray-600') : (isDark ? 'text-zinc-500' : 'text-gray-400'))}>{l}</div>
+                    <p key={i} style={{ fontSize: '12px', margin: 0, color: i === 0 ? D.muted : 'rgba(173,170,170,0.5)', lineHeight: 1.6 }}>{l}</p>
                   ))}
                 </div>
               </div>
@@ -80,44 +146,91 @@ export default function Contact() {
           </div>
 
           {/* Form */}
-          <div className="md:col-span-3">
-            {sent ? (
-              <div className={cn('rounded-2xl p-10 text-center border', isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm')}>
-                <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-400" />
-                </div>
-                <h2 className={cn('text-xl font-bold mb-2', isDark ? 'text-white' : 'text-gray-900')}>Message envoyé !</h2>
-                <p className={cn('mb-6 text-sm', isDark ? 'text-zinc-400' : 'text-gray-500')}>Nous vous répondrons dans les plus brefs délais.</p>
-                <button onClick={() => navigate('/')} className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
-                  Retour à l'accueil
-                </button>
+          {sent ? (
+            <div style={{
+              background: D.surfaceLow, borderRadius: '20px', padding: '60px 40px',
+              textAlign: 'center', boxShadow: `0 0 0 1px ${border}`,
+            }}>
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '50%',
+                background: 'rgba(136,235,255,0.08)', border: `1px solid ${D.tertiary}40`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 20px', boxShadow: `0 0 24px rgba(136,235,255,0.2)`,
+              }}>
+                <CheckCircle size={28} style={{ color: D.tertiary }} />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className={cn('rounded-2xl p-8 space-y-5 border', isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm')}>
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className={cn('block text-sm font-medium mb-1.5', isDark ? 'text-zinc-400' : 'text-gray-600')}>Nom complet</label>
-                    <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className={input} placeholder="" required />
+              <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '10px', fontFamily: 'Montserrat, sans-serif', color: text }}>Message envoyé !</h2>
+              <p style={{ color: D.muted, fontSize: '14px', marginBottom: '28px', lineHeight: 1.6 }}>
+                Nous vous répondrons dans les plus brefs délais.
+              </p>
+              <button onClick={() => navigate('/')} style={{
+                background: D.gradPrimary, color: '#fff', fontWeight: 700, fontSize: '13px',
+                padding: '12px 28px', borderRadius: '999px', border: 'none', cursor: 'pointer',
+                boxShadow: `0 4px 20px rgba(255,137,172,0.35)`,
+              }}>
+                Retour à l'accueil
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{
+              background: D.surfaceLow, borderRadius: '20px', padding: '40px',
+              boxShadow: `0 0 0 1px ${border}`,
+            }}>
+              <div style={{ height: '3px', background: D.gradFull, borderRadius: '999px', marginBottom: '32px' }} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                {[
+                  { key: 'name', label: 'Nom complet', type: 'text' },
+                  { key: 'email', label: 'Email', type: 'email' },
+                ].map(({ key, label, type }) => (
+                  <div key={key}>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: labelColor(key), marginBottom: '10px', transition: 'color 0.2s' }}>
+                      {label}
+                    </label>
+                    <input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} required
+                      style={{ ...inputStyle(key), borderBottomColor: focusBorder(key) }}
+                      onFocus={() => setFocused(key)} onBlur={() => setFocused(null)}
+                    />
                   </div>
-                  <div>
-                    <label className={cn('block text-sm font-medium mb-1.5', isDark ? 'text-zinc-400' : 'text-gray-600')}>Email</label>
-                    <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={input} placeholder="" required />
-                  </div>
-                </div>
-                <div>
-                  <label className={cn('block text-sm font-medium mb-1.5', isDark ? 'text-zinc-400' : 'text-gray-600')}>Sujet</label>
-                  <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className={input} placeholder="Demande d'information..." required />
-                </div>
-                <div>
-                  <label className={cn('block text-sm font-medium mb-1.5', isDark ? 'text-zinc-400' : 'text-gray-600')}>Message</label>
-                  <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} rows={5} className={cn(input, 'resize-none')} placeholder="Votre message..." required />
-                </div>
-                <button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl py-3 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-violet-900/20">
-                  <Send className="w-4 h-4" /> Envoyer le message
-                </button>
-              </form>
-            )}
-          </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: labelColor('subject'), marginBottom: '10px', transition: 'color 0.2s' }}>
+                  Sujet
+                </label>
+                <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
+                  placeholder="Demande d'information..." required
+                  style={{ ...inputStyle('subject'), borderBottomColor: focusBorder('subject') }}
+                  onFocus={() => setFocused('subject')} onBlur={() => setFocused(null)}
+                />
+              </div>
+
+              <div style={{ marginBottom: '32px' }}>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: labelColor('message'), marginBottom: '10px', transition: 'color 0.2s' }}>
+                  Message
+                </label>
+                <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })}
+                  rows={5} placeholder="Votre message..." required
+                  style={{ ...inputStyle('message'), borderBottomColor: focusBorder('message'), resize: 'none' }}
+                  onFocus={() => setFocused('message')} onBlur={() => setFocused(null)}
+                />
+              </div>
+
+              <button type="submit" style={{
+                width: '100%', background: D.gradPrimary, color: '#fff',
+                fontWeight: 700, fontSize: '14px', padding: '14px', borderRadius: '12px',
+                border: 'none', cursor: 'pointer', letterSpacing: '0.02em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                boxShadow: `0 4px 24px rgba(255,137,172,0.35)`, transition: 'opacity 0.2s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                <Send size={15} /> Envoyer le message
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

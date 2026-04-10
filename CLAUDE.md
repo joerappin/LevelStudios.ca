@@ -135,6 +135,48 @@ npm install
 npm run dev
 ```
 
+## Page de maintenance
+
+Une page de maintenance s'affiche **avant** la landing page à chaque nouvelle session navigateur.
+
+- **Fichier** : `src/pages/MaintenancePage.jsx`
+- **Intégration** : `src/App.jsx` via `AppWithMaintenance` + `useMaintenanceBypass`
+- **Bypass** : stocké en `sessionStorage` (clé `level_maintenance_bypass`)
+- **Visuel** : fond noir, girophares animés, barrières rouge/blanc, panneau jaune cliquable ⚠️
+- **Accès** : clic sur le panneau → popup → identifiant `Revs` + mot de passe `Mandrier88`
+
+---
+
+## Dossiers de sauvegarde comptes
+
+Ces dossiers sont dans `public/` (copiés automatiquement dans `dist/` à chaque build par Vite). **Ils doivent toujours être présents.**
+
+| Dossier source | Copié vers | Contenu |
+|----------------|-----------|---------|
+| `public/customers/` | `dist/customers/` | Sauvegardes des comptes clients créés |
+| `public/workers/` | `dist/workers/` | Sauvegardes des comptes employés / workers |
+| `public/admin/` | `dist/admin/` | Sauvegardes des comptes administrateurs |
+
+---
+
+## Gestion des tarifs
+
+Les prix sont configurables depuis l'interface admin → **`/admin/pricing`**.
+
+- **Stockage** : `localStorage` clé `ls_custom_prices` — **non effacée par les mises à jour du seed**
+- **Fallback** : constante `DEFAULT_PRICES` dans `src/data/store.js`
+- **Référence** : `$/prices.json` — fichier JSON à la racine du projet, à mettre à jour manuellement pour ancrer de nouveaux tarifs dans le code
+
+### Dossier `$`
+
+| Fichier | Rôle |
+|---------|------|
+| `$/prices.json` | Référence des tarifs par défaut — source de vérité pour les déploiements frais |
+
+**Workflow prix** : Admin modifie via UI → sauvegardé en localStorage immédiatement → pour pérenniser après un déploiement sur un nouveau navigateur, mettre à jour `$/prices.json` et rebuilder.
+
+---
+
 ## Architecture des pages
 
 ```
@@ -156,6 +198,7 @@ npm run dev
 /admin/boarding       → RH / congés
 /admin/manual         → Manuel interne
 /admin/tool           → Outils divers
+/admin/pricing        → Gestion des tarifs (admin uniquement)
 
 /employee/dashboard   → Dashboard employé
 /employee/projects    → Projets assignés

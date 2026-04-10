@@ -2,9 +2,11 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
+import MaintenancePage, { useMaintenanceBypass } from './pages/MaintenancePage'
 
 // Public pages
 import Home from './pages/Home'
+import Login from './pages/Login'
 import Contact from './pages/Contact'
 import NewReservation from './pages/NewReservation'
 import SetPassword from './pages/SetPassword'
@@ -26,6 +28,7 @@ import AdminBoarding from './pages/admin/AdminBoarding'
 import AdminManual from './pages/admin/AdminManual'
 import AdminTool from './pages/admin/AdminTool'
 import AdminBeta from './pages/admin/AdminBeta'
+import AdminPricing from './pages/admin/AdminPricing'
 
 // Employee pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard'
@@ -77,6 +80,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/reservation" element={<NewReservation />} />
       <Route path="/set-password" element={<SetPassword />} />
@@ -97,6 +101,7 @@ function AppRoutes() {
       <Route path="/admin/manual" element={<ProtectedRoute requiredType="admin"><AdminManual /></ProtectedRoute>} />
       <Route path="/admin/tool" element={<ProtectedRoute requiredType="admin"><AdminTool /></ProtectedRoute>} />
       <Route path="/admin/beta" element={<ProtectedRoute requiredType="admin"><AdminBeta /></ProtectedRoute>} />
+      <Route path="/admin/pricing" element={<ProtectedRoute requiredType="admin"><AdminPricing /></ProtectedRoute>} />
 
       <Route path="/employee/dashboard" element={<ProtectedRoute requiredType="employee"><EmployeeDashboard /></ProtectedRoute>} />
       <Route path="/employee/projects" element={<ProtectedRoute requiredType="employee"><EmployeeProjects /></ProtectedRoute>} />
@@ -132,7 +137,9 @@ function AppRoutes() {
   )
 }
 
-export default function App() {
+function AppWithMaintenance() {
+  const { bypassed, bypass } = useMaintenanceBypass()
+  if (!bypassed) return <MaintenancePage onBypass={bypass} />
   return (
     <AppProvider>
       <AuthProvider>
@@ -142,4 +149,8 @@ export default function App() {
       </AuthProvider>
     </AppProvider>
   )
+}
+
+export default function App() {
+  return <AppWithMaintenance />
 }

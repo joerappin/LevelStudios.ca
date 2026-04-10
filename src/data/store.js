@@ -40,6 +40,26 @@ function generateResId() {
   return id
 }
 
+// ─── Pricing — stored OUTSIDE KEYS so seed resets never wipe it ─────────────
+const PRICE_KEY = 'ls_custom_prices'
+
+const DEFAULT_PRICES = {
+  services: [
+    { id: 'ARGENT', label: 'Offre Argent (/ heure)', price: 221 },
+    { id: 'GOLD',   label: 'Offre Gold (/ heure)',   price: 587 },
+  ],
+  options: [
+    { id: 'Photo',            label: 'Photo',                        group: 'Base',           price: 44  },
+    { id: 'Short',            label: 'Short vidéo',                  group: 'Base',           price: 44  },
+    { id: 'Miniature',        label: 'Miniature',                    group: 'Base',           price: 44  },
+    { id: 'Live',             label: 'Live stream',                  group: 'Live',           price: 662 },
+    { id: 'BriefingLive',     label: 'Briefing live (obligatoire)',  group: 'Live',           price: 118 },
+    { id: 'Replay',           label: 'Replay',                       group: 'Live',           price: 74  },
+    { id: 'CommunityManager', label: 'Community manager',            group: 'Accompagnement', price: 147 },
+    { id: 'Coaching',         label: 'Coaching',                     group: 'Accompagnement', price: 588 },
+  ],
+}
+
 // ─── Seed version — increment to force a full re-seed ───────────────────────
 const SEED_VERSION = '8'
 
@@ -290,6 +310,17 @@ export const Store = {
     delete tokens[token]
     localStorage.setItem(KEYS.pwdTokens, JSON.stringify(tokens))
   },
+
+  // Pricing — persists independently of seed version
+  getPrices: () => {
+    try {
+      const s = localStorage.getItem(PRICE_KEY)
+      return s ? JSON.parse(s) : DEFAULT_PRICES
+    } catch { return DEFAULT_PRICES }
+  },
+  setPrices: (data) => localStorage.setItem(PRICE_KEY, JSON.stringify(data)),
+  resetPrices: () => localStorage.removeItem(PRICE_KEY),
+  getDefaultPrices: () => DEFAULT_PRICES,
 
   // Restore accounts from server files (called on app startup to recover from localStorage wipe)
   restoreAccountsFromServer: async () => {

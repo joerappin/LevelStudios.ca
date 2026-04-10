@@ -7,41 +7,58 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { translations } from '../../i18n/translations'
 
-// ── Prices from CLAUDE.md ──────────────────────────────────────────────────
-const ARGENT_PACKS = [
-  { hours: 1,  pricePerHour: 221, total: 221,  discount: null },
-  { hours: 4,  pricePerHour: 198, total: 794,  discount: 10 },
-  { hours: 10, pricePerHour: 187, total: 1874, discount: 15, popular: true },
-  { hours: 20, pricePerHour: 176, total: 3528, discount: 20 },
-]
+function buildPacks() {
+  const p = Store.getPrices()
+  const a = p.services.find(s => s.id === 'ARGENT')?.price ?? 221
+  const g = p.services.find(s => s.id === 'GOLD')?.price ?? 587
+  const round = v => Math.round(v)
+  return {
+    ARGENT_PACKS: [
+      { hours: 1,  pricePerHour: a,             total: a * 1,              discount: null },
+      { hours: 4,  pricePerHour: round(a * 0.9), total: round(a * 0.9) * 4,  discount: 10 },
+      { hours: 10, pricePerHour: round(a * 0.85),total: round(a * 0.85) * 10, discount: 15, popular: true },
+      { hours: 20, pricePerHour: round(a * 0.8), total: round(a * 0.8) * 20,  discount: 20 },
+    ],
+    GOLD_PACKS: [
+      { hours: 1,  pricePerHour: g,             total: g * 1,              discount: null },
+      { hours: 4,  pricePerHour: round(g * 0.9), total: round(g * 0.9) * 4,  discount: 10 },
+      { hours: 10, pricePerHour: round(g * 0.85),total: round(g * 0.85) * 10, discount: 15, popular: true },
+      { hours: 20, pricePerHour: round(g * 0.8), total: round(g * 0.8) * 20,  discount: 20 },
+    ],
+    argentBase: a,
+    goldBase: g,
+  }
+}
 
-const GOLD_PACKS = [
-  { hours: 1,  pricePerHour: 587, total: 587,  discount: null },
-  { hours: 4,  pricePerHour: 462, total: 1847, discount: 10 },
-  { hours: 10, pricePerHour: 436, total: 4361, discount: 15, popular: true },
-  { hours: 20, pricePerHour: 410, total: 8210, discount: 20 },
-]
-
-const OPTIONS_BASE = [
-  { key: 'option_photo',      icon: Camera,      price: 44,  label_fr: 'Photo',        label_en: 'Photo' },
-  { key: 'option_short',      icon: Video,       price: 44,  label_fr: 'Short vidéo',  label_en: 'Short video' },
-  { key: 'option_thumbnail',  icon: Image,       price: 44,  label_fr: 'Miniature',    label_en: 'Thumbnail' },
-]
-const OPTIONS_LIVE = [
-  { key: 'option_live',     icon: Radio,          price: 662, label_fr: 'Live stream',    label_en: 'Live stream' },
-  { key: 'option_briefing', icon: Zap,            price: 118, label_fr: 'Briefing live',  label_en: 'Live briefing' },
-  { key: 'option_replay',   icon: Video,          price: 74,  label_fr: 'Replay',         label_en: 'Replay' },
-]
-const OPTIONS_ACCOM = [
-  { key: 'option_cm',       icon: Users,          price: 147, label_fr: 'Community manager', label_en: 'Community manager' },
-  { key: 'option_coaching', icon: TrendingUp,     price: 588, label_fr: 'Coaching',           label_en: 'Coaching' },
-]
+function buildOptions() {
+  const p = Store.getPrices()
+  const priceOf = (id, fb) => p.options.find(o => o.id === id)?.price ?? fb
+  return {
+    OPTIONS_BASE: [
+      { key: 'option_photo',     icon: Camera,     price: priceOf('Photo', 44),             label_fr: 'Photo',             label_en: 'Photo' },
+      { key: 'option_short',     icon: Video,      price: priceOf('Short', 44),             label_fr: 'Short vidéo',       label_en: 'Short video' },
+      { key: 'option_thumbnail', icon: Image,      price: priceOf('Miniature', 44),         label_fr: 'Miniature',         label_en: 'Thumbnail' },
+    ],
+    OPTIONS_LIVE: [
+      { key: 'option_live',     icon: Radio,       price: priceOf('Live', 662),             label_fr: 'Live stream',       label_en: 'Live stream' },
+      { key: 'option_briefing', icon: Zap,         price: priceOf('BriefingLive', 118),     label_fr: 'Briefing live',     label_en: 'Live briefing' },
+      { key: 'option_replay',   icon: Video,       price: priceOf('Replay', 74),            label_fr: 'Replay',            label_en: 'Replay' },
+    ],
+    OPTIONS_ACCOM: [
+      { key: 'option_cm',       icon: Users,       price: priceOf('CommunityManager', 147), label_fr: 'Community manager', label_en: 'Community manager' },
+      { key: 'option_coaching', icon: TrendingUp,  price: priceOf('Coaching', 588),         label_fr: 'Coaching',          label_en: 'Coaching' },
+    ],
+  }
+}
 
 export default function ClientSubscription() {
   const { user } = useAuth()
   const { theme, lang } = useApp()
   const t = (k) => translations[lang]?.[k] || k
   const isDark = theme === 'dark'
+
+  const { ARGENT_PACKS, GOLD_PACKS, argentBase, goldBase } = buildPacks()
+  const { OPTIONS_BASE, OPTIONS_LIVE, OPTIONS_ACCOM } = buildOptions()
 
   const [packs, setPacks] = useState([])
   const [allPacks, setAllPacks] = useState([])
@@ -229,7 +246,7 @@ export default function ClientSubscription() {
               <Star size={14} className="text-white" />
             </div>
             <h3 className={`text-base font-bold ${textPrimary}`}>{t('argent_offer')}</h3>
-            <span className={`text-xs ${textSecondary}`}>À partir de 221 CAD/h</span>
+            <span className={`text-xs ${textSecondary}`}>À partir de {argentBase} CAD/h</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {ARGENT_PACKS.map((pack, i) => (
@@ -245,7 +262,7 @@ export default function ClientSubscription() {
               <Star size={14} className="text-white" />
             </div>
             <h3 className={`text-base font-bold ${textPrimary}`}>{t('gold_offer')}</h3>
-            <span className={`text-xs ${textSecondary}`}>À partir de 587 CAD/h</span>
+            <span className={`text-xs ${textSecondary}`}>À partir de {goldBase} CAD/h</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {GOLD_PACKS.map((pack, i) => (
