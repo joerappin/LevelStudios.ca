@@ -7,7 +7,6 @@ import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { sendAccountCreatedEmail } from '../../utils/emailService'
-import { fsCreateAccount, fsGetAllAccounts } from '../../lib/firestoreService'
 
 
 const EMPLOYEE_ROLES = [
@@ -47,26 +46,27 @@ export default function AdminAccounts() {
   const isDark = theme === 'dark'
   const [tab, setTab] = useState('clients')
   const [search, setSearch] = useState('')
-  const [clients, setClients] = useState(() => Store.getAccounts().filter(a => a.type === 'client'))
-  const [employees, setEmployees] = useState(() => Store.getEmployees().filter(e => !e.deleted))
+  const [clients, setClients] = useState([])
+  const [employees, setEmployees] = useState([])
 
-  // Sync depuis Firestore au chargement
-  useEffect(() => {
-    fsGetAllAccounts().then(fsAccounts => {
-      // Merge Firestore accounts into localStorage
-      fsAccounts.forEach(fsa => {
-        const existing = Store.getAccounts().find(a => a.id === fsa.id)
-        if (!existing) Store.addAccount ? null : null
-        // Add to store if missing
-        const accounts = Store.getAccounts()
-        if (!accounts.find(a => a.id === fsa.id)) {
-          const all = [...accounts, fsa]
-          localStorage.setItem('ls_accounts', JSON.stringify(all))
-        }
+  // Charger les comptes depuis les fichiers JSON
+  const loadAccounts = () => {
+    fetch('/api/accounts.php')
+      .then(r => r.json())
+      .then(accounts => {
+        setClients(accounts.filter(a => a.type === 'client'))
+        setEmployees(accounts.filter(a => a.type !== 'client'))
+        // Populate localStorage cache for other parts of the app
+        localStorage.setItem('ls_accounts', JSON.stringify(accounts))
       })
-      setClients(Store.getAccounts().filter(a => a.type === 'client'))
-    }).catch(() => {})
-  }, [])
+      .catch(() => {
+        // Fallback localStorage
+        setClients(Store.getAccounts().filter(a => a.type === 'client'))
+        setEmployees(Store.getEmployees().filter(e => !e.deleted))
+      })
+  }
+
+  useEffect(() => { loadAccounts() }, [])
 
   // Modal state
   const [modal, setModal] = useState(null) // null | 'choice' | 'client' | 'employee' | 'success'
@@ -96,32 +96,31 @@ export default function AdminAccounts() {
     navigate('/employee/dashboard')
   }
 
-  const toggleSuspend = (id, isEmployee) => {
+  const toggleSuspend = async (id, isEmployee) => {
     if (isEmployee) {
       const emp = employees.find(e => e.id === id)
+      const patch = { id, active: !emp.active }
+      await fetch('/api/accounts.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }).catch(() => {})
       Store.updateEmployee(id, { active: !emp.active })
-      setEmployees(Store.getEmployees())
     } else {
       const client = clients.find(c => c.id === id)
+      const patch = { id, suspended: !client.suspended }
+      await fetch('/api/accounts.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }).catch(() => {})
       Store.updateAccount(id, { suspended: !client.suspended })
-      setClients(Store.getAccounts().filter(a => a.type === 'client'))
     }
+    loadAccounts()
   }
 
-  const handleDelete = (id, isEmployee) => {
+  const handleDelete = async (id, isEmployee) => {
     if (!confirm('Supprimer ce compte définitivement ?')) return
-    if (isEmployee) {
-      const emp = employees.find(e => e.id === id)
-      const isAdmin = emp?.roleKey === 'admin'
-      Store.updateEmployee(id, { active: false, deleted: true })
-      Store.deleteAccount(id)
-      fetch(`${isAdmin ? '/api/admins' : '/api/workers'}/${id}`, { method: 'DELETE' }).catch(() => {})
-      setEmployees(Store.getEmployees().filter(e => !e.deleted))
-    } else {
-      Store.deleteAccount(id)
-      fetch(`/api/clients/${id}`, { method: 'DELETE' }).catch(() => {})
-      setClients(Store.getAccounts().filter(a => a.type === 'client'))
-    }
+    await fetch('/api/accounts.php', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch(() => {})
+    Store.deleteAccount(id)
+    if (isEmployee) Store.updateEmployee(id, { active: false, deleted: true })
+    loadAccounts()
   }
 
   const submitClient = async (e) => {
@@ -130,7 +129,9 @@ export default function AdminAccounts() {
     if (!clientForm.cgu) return setClientError('Veuillez accepter les conditions générales.')
     const clientType = (clientForm.tps || clientForm.tvq) ? 'pro' : 'particulier'
     const name = `${clientForm.firstName} ${clientForm.lastName}`.trim()
-    const account = Store.addAccount({
+    const id = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
+    const account = {
+      id,
       email: clientForm.email,
       name,
       type: 'client',
@@ -138,16 +139,20 @@ export default function AdminAccounts() {
       company: clientForm.company || null,
       tps: clientForm.tps || null,
       tvq: clientForm.tvq || null,
-    })
-    const token = Store.createPwdToken(account.id, clientForm.email, name, 'client')
-    const result = await sendAccountCreatedEmail({ name, email: clientForm.email, token, accountType: 'client' })
-    fsCreateAccount({ ...account, pending: true }).catch(() => {})
-    fetch('/api/create-customer.php', {
+      created_at: new Date().toISOString(),
+      pending: true,
+    }
+    // Save to JSON file (Mac → git → Hostinger)
+    await fetch('/api/accounts.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: account.id, email: clientForm.email, name, company: clientForm.company || '', clientType }),
+      body: JSON.stringify(account),
     }).catch(() => {})
-    setClients(Store.getAccounts().filter(a => a.type === 'client'))
+    // localStorage cache + pwd token
+    Store.addAccount(account)
+    const token = Store.createPwdToken(id, clientForm.email, name, 'client')
+    const result = await sendAccountCreatedEmail({ name, email: clientForm.email, token, accountType: 'client' })
+    loadAccounts()
     setSuccessInfo({ name, email: clientForm.email, setUrl: result.setUrl, emailSent: result.success })
     setModal('success')
     setTab('clients')
@@ -158,27 +163,33 @@ export default function AdminAccounts() {
     setEmpError('')
     if (!empForm.role) return setEmpError('Veuillez sélectionner un rôle.')
     const roleName = ROLE_DISPLAY[empForm.role] || empForm.role
-    const emp = Store.addEmployee({
-      name: empForm.name,
+    const lvl = empForm.role === 'admin' ? 1 : empForm.role === 'chef_projet' ? 2 : 3
+    const id = `LVL${lvl}${Math.floor(10000 + Math.random() * 90000)}`
+    const account = {
+      id,
       email: empForm.email,
+      name: empForm.name,
+      type: empForm.role === 'admin' ? 'admin' : 'employee',
       role: roleName,
       roleKey: empForm.role,
       phone: empForm.phone,
       active: true,
       joined_at: new Date().toISOString().split('T')[0],
-    })
-    Store.addAccount({
-      id: emp.id,
-      email: empForm.email,
-      name: empForm.name,
-      type: 'employee',
-      role: roleName,
-      roleKey: empForm.role,
-    })
-    const token = Store.createPwdToken(emp.id, empForm.email, empForm.name, 'employee')
+      created_at: new Date().toISOString(),
+      pending: true,
+    }
+    // Save to JSON file (Mac → git → Hostinger)
+    await fetch('/api/accounts.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(account),
+    }).catch(() => {})
+    // localStorage cache + pwd token
+    Store.addEmployee({ ...account })
+    Store.addAccount(account)
+    const token = Store.createPwdToken(id, empForm.email, empForm.name, 'employee')
     const result = await sendAccountCreatedEmail({ name: empForm.name, email: empForm.email, token, accountType: 'employee' })
-    fsCreateAccount({ id: emp.id, email: empForm.email, name: empForm.name, type: empForm.role === 'admin' ? 'admin' : 'employee', role: roleName, roleKey: empForm.role, pending: true }).catch(() => {})
-    setEmployees(Store.getEmployees().filter(e => !e.deleted))
+    loadAccounts()
     setSuccessInfo({ name: empForm.name, email: empForm.email, setUrl: result.setUrl, emailSent: result.success })
     setModal('success')
     setTab('employees')

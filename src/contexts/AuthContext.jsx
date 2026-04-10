@@ -1,21 +1,37 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Store } from '../data/store'
-import { fsGetAccountByEmail, fsUpdateAccount } from '../lib/firestoreService'
-// type helper: maps stored account type to Firestore collection key
-function typeFor(data) { return data?.type || 'client' }
 
+// Hardcoded admin account (never stored in files — always available)
 const TEST_ACCOUNTS = [
-  {
-    email: 'joe.rappin@gmail.com',
-    password: 'Mandrier88',
-    type: 'admin',
-    name: 'Joe Rappin',
-    id: 'LVL10001',
-  },
+  { email: 'joe.rappin@gmail.com', password: 'Mandrier88', type: 'admin', name: 'Joe Rappin', id: 'LVL10001' },
 ]
 
 const AuthContext = createContext(null)
 
+// ─── Fetch helpers ─────────────────────────────────────────────────────────────
+async function apiGetAccounts() {
+  const res = await fetch('/api/accounts.php')
+  if (!res.ok) throw new Error('fetch failed')
+  return res.json()
+}
+
+async function apiSaveAccount(account) {
+  await fetch('/api/accounts.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(account),
+  })
+}
+
+async function apiPatchAccount(id, fields) {
+  await fetch('/api/accounts.php', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...fields }),
+  })
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -23,55 +39,54 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const stored = localStorage.getItem('level_studio_user')
-    if (stored) {
-      try { setUser(JSON.parse(stored)) } catch {}
-    }
+    if (stored) { try { setUser(JSON.parse(stored)) } catch {} }
     const backup = localStorage.getItem('level_studio_admin_backup')
-    if (backup) {
-      try { setImpersonatedBy(JSON.parse(backup)) } catch {}
-    }
+    if (backup) { try { setImpersonatedBy(JSON.parse(backup)) } catch {} }
     setLoading(false)
   }, [])
 
   const login = async (email, password) => {
-    // Check hardcoded test accounts first
-    const account = TEST_ACCOUNTS.find(a => a.email === email && a.password === password)
-    if (account) {
-      const userData = { ...account }
-      delete userData.password
+    // 1 — hardcoded accounts
+    const hardcoded = TEST_ACCOUNTS.find(a => a.email === email && a.password === password)
+    if (hardcoded) {
+      const userData = { ...hardcoded }; delete userData.password
       setUser(userData)
       localStorage.setItem('level_studio_user', JSON.stringify(userData))
       return { success: true, user: userData }
     }
-    // Check Firestore first
+
+    // 2 — JSON files (via Vite plugin locally / PHP on Hostinger)
     try {
-      const fsAccount = await fsGetAccountByEmail(email)
-      if (fsAccount && fsAccount.password === password && !fsAccount.pending) {
-        const userData = { ...fsAccount }
-        delete userData.password
+      const accounts = await apiGetAccounts()
+      const match = accounts.find(a => a.email === email && a.password === password && !a.pending)
+      if (match) {
+        const userData = { ...match }; delete userData.password
         setUser(userData)
         localStorage.setItem('level_studio_user', JSON.stringify(userData))
         return { success: true, user: userData }
       }
     } catch {}
-    // Fallback: localStorage
+
+    // 3 — localStorage fallback (legacy data)
     const stored = Store.findAccountByEmailAndPassword(email, password)
     if (stored) {
-      const userData = { ...stored }
-      delete userData.password
+      const userData = { ...stored }; delete userData.password
       setUser(userData)
       localStorage.setItem('level_studio_user', JSON.stringify(userData))
       return { success: true, user: userData }
     }
+
     return { success: false, error: 'Email ou mot de passe incorrect' }
   }
 
   const setAccountPassword = async (token, password) => {
     const data = Store.validatePwdToken(token)
     if (!data) return { success: false, error: 'Lien invalide ou expiré.' }
-    Store.updateAccount(data.accountId, { password, pending: false })
     Store.consumePwdToken(token)
-    try { await fsUpdateAccount(data.accountId, data.type || 'client', { password, pending: false }) } catch {}
+    // Update in JSON file
+    try { await apiPatchAccount(data.accountId, { password, pending: false }) } catch {}
+    // Also update localStorage fallback
+    Store.updateAccount(data.accountId, { password, pending: false })
     return { success: true, accountType: data.type }
   }
 
@@ -92,35 +107,16 @@ export function AuthProvider({ children }) {
 
   const stopImpersonating = () => {
     const admin = JSON.parse(localStorage.getItem('level_studio_admin_backup'))
-    if (admin) {
-      setUser(admin)
-      localStorage.setItem('level_studio_user', JSON.stringify(admin))
-    }
+    if (admin) { setUser(admin); localStorage.setItem('level_studio_user', JSON.stringify(admin)) }
     setImpersonatedBy(null)
     localStorage.removeItem('level_studio_admin_backup')
   }
 
-  const register = (data) => {
-    const newUser = {
-      email: data.email,
-      type: 'client',
-      name: `${data.firstName} ${data.lastName}`,
-      id: `LVL3C${Math.floor(Math.random() * 90000) + 10000}`,
-      phone: data.phone || '',
-      clientType: data.clientType || 'particulier',
-    }
-    setUser(newUser)
-    localStorage.setItem('level_studio_user', JSON.stringify(newUser))
-    return { success: true, user: newUser }
-  }
-
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, impersonate, stopImpersonating, impersonatedBy, setAccountPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, impersonate, stopImpersonating, impersonatedBy, setAccountPassword }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-export function useAuth() {
-  return useContext(AuthContext)
-}
+export function useAuth() { return useContext(AuthContext) }
