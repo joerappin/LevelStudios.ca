@@ -58,30 +58,42 @@ function deleteAccountFile(account, publicDir, fromTrash = false) {
 }
 
 // ─── Reservation helpers ───────────────────────────────────────────────────────
+// Structure : public/customers/{email}/{resId}/reservation.json
 function readReservations(publicDir) {
-  const resDir = path.join(publicDir, 'reservations')
-  if (!fs.existsSync(resDir)) return []
+  const customersDir = path.join(publicDir, 'customers')
+  if (!fs.existsSync(customersDir)) return []
   const reservations = []
-  for (const entry of fs.readdirSync(resDir)) {
-    const file = path.join(resDir, entry, 'reservation.json')
-    if (fs.existsSync(file)) {
-      try { reservations.push(JSON.parse(fs.readFileSync(file, 'utf8'))) } catch {}
+  for (const emailFolder of fs.readdirSync(customersDir)) {
+    const emailDir = path.join(customersDir, emailFolder)
+    if (!fs.statSync(emailDir).isDirectory()) continue
+    for (const entry of fs.readdirSync(emailDir)) {
+      const file = path.join(emailDir, entry, 'reservation.json')
+      if (fs.existsSync(file)) {
+        try { reservations.push(JSON.parse(fs.readFileSync(file, 'utf8'))) } catch {}
+      }
     }
   }
   return reservations
 }
 
 function writeReservation(reservation, publicDir) {
-  // Central reservations folder
-  const dir = path.join(publicDir, 'reservations', String(reservation.id))
-  fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(path.join(dir, 'reservation.json'), JSON.stringify(reservation, null, 2))
+  if (!reservation.client_email) return
+  const clientDir = path.join(publicDir, 'customers', sanitizeEmail(reservation.client_email), String(reservation.id))
+  fs.mkdirSync(clientDir, { recursive: true })
+  fs.writeFileSync(path.join(clientDir, 'reservation.json'), JSON.stringify(reservation, null, 2))
+}
 
-  // Mirror inside the client's folder
-  if (reservation.client_email) {
-    const clientDir = path.join(publicDir, 'customers', sanitizeEmail(reservation.client_email), String(reservation.id))
-    fs.mkdirSync(clientDir, { recursive: true })
-    fs.writeFileSync(path.join(clientDir, 'reservation.json'), JSON.stringify(reservation, null, 2))
+function deleteReservationFile(id, publicDir) {
+  const customersDir = path.join(publicDir, 'customers')
+  if (!fs.existsSync(customersDir)) return
+  for (const emailFolder of fs.readdirSync(customersDir)) {
+    const resDir = path.join(customersDir, emailFolder, String(id))
+    const resFile = path.join(resDir, 'reservation.json')
+    if (fs.existsSync(resFile)) {
+      fs.unlinkSync(resFile)
+      try { fs.rmdirSync(resDir) } catch {}
+      return
+    }
   }
 }
 
@@ -224,22 +236,7 @@ function localReservationsPlugin() {
 
             if (req.method === 'DELETE') {
               if (!data.id) { res.statusCode = 400; res.end(JSON.stringify({ error: 'id required' })); return }
-              const dir = path.join(publicDir, 'reservations', String(data.id))
-              const file = path.join(dir, 'reservation.json')
-              let existing = null
-              if (fs.existsSync(file)) {
-                try { existing = JSON.parse(fs.readFileSync(file, 'utf8')) } catch {}
-                fs.unlinkSync(file)
-              }
-              try { fs.rmdirSync(dir) } catch {}
-              // Also remove from client's folder
-              const email = existing?.client_email || data.client_email
-              if (email) {
-                const clientDir = path.join(publicDir, 'customers', sanitizeEmail(email), String(data.id))
-                const clientFile = path.join(clientDir, 'reservation.json')
-                if (fs.existsSync(clientFile)) fs.unlinkSync(clientFile)
-                try { fs.rmdirSync(clientDir) } catch {}
-              }
+              deleteReservationFile(data.id, publicDir)
               res.end(JSON.stringify({ success: true })); return
             }
 

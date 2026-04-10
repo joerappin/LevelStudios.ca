@@ -6,22 +6,28 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
-$root   = dirname(__DIR__); // public_html/
-$resDir = $root . '/reservations';
+$root = dirname(__DIR__); // public_html/
 
 function sanitizeEmail($email) {
   return preg_replace('/[^a-z0-9._@-]/', '_', strtolower(trim($email)));
 }
 
-function readAllReservations($resDir) {
-  if (!is_dir($resDir)) return [];
+// Structure : public_html/customers/{email}/{resId}/reservation.json
+function readAllReservations($root) {
+  $customersDir = $root . '/customers';
+  if (!is_dir($customersDir)) return [];
   $reservations = [];
-  foreach (scandir($resDir) as $entry) {
-    if ($entry === '.' || $entry === '..') continue;
-    $file = $resDir . '/' . $entry . '/reservation.json';
-    if (file_exists($file)) {
-      $data = json_decode(file_get_contents($file), true);
-      if ($data) $reservations[] = $data;
+  foreach (scandir($customersDir) as $emailFolder) {
+    if ($emailFolder === '.' || $emailFolder === '..') continue;
+    $emailDir = $customersDir . '/' . $emailFolder;
+    if (!is_dir($emailDir)) continue;
+    foreach (scandir($emailDir) as $entry) {
+      if ($entry === '.' || $entry === '..') continue;
+      $file = $emailDir . '/' . $entry . '/reservation.json';
+      if (file_exists($file)) {
+        $data = json_decode(file_get_contents($file), true);
+        if ($data) $reservations[] = $data;
+      }
     }
   }
   usort($reservations, function($a, $b) {
@@ -30,17 +36,25 @@ function readAllReservations($resDir) {
   return $reservations;
 }
 
-function writeReservation($reservation, $resDir, $root) {
-  // Central reservations folder
-  $dir = $resDir . '/' . $reservation['id'];
-  if (!is_dir($dir)) mkdir($dir, 0755, true);
-  file_put_contents($dir . '/reservation.json', json_encode($reservation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+function writeReservation($reservation, $root) {
+  if (empty($reservation['client_email'])) return;
+  $clientDir = $root . '/customers/' . sanitizeEmail($reservation['client_email']) . '/' . $reservation['id'];
+  if (!is_dir($clientDir)) mkdir($clientDir, 0755, true);
+  file_put_contents($clientDir . '/reservation.json', json_encode($reservation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+}
 
-  // Mirror inside the client's folder
-  if (!empty($reservation['client_email'])) {
-    $clientDir = $root . '/customers/' . sanitizeEmail($reservation['client_email']) . '/' . $reservation['id'];
-    if (!is_dir($clientDir)) mkdir($clientDir, 0755, true);
-    file_put_contents($clientDir . '/reservation.json', json_encode($reservation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+function deleteReservationFile($id, $root) {
+  $customersDir = $root . '/customers';
+  if (!is_dir($customersDir)) return;
+  foreach (scandir($customersDir) as $emailFolder) {
+    if ($emailFolder === '.' || $emailFolder === '..') continue;
+    $resDir  = $customersDir . '/' . $emailFolder . '/' . $id;
+    $resFile = $resDir . '/reservation.json';
+    if (file_exists($resFile)) {
+      unlink($resFile);
+      @rmdir($resDir);
+      return;
+    }
   }
 }
 
@@ -48,7 +62,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $body   = json_decode(file_get_contents('php://input'), true) ?: [];
 
 if ($method === 'GET') {
-  $all = readAllReservations($resDir);
+  $all = readAllReservations($root);
   if (!empty($_GET['client_email'])) {
     $email = $_GET['client_email'];
     $all = array_values(array_filter($all, fn($r) => ($r['client_email'] ?? '') === $email));
@@ -59,41 +73,25 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
   if (empty($body['id'])) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
-  writeReservation($body, $resDir, $root);
+  writeReservation($body, $root);
   echo json_encode(['success' => true]);
   exit;
 }
 
 if ($method === 'PATCH') {
   if (empty($body['id'])) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
-  $all = readAllReservations($resDir);
+  $all = readAllReservations($root);
   $existing = null;
   foreach ($all as $r) { if ((string)$r['id'] === (string)$body['id']) { $existing = $r; break; } }
   if (!$existing) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
-  writeReservation(array_merge($existing, $body), $resDir, $root);
+  writeReservation(array_merge($existing, $body), $root);
   echo json_encode(['success' => true]);
   exit;
 }
 
 if ($method === 'DELETE') {
   if (empty($body['id'])) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
-  $dir  = $resDir . '/' . $body['id'];
-  $file = $dir . '/reservation.json';
-  // Read before deleting to get client_email
-  $existing = null;
-  if (file_exists($file)) {
-    $existing = json_decode(file_get_contents($file), true);
-    unlink($file);
-  }
-  @rmdir($dir);
-  // Also remove from client's folder
-  $email = $existing['client_email'] ?? $body['client_email'] ?? null;
-  if ($email) {
-    $clientDir  = $root . '/customers/' . sanitizeEmail($email) . '/' . $body['id'];
-    $clientFile = $clientDir . '/reservation.json';
-    if (file_exists($clientFile)) unlink($clientFile);
-    @rmdir($clientDir);
-  }
+  deleteReservationFile($body['id'], $root);
   echo json_encode(['success' => true]);
   exit;
 }
