@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, ShieldCheck } from 'lucide-react'
+import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -66,11 +66,6 @@ export default function AdminAccounts() {
     setModal('choice')
   }
 
-  const openAdminForm = () => {
-    setEmpForm({ name: '', email: '', role: 'admin', phone: '' })
-    setEmpError('')
-    setModal('employee')
-  }
   const closeModal = () => setModal(null)
 
   const handleImpersonate = (account) => {
@@ -390,20 +385,7 @@ export default function AdminAccounts() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`font-semibold text-sm ${textPrimary}`}>Compte Employé</div>
-                      <div className={`text-xs mt-0.5 ${textSecondary}`}>Chef de projet ou technicien</div>
-                    </div>
-                    <ChevronRight className={`w-4 h-4 flex-shrink-0 ${textSecondary} group-hover:text-violet-400 transition-colors`} />
-                  </button>
-                  <button
-                    onClick={openAdminForm}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all hover:border-violet-500 group ${isDark ? 'border-zinc-700 hover:bg-zinc-800' : 'border-gray-200 hover:bg-gray-50'}`}
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center flex-shrink-0">
-                      <ShieldCheck className="w-5 h-5 text-violet-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`font-semibold text-sm ${textPrimary}`}>Compte Admin</div>
-                      <div className={`text-xs mt-0.5 ${textSecondary}`}>Accès complet — tous les droits</div>
+                      <div className={`text-xs mt-0.5 ${textSecondary}`}>Administrateur, chef de projet ou technicien</div>
                     </div>
                     <ChevronRight className={`w-4 h-4 flex-shrink-0 ${textSecondary} group-hover:text-violet-400 transition-colors`} />
                   </button>
