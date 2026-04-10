@@ -31,6 +31,11 @@ function generateId(prefix = 'ID') {
   return `${prefix}${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
 }
 
+// LVL1=Admin, LVL2=Chef de projet, LVL3=Worker/Technicien, LVL4=Client
+function generateLvlId(lvl) {
+  return `LVL${lvl}${Math.floor(10000 + Math.random() * 90000)}`
+}
+
 function generateResId() {
   const existing = new Set(
     (() => { try { return JSON.parse(localStorage.getItem('ls_reservations') || '[]').map(r => r.id) } catch { return [] } })()
@@ -153,7 +158,8 @@ export const Store = {
   getEmployees: () => getAll(KEYS.employees),
   addEmployee: (data) => {
     const items = getAll(KEYS.employees)
-    const item = { id: `LVL2${Math.floor(Math.random() * 90000) + 10000}`, ...data }
+    const lvl = data.roleKey === 'admin' ? 1 : data.roleKey === 'chef_projet' ? 2 : 3
+    const item = { id: generateLvlId(lvl), ...data }
     items.push(item)
     saveAll(KEYS.employees, items)
     return item
@@ -253,7 +259,8 @@ export const Store = {
   getAccounts: () => getAll(KEYS.accounts),
   addAccount: (data) => {
     const items = getAll(KEYS.accounts)
-    const item = { id: generateId('ACC'), created_at: new Date().toISOString(), pending: true, ...data }
+    const id = data.id || (data.type === 'client' ? generateLvlId(4) : generateId('ACC'))
+    const item = { id, created_at: new Date().toISOString(), pending: true, ...data }
     items.push(item)
     saveAll(KEYS.accounts, items)
     return item

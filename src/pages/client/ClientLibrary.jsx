@@ -211,15 +211,16 @@ export default function ClientLibrary() {
     if (!user) return
     const allRes = Store.getReservations().filter(r => r.client_email === user.email)
     setReservations(allRes)
-    const syncList = allRes.map(r => ({ email: r.client_email, resId: r.id }))
-    const doFetch = () =>
-      fetch('/api/folders').then(r => r.json()).then(data => {
-        const map = {}
-        for (const { email, reservations: resMap } of data) map[email] = resMap
+    fetch(`/api/list-sessions.php?email=${encodeURIComponent(user.email)}`)
+      .then(r => r.json())
+      .then(data => {
+        const map = { [user.email]: {} }
+        for (const session of (data.sessions || [])) {
+          map[user.email][session.id] = session.files.map(f => ({ name: f.name, url: f.url }))
+        }
         setFolders(map)
-      }).catch(() => {})
-    fetch('/api/folders/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(syncList) })
-      .then(doFetch).catch(doFetch)
+      })
+      .catch(() => {})
   }, [user])
 
   // Load fileSettings when selected changes
@@ -240,7 +241,9 @@ export default function ClientLibrary() {
   }
 
   function fileUrl(r, filename) {
-    return `/files/${encodeURIComponent(user.email)}/${r.id}/${encodeURIComponent(filename)}`
+    const files = folders[user.email]?.[r.id] || []
+    const f = files.find(f => f.name === filename)
+    return f?.url || `/customers/${encodeURIComponent(user.email)}/${r.id}/${encodeURIComponent(filename)}`
   }
 
   const q = search.toLowerCase()
@@ -509,7 +512,7 @@ export default function ClientLibrary() {
                   const downloadableFiles = selectedFiles.filter(f => fileSettings[f.name]?.allowDownload !== false)
                   const noneDownloadable = hasFiles && downloadableFiles.length === 0
                   const zipUrl = (type) =>
-                    `/api/folders/${encodeURIComponent(user.email)}/${selected.id}/zip?type=${type}`
+                    `/api/zip-session.php?email=${encodeURIComponent(user.email)}&session=${selected.id}&type=${type}`
 
                   return (
                     <div className={`rounded-2xl border flex flex-col ${card}`} style={{ maxHeight: 420 }}>

@@ -142,6 +142,11 @@ export default function AdminAccounts() {
     const token = Store.createPwdToken(account.id, clientForm.email, name, 'client')
     const result = await sendAccountCreatedEmail({ name, email: clientForm.email, token, accountType: 'client' })
     fsCreateAccount({ ...account, pending: true }).catch(() => {})
+    fetch('/api/create-customer.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: account.id, email: clientForm.email, name, company: clientForm.company || '', clientType }),
+    }).catch(() => {})
     setClients(Store.getAccounts().filter(a => a.type === 'client'))
     setSuccessInfo({ name, email: clientForm.email, setUrl: result.setUrl, emailSent: result.success })
     setModal('success')
@@ -254,7 +259,7 @@ export default function AdminAccounts() {
                   <tr key={c.id} className={`border-b transition-colors ${tableRow}`}>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isDark ? 'bg-zinc-700 text-zinc-300' : 'bg-gray-100 text-gray-600'}`}>{c.name.charAt(0)}</div>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold bg-blue-500/20 text-blue-400">{c.name.charAt(0)}</div>
                         <div>
                           <div className={`text-sm font-medium ${textPrimary}`}>{c.name}</div>
                           <div className={`text-xs sm:hidden ${textSecondary}`}>{c.email}</div>
@@ -299,11 +304,14 @@ export default function AdminAccounts() {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.map(e => (
+                {filteredEmployees.map(e => {
+                  const RC = { admin: { bg: 'bg-red-500/20', text: 'text-red-400', badge: 'bg-red-500/10 text-red-400' }, chef_projet: { bg: 'bg-violet-500/20', text: 'text-violet-400', badge: 'bg-violet-500/10 text-violet-400' }, technicien: { bg: 'bg-green-500/20', text: 'text-green-400', badge: 'bg-green-500/10 text-green-400' } }
+                  const rc = RC[e.roleKey] || { bg: 'bg-zinc-500/20', text: 'text-zinc-400', badge: 'bg-zinc-500/10 text-zinc-400' }
+                  return (
                   <tr key={e.id} className={`border-b transition-colors ${tableRow}`}>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center text-xs font-bold text-blue-400">{e.name.charAt(0)}</div>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${rc.bg} ${rc.text}`}>{e.name.charAt(0)}</div>
                         <div>
                           <div className={`text-sm font-medium ${textPrimary}`}>{e.name}</div>
                           <div className={`text-xs sm:hidden ${textSecondary}`}>{e.email}</div>
@@ -313,7 +321,7 @@ export default function AdminAccounts() {
                     </td>
                     <td className={`px-5 py-3.5 hidden sm:table-cell text-sm ${isDark ? 'text-zinc-300' : 'text-gray-600'}`}>{e.email}</td>
                     <td className="px-5 py-3.5 hidden md:table-cell">
-                      <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded-md font-medium">{e.role}</span>
+                      <span className={`text-xs px-2 py-1 rounded-md font-medium ${rc.badge}`}>{e.role}</span>
                     </td>
                     <td className={`px-5 py-3.5 hidden lg:table-cell text-sm ${textSecondary}`}>{e.phone}</td>
                     <td className="px-5 py-3.5">
@@ -324,7 +332,8 @@ export default function AdminAccounts() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
