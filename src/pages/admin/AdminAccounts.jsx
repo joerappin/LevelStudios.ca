@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
@@ -7,7 +7,7 @@ import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { sendAccountCreatedEmail } from '../../utils/emailService'
-import { fsCreateAccount } from '../../lib/firestoreService'
+import { fsCreateAccount, fsGetAllAccounts } from '../../lib/firestoreService'
 
 
 const EMPLOYEE_ROLES = [
@@ -48,7 +48,25 @@ export default function AdminAccounts() {
   const [tab, setTab] = useState('clients')
   const [search, setSearch] = useState('')
   const [clients, setClients] = useState(() => Store.getAccounts().filter(a => a.type === 'client'))
-  const [employees, setEmployees] = useState(Store.getEmployees())
+  const [employees, setEmployees] = useState(() => Store.getEmployees().filter(e => !e.deleted))
+
+  // Sync depuis Firestore au chargement
+  useEffect(() => {
+    fsGetAllAccounts().then(fsAccounts => {
+      // Merge Firestore accounts into localStorage
+      fsAccounts.forEach(fsa => {
+        const existing = Store.getAccounts().find(a => a.id === fsa.id)
+        if (!existing) Store.addAccount ? null : null
+        // Add to store if missing
+        const accounts = Store.getAccounts()
+        if (!accounts.find(a => a.id === fsa.id)) {
+          const all = [...accounts, fsa]
+          localStorage.setItem('ls_accounts', JSON.stringify(all))
+        }
+      })
+      setClients(Store.getAccounts().filter(a => a.type === 'client'))
+    }).catch(() => {})
+  }, [])
 
   // Modal state
   const [modal, setModal] = useState(null) // null | 'choice' | 'client' | 'employee' | 'success'
@@ -124,24 +142,8 @@ export default function AdminAccounts() {
     const token = Store.createPwdToken(account.id, clientForm.email, name, 'client')
     const result = await sendAccountCreatedEmail({ name, email: clientForm.email, token, accountType: 'client' })
     fsCreateAccount({ ...account, pending: true }).catch(() => {})
-    fetch('/api/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: account.id,
-        name,
-        email: clientForm.email,
-        type: 'client',
-        clientType,
-        company: clientForm.company || null,
-        tps: clientForm.tps || null,
-        tvq: clientForm.tvq || null,
-        phone: '',
-        created_at: new Date().toISOString(),
-      }),
-    }).catch(() => {})
     setClients(Store.getAccounts().filter(a => a.type === 'client'))
-    setSuccessInfo({ name, email: clientForm.email, setUrl: result.setUrl })
+    setSuccessInfo({ name, email: clientForm.email, setUrl: result.setUrl, emailSent: result.success })
     setModal('success')
     setTab('clients')
   }
@@ -171,31 +173,8 @@ export default function AdminAccounts() {
     const token = Store.createPwdToken(emp.id, empForm.email, empForm.name, 'employee')
     const result = await sendAccountCreatedEmail({ name: empForm.name, email: empForm.email, token, accountType: 'employee' })
     fsCreateAccount({ id: emp.id, email: empForm.email, name: empForm.name, type: empForm.role === 'admin' ? 'admin' : 'employee', role: roleName, roleKey: empForm.role, pending: true }).catch(() => {})
-    const ROLE_PERMISSIONS = {
-      admin:       ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'accounts', 'sav', 'promo', 'check', 'boarding', 'manual', 'tool'],
-      chef_projet: ['dashboard', 'calendar', 'reservations', 'projects', 'rushes', 'messaging', 'alerts', 'library'],
-      technicien:  ['dashboard', 'projects', 'messaging', 'check', 'calendar', 'leave', 'alerts', 'rushes'],
-    }
-    const isAdmin = empForm.role === 'admin'
-    const apiEndpoint = isAdmin ? '/api/admins' : '/api/workers'
-    fetch(apiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: emp.id,
-        name: empForm.name,
-        email: empForm.email,
-        role: roleName,
-        roleKey: empForm.role,
-        phone: empForm.phone || null,
-        type: isAdmin ? 'admin' : 'employee',
-        permissions: ROLE_PERMISSIONS[empForm.role] || [],
-        dashboard: isAdmin ? '/admin/dashboard' : empForm.role === 'chef_projet' ? '/chef/dashboard' : '/employee/dashboard',
-        created_at: new Date().toISOString(),
-      }),
-    }).catch(() => {})
     setEmployees(Store.getEmployees().filter(e => !e.deleted))
-    setSuccessInfo({ name: empForm.name, email: empForm.email, setUrl: result.setUrl })
+    setSuccessInfo({ name: empForm.name, email: empForm.email, setUrl: result.setUrl, emailSent: result.success })
     setModal('success')
     setTab('employees')
   }
@@ -476,7 +455,10 @@ export default function AdminAccounts() {
                     <Check className="w-7 h-7 text-green-400" />
                   </div>
                   <h3 className={`text-lg font-bold mb-1 ${textPrimary}`}>Compte créé</h3>
-                  <p className={`text-sm ${textSecondary}`}>Un email a été envoyé à <strong className={textPrimary}>{successInfo.email}</strong> avec un lien pour créer son mot de passe.</p>
+                  {successInfo.emailSent
+                    ? <p className={`text-sm ${textSecondary}`}>Un email a été envoyé à <strong className={textPrimary}>{successInfo.email}</strong> avec un lien pour créer son mot de passe.</p>
+                    : <p className="text-sm text-orange-400">Email non envoyé — partagez le lien ci-dessous manuellement.</p>
+                  }
                 </div>
                 {successInfo.setUrl && (
                   <div className={`rounded-xl border p-4 mb-4 ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
