@@ -1,0 +1,16 @@
+{
+  "name": "Level Studios",
+  "short_name": "Level Studios",
+  "description": "Votre studio de podcast professionnel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#18181b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
