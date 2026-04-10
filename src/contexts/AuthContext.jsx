@@ -79,6 +79,44 @@ export function AuthProvider({ children }) {
     return { success: false, error: 'Email ou mot de passe incorrect' }
   }
 
+  // ─── register — creates a client account, logs in immediately ────────────
+  const register = ({ firstName, lastName, email, password, company, tps, tvq, clientType, googleAuth }) => {
+    // Check duplicate in localStorage cache
+    const existing = Store.getAccounts().find(a => a.email?.toLowerCase() === email?.toLowerCase())
+    if (existing) return { success: false, error: 'Un compte avec cet email existe déjà.' }
+
+    const id = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
+    const name = `${firstName || ''} ${lastName || ''}`.trim()
+    const account = {
+      id,
+      email,
+      name,
+      type: 'client',
+      clientType: clientType || 'particulier',
+      company: company || null,
+      tps: tps || null,
+      tvq: tvq || null,
+      password: googleAuth ? undefined : password,
+      googleAuth: !!googleAuth,
+      pending: false,
+      created_at: new Date().toISOString(),
+    }
+
+    // Save to localStorage immediately (synchronous)
+    Store.addAccount(account)
+
+    // Persist to file (Mac → git → Hostinger) — fire and forget
+    apiSaveAccount(account).catch(() => {})
+
+    // Log in right away
+    const userData = { ...account }
+    delete userData.password
+    setUser(userData)
+    localStorage.setItem('level_studio_user', JSON.stringify(userData))
+
+    return { success: true, user: userData }
+  }
+
   const setAccountPassword = async (token, password) => {
     const data = Store.validatePwdToken(token)
     if (!data) return { success: false, error: 'Lien invalide ou expiré.' }
@@ -113,7 +151,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, impersonate, stopImpersonating, impersonatedBy, setAccountPassword }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, impersonate, stopImpersonating, impersonatedBy, setAccountPassword }}>
       {children}
     </AuthContext.Provider>
   )

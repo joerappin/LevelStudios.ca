@@ -1017,6 +1017,7 @@ export default function NewReservation() {
               <button onClick={() => {
                   const { firstName, lastName, email, password, confirmPassword, cgu, tps, tvq, company } = quickRegisterForm
                   if (!firstName || !lastName || !email || !password) { setQuickRegisterError('Veuillez remplir tous les champs obligatoires.'); return }
+                  if (password.length < 6) { setQuickRegisterError('Le mot de passe doit faire au moins 6 caractères.'); return }
                   if (password !== confirmPassword) { setQuickRegisterError('Les mots de passe ne correspondent pas.'); return }
                   if (!cgu) { setQuickRegisterError('Veuillez accepter les conditions générales.'); return }
                   const clientType = (tps || tvq) ? 'pro' : 'particulier'
