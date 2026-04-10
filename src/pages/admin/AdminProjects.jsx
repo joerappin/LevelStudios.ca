@@ -41,6 +41,13 @@ export default function AdminProjects() {
     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
 
   useEffect(() => {
+    // Auto-promote Booking → Todo for today's reservations
+    const today = new Date().toISOString().split('T')[0]
+    Store.getProjects().forEach(p => {
+      if (p.status === 'Booking' && p.date === today) {
+        Store.updateProject(p.id, { status: 'Todo' })
+      }
+    })
     setProjects(Store.getProjects())
     setEmployees(Store.getEmployees())
   }, [])
@@ -138,7 +145,12 @@ export default function AdminProjects() {
                         <div className={cn('text-xs font-semibold mb-1 truncate', textPrimary)}>{p.title}</div>
                         <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
                         {p.studio && (
-                          <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-2">{p.studio}</div>
+                          <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-1">{p.studio}</div>
+                        )}
+                        {p.date && (
+                          <div className={cn('text-[10px] mb-1', textSecondary)}>
+                            {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
+                          </div>
                         )}
                         {p.assigned_to && (
                           <div className={cn('text-[10px]', textSecondary)}>

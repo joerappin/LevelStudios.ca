@@ -88,7 +88,31 @@ export const Store = {
     const item = { id: generateResId(), created_at: new Date().toISOString(), ...data }
     items.unshift(item)
     saveAll(KEYS.reservations, items)
-    // Persist to file (Mac → git → Hostinger) — fire and forget
+
+    // Auto-create project card in Kanban
+    const today = new Date().toISOString().split('T')[0]
+    const projectStatus = item.date === today ? 'Todo' : 'Booking'
+    const projects = getAll(KEYS.projects)
+    const project = {
+      id: generateId('PROJ'),
+      created_at: new Date().toISOString(),
+      files: [],
+      title: `${item.client_name || 'Client'} — ${item.studio || 'Studio'}`,
+      client_name: item.client_name,
+      client_email: item.client_email,
+      studio: item.studio,
+      status: projectStatus,
+      pipeline: 'PROD',
+      reservation_id: item.id,
+      date: item.date,
+      start_time: item.start_time,
+      end_time: item.end_time,
+      service: item.service,
+    }
+    projects.unshift(project)
+    saveAll(KEYS.projects, projects)
+
+    // Persist reservation to file (Mac → git → Hostinger) — fire and forget
     fetch('/api/reservations.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).catch(() => {})
     return item
   },
