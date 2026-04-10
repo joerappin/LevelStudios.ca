@@ -153,7 +153,6 @@ export default function AdminDashboard() {
   const ca         = paid.reduce((s, r) => s + (r.price || 0), 0)
   const totalHours = countable.reduce((s, r) => s + (r.duration || 0), 0)
   const activeClients = accounts.filter(a => a.type === 'client' && !a.suspended && !trashedEmails.has(a.email)).length
-    || [...new Set(activeRes.map(r => r.client_email))].length
 
   // ─── studio breakdown ───────────────────────────────────────────────────────
   const studioStats = STUDIOS.map(studio => {
