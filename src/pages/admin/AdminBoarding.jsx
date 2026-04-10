@@ -1,48 +1,160 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { CheckSquare, Square, ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2, Save, User } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 
+// ─── Onboarding steps template ────────────────────────────────────────────────
 const ONBOARDING_STEPS = [
-  {
-    category: 'Accueil',
-    items: [
-      { id: 1, label: 'Visite des locaux effectuée', done: false },
-      { id: 2, label: "Présentation de l'équipe", done: false },
-      { id: 3, label: "Remise du badge d'accès", done: false },
-      { id: 4, label: 'Explication des horaires', done: false },
-    ]
-  },
-  {
-    category: 'Outils & Accès',
-    items: [
-      { id: 5, label: 'Création du compte email', done: false },
-      { id: 6, label: 'Accès au logiciel de réservation', done: false },
-      { id: 7, label: 'Formation sur les équipements', done: false },
-      { id: 8, label: 'Accès au serveur fichiers', done: false },
-    ]
-  },
-  {
-    category: 'Administratif',
-    items: [
-      { id: 9,  label: 'Contrat signé', done: false },
-      { id: 10, label: 'RIB fourni', done: false },
-      { id: 11, label: 'Mutuelle choisie', done: false },
-      { id: 12, label: 'Document de formation sécurité lu et signé', done: false },
-    ]
-  },
+  { category: 'Accueil', items: [
+    { id: 1, label: 'Visite des locaux effectuée', done: false },
+    { id: 2, label: "Présentation de l'équipe", done: false },
+    { id: 3, label: "Remise du badge d'accès", done: false },
+    { id: 4, label: 'Explication des horaires', done: false },
+  ]},
+  { category: 'Outils & Accès', items: [
+    { id: 5, label: 'Création du compte email', done: false },
+    { id: 6, label: 'Accès au logiciel de réservation', done: false },
+    { id: 7, label: 'Formation sur les équipements', done: false },
+    { id: 8, label: 'Accès au serveur fichiers', done: false },
+  ]},
+  { category: 'Administratif', items: [
+    { id: 9,  label: 'Contrat signé', done: false },
+    { id: 10, label: 'RIB fourni', done: false },
+    { id: 11, label: 'Mutuelle choisie', done: false },
+    { id: 12, label: 'Document de formation sécurité lu et signé', done: false },
+  ]},
 ]
 
 const EMPTY_PROFILE = {
-  firstName: '', lastName: '', photo: '', birthDate: '', birthPlace: '', nationality: '',
-  maritalStatus: '', address: '', city: '', postalCode: '', province: '', phone: '',
-  sin: '', emergencyName: '', emergencyPhone: '', emergencyRelation: '', notes: '',
+  firstName: '', lastName: '', photo: '', birthDate: '', birthPlace: '',
+  nationality: '', maritalStatus: '', address: '', city: '', postalCode: '',
+  province: '', phone: '', sin: '', emergencyName: '', emergencyPhone: '',
+  emergencyRelation: '', notes: '',
 }
 
-const EMPTY_SOFTWARE = { name: '', password: '', machine: '', price: '', active: true }
+// ─── Isolated row for software table — own local state → no cursor loss ───────
+function SoftwareRow({ initialRow, rowKey, inputCls, selectCls, textSecondary, onSave, onDelete }) {
+  const [row, setRow] = useState(initialRow)
+  const [showPwd, setShowPwd] = useState(false)
 
+  // Sync only when the employee changes (rowKey changes)
+  useEffect(() => { setRow(initialRow) }, [rowKey]) // eslint-disable-line
+
+  const update = (field, value) => setRow(prev => ({ ...prev, [field]: value }))
+  const persist  = () => onSave({ ...row })
+
+  const statusCls =
+    row.active === true    ? 'bg-green-500/10 text-green-400 border-green-500/30' :
+    row.active === false   ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' :
+                             'bg-red-500/10 text-red-400 border-red-500/30'
+
+  return (
+    <tr className="border-b border-inherit">
+      {/* Logiciel */}
+      <td className="px-3 py-2">
+        <input
+          value={row.name}
+          onChange={e => update('name', e.target.value)}
+          onBlur={persist}
+          placeholder="Ex : Adobe CC"
+          className={`w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${inputCls}`}
+        />
+      </td>
+      {/* Mot de passe */}
+      <td className="px-3 py-2">
+        <div className="flex items-center gap-1.5">
+          <input
+            value={row.password}
+            type={showPwd ? 'text' : 'password'}
+            onChange={e => update('password', e.target.value)}
+            onBlur={persist}
+            placeholder="Mot de passe"
+            className={`flex-1 border rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none ${inputCls}`}
+          />
+          <button
+            type="button"
+            onMouseDown={e => e.preventDefault()} // prevent blur on input
+            onClick={() => setShowPwd(s => !s)}
+            className={`${textSecondary} hover:text-violet-400 transition-colors`}
+          >
+            {showPwd ? <EyeOff size={13} /> : <Eye size={13} />}
+          </button>
+        </div>
+      </td>
+      {/* Machine */}
+      <td className="px-3 py-2 hidden md:table-cell">
+        <input
+          value={row.machine}
+          onChange={e => update('machine', e.target.value)}
+          onBlur={persist}
+          placeholder="Ex : MacBook Pro Joe"
+          className={`w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${inputCls}`}
+        />
+      </td>
+      {/* Prix */}
+      <td className="px-3 py-2 hidden lg:table-cell">
+        <input
+          value={row.price}
+          onChange={e => update('price', e.target.value)}
+          onBlur={persist}
+          placeholder="Ex : 59.99 CAD"
+          className={`w-36 border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${inputCls}`}
+        />
+      </td>
+      {/* Statut */}
+      <td className="px-3 py-2 text-center">
+        <select
+          value={row.active === true ? 'actif' : row.active === false ? 'inactif' : 'supprimé'}
+          onChange={e => {
+            const v = e.target.value === 'actif' ? true : e.target.value === 'inactif' ? false : 'deleted'
+            const updated = { ...row, active: v }
+            setRow(updated)
+            onSave(updated)
+          }}
+          className={`border rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none ${statusCls}`}
+        >
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif</option>
+          <option value="supprimé">Supprimé</option>
+        </select>
+      </td>
+      {/* Supprimer */}
+      <td className="px-3 py-2 text-center">
+        <button
+          type="button"
+          onClick={onDelete}
+          className={`p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors`}
+        >
+          <Trash2 size={13} />
+        </button>
+      </td>
+    </tr>
+  )
+}
+
+// ─── Isolated profile field — own local state → no cursor loss ────────────────
+function ProfileField({ label, storeValue, onCommit, cls, labelCls, type = 'text', placeholder }) {
+  const [val, setVal] = useState(storeValue)
+  // Sync if external value changes (employee switch)
+  useEffect(() => { setVal(storeValue) }, [storeValue])
+  return (
+    <div>
+      <label className={`block text-xs font-medium mb-1.5 ${labelCls}`}>{label}</label>
+      <input
+        type={type}
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={() => onCommit(val)}
+        placeholder={placeholder}
+        className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none ${cls}`}
+      />
+    </div>
+  )
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AdminBoarding() {
   const { theme } = useApp()
   const isDark = theme === 'dark'
@@ -53,7 +165,7 @@ export default function AdminBoarding() {
   // ── Checklist ──────────────────────────────────────────────────────────────
   const [selectedEmpId, setSelectedEmpId] = useState('')
   const [steps, setSteps] = useState(ONBOARDING_STEPS)
-  const [openCategories, setOpenCategories] = useState(['Accueil', 'Outils & Accès', 'Administratif'])
+  const [openCats, setOpenCats] = useState(['Accueil', 'Outils & Accès', 'Administratif'])
 
   // ── Fiche employé ──────────────────────────────────────────────────────────
   const [ficheEmpId, setFicheEmpId] = useState('')
@@ -62,8 +174,9 @@ export default function AdminBoarding() {
 
   // ── Comptes (software) ─────────────────────────────────────────────────────
   const [compteEmpId, setCompteEmpId] = useState('')
-  const [visiblePwd, setVisiblePwd] = useState({})
+  // software is the source-of-truth list; each SoftwareRow has its own local state
   const [software, setSoftware] = useState([])
+  const softwareRef = useRef([])
 
   useEffect(() => {
     const emps = Store.getEmployees().filter(e => !e.deleted)
@@ -75,63 +188,82 @@ export default function AdminBoarding() {
     }
   }, [])
 
-  // Load profile when fiche employee changes
+  // Load profile when employee changes
   useEffect(() => {
     if (!ficheEmpId) return
-    const saved = Store.getEmployeeProfile(ficheEmpId)
-    setProfile({ ...EMPTY_PROFILE, ...saved })
+    setProfile({ ...EMPTY_PROFILE, ...Store.getEmployeeProfile(ficheEmpId) })
     setProfileSaved(false)
   }, [ficheEmpId])
 
-  // Load software when compte employee changes
+  // Load software when employee changes — assign stable _key to each row
   useEffect(() => {
     if (!compteEmpId) return
-    setSoftware(Store.getEmployeeSoftware(compteEmpId))
-    setVisiblePwd({})
+    const rows = Store.getEmployeeSoftware(compteEmpId).map((r, i) => ({
+      _key: r._key || `${compteEmpId}-${i}-${Date.now()}`,
+      name: '', password: '', machine: '', price: '', active: true,
+      ...r,
+    }))
+    setSoftware(rows)
+    softwareRef.current = rows
   }, [compteEmpId])
 
   // ── Styles ─────────────────────────────────────────────────────────────────
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
-  const textPrimary = isDark ? 'text-white' : 'text-gray-900'
+  const textPrimary   = isDark ? 'text-white' : 'text-gray-900'
   const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
-  const selectCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-  const inputCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
-  const labelCls = isDark ? 'text-zinc-400' : 'text-gray-600'
-  const divider = isDark ? 'border-zinc-800' : 'border-gray-100'
+  const selectCls  = isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-gray-300 text-gray-900'
+  const inputCls   = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+  const labelCls   = isDark ? 'text-zinc-400' : 'text-gray-600'
+  const divider    = isDark ? 'border-zinc-800' : 'border-gray-100'
   const progressBg = isDark ? 'bg-zinc-800' : 'bg-gray-200'
-  const rowHover = isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-gray-50'
-  const rowDivide = isDark ? 'divide-zinc-800/50' : 'divide-gray-100'
-  const catHover = isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-gray-50'
-  const tableHead = isDark ? 'text-zinc-500 border-zinc-800' : 'text-gray-500 border-gray-200'
-  const tableRow = isDark ? 'border-zinc-800/50' : 'border-gray-100'
+  const rowDivide  = isDark ? 'divide-zinc-800/50' : 'divide-gray-100'
+  const catHover   = isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-gray-50'
+  const rowHover   = isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-gray-50'
+  const tableHead  = isDark ? 'text-zinc-500 border-zinc-800' : 'text-gray-500 border-gray-200'
 
-  // ── Checklist helpers ───────────────────────────────────────────────────────
-  const toggleCategory = (cat) => setOpenCategories(o => o.includes(cat) ? o.filter(c => c !== cat) : [...o, cat])
-  const toggleItem = (ci, ii) => setSteps(s => s.map((cat, c) => c === ci ? { ...cat, items: cat.items.map((item, i) => i === ii ? { ...item, done: !item.done } : item) } : cat))
+  // ── Checklist ──────────────────────────────────────────────────────────────
+  const toggleCat  = (cat) => setOpenCats(o => o.includes(cat) ? o.filter(c => c !== cat) : [...o, cat])
+  const toggleItem = (ci, ii) => setSteps(s => s.map((cat, c) => c !== ci ? cat : {
+    ...cat, items: cat.items.map((item, i) => i !== ii ? item : { ...item, done: !item.done })
+  }))
   const totalItems = steps.reduce((s, c) => s + c.items.length, 0)
   const doneItems  = steps.reduce((s, c) => s + c.items.filter(i => i.done).length, 0)
   const progress   = Math.round((doneItems / totalItems) * 100)
 
-  // ── Profile helpers ─────────────────────────────────────────────────────────
-  const saveProfile = () => {
+  // ── Profile ────────────────────────────────────────────────────────────────
+  const commitProfile = (field, value) => {
+    const updated = { ...profile, [field]: value }
+    setProfile(updated)
+    Store.saveEmployeeProfile(ficheEmpId, updated)
+  }
+  const saveAll = () => {
     Store.saveEmployeeProfile(ficheEmpId, profile)
     setProfileSaved(true)
     setTimeout(() => setProfileSaved(false), 2000)
   }
 
-  // ── Software helpers ────────────────────────────────────────────────────────
-  const addSoftwareRow = () => {
-    const updated = [...software, { ...EMPTY_SOFTWARE, id: Date.now() }]
+  // ── Software ───────────────────────────────────────────────────────────────
+  const addRow = () => {
+    const newRow = {
+      _key: `${compteEmpId}-new-${Date.now()}`,
+      name: '', password: '', machine: '', price: '', active: true,
+    }
+    const updated = [...softwareRef.current, newRow]
+    softwareRef.current = updated
     setSoftware(updated)
     Store.saveEmployeeSoftware(compteEmpId, updated)
   }
-  const updateSoftwareRow = (idx, field, value) => {
-    const updated = software.map((s, i) => i === idx ? { ...s, [field]: value } : s)
+
+  const saveRow = (idx, row) => {
+    const updated = softwareRef.current.map((r, i) => i === idx ? row : r)
+    softwareRef.current = updated
     setSoftware(updated)
     Store.saveEmployeeSoftware(compteEmpId, updated)
   }
-  const deleteSoftwareRow = (idx) => {
-    const updated = software.filter((_, i) => i !== idx)
+
+  const deleteRow = (idx) => {
+    const updated = softwareRef.current.filter((_, i) => i !== idx)
+    softwareRef.current = updated
     setSoftware(updated)
     Store.saveEmployeeSoftware(compteEmpId, updated)
   }
@@ -145,20 +277,17 @@ export default function AdminBoarding() {
   return (
     <Layout navItems={ADMIN_NAV} title="Onboarding">
       <div className="space-y-6">
+
         {/* Tabs */}
         <div className="flex gap-2 flex-wrap">
           {TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
+            <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === t.key ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >
-              {t.label}
-            </button>
+            >{t.label}</button>
           ))}
         </div>
 
-        {/* ══ CHECKLIST ══════════════════════════════════════════════════════════ */}
+        {/* ══ CHECKLIST ══════════════════════════════════════════════════════ */}
         {tab === 'checklist' && (
           <div className="space-y-6 max-w-2xl">
             <div className="flex items-center justify-between">
@@ -166,15 +295,11 @@ export default function AdminBoarding() {
                 <h2 className={`font-bold text-lg ${textPrimary}`}>Checklist onboarding</h2>
                 <p className={`text-sm ${textSecondary}`}>Suivi de l'intégration des nouveaux employés</p>
               </div>
-              <select
-                value={selectedEmpId}
-                onChange={e => setSelectedEmpId(e.target.value)}
-                className={`border rounded-xl px-4 py-2 text-sm focus:outline-none ${selectCls}`}
-              >
+              <select value={selectedEmpId} onChange={e => setSelectedEmpId(e.target.value)}
+                className={`border rounded-xl px-4 py-2 text-sm focus:outline-none ${selectCls}`}>
                 {employees.length === 0
                   ? <option value="">Aucun employé</option>
-                  : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)
-                }
+                  : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
               </select>
             </div>
 
@@ -190,32 +315,26 @@ export default function AdminBoarding() {
             </div>
 
             {steps.map((cat, ci) => {
-              const isOpen = openCategories.includes(cat.category)
-              const catDone = cat.items.filter(i => i.done).length
+              const isOpen = openCats.includes(cat.category)
               return (
                 <div key={cat.category} className={`border rounded-2xl overflow-hidden ${card}`}>
-                  <button
-                    onClick={() => toggleCategory(cat.category)}
-                    className={`w-full flex items-center justify-between px-5 py-4 transition-colors ${catHover}`}
-                  >
+                  <button onClick={() => toggleCat(cat.category)}
+                    className={`w-full flex items-center justify-between px-5 py-4 transition-colors ${catHover}`}>
                     <div className="flex items-center gap-3">
                       <h3 className={`font-semibold ${textPrimary}`}>{cat.category}</h3>
-                      <span className={`text-xs ${textSecondary}`}>{catDone}/{cat.items.length}</span>
+                      <span className={`text-xs ${textSecondary}`}>{cat.items.filter(i => i.done).length}/{cat.items.length}</span>
                     </div>
                     {isOpen ? <ChevronUp className={`w-4 h-4 ${textSecondary}`} /> : <ChevronDown className={`w-4 h-4 ${textSecondary}`} />}
                   </button>
                   {isOpen && (
                     <div className={`border-t divide-y ${divider} ${rowDivide}`}>
                       {cat.items.map((item, ii) => (
-                        <button
-                          key={item.id}
-                          onClick={() => toggleItem(ci, ii)}
-                          className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors text-left ${rowHover}`}
-                        >
+                        <button key={item.id} onClick={() => toggleItem(ci, ii)}
+                          className={`w-full flex items-center gap-3 px-5 py-3.5 transition-colors text-left ${rowHover}`}>
                           {item.done
                             ? <CheckSquare className="w-5 h-5 text-green-400 flex-shrink-0" />
                             : <Square className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-zinc-600' : 'text-gray-400'}`} />}
-                          <span className={`text-sm ${item.done ? 'text-zinc-400 line-through' : (isDark ? 'text-zinc-200' : 'text-gray-700')}`}>{item.label}</span>
+                          <span className={`text-sm ${item.done ? 'text-zinc-400 line-through' : isDark ? 'text-zinc-200' : 'text-gray-700'}`}>{item.label}</span>
                         </button>
                       ))}
                     </div>
@@ -226,38 +345,31 @@ export default function AdminBoarding() {
           </div>
         )}
 
-        {/* ══ FICHE EMPLOYÉ ══════════════════════════════════════════════════════ */}
+        {/* ══ FICHE EMPLOYÉ ══════════════════════════════════════════════════ */}
         {tab === 'fiche' && (
           <div className="space-y-6 max-w-3xl">
-            {/* Employee selector */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center">
                   <User className="w-4 h-4 text-violet-400" />
                 </div>
                 <div>
                   <h2 className={`font-bold text-lg ${textPrimary}`}>Fiche employé</h2>
-                  <p className={`text-xs ${textSecondary}`}>État civil et informations RH</p>
+                  <p className={`text-xs ${textSecondary}`}>État civil et informations RH — sauvegarde automatique à la sortie de chaque champ</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <select
-                  value={ficheEmpId}
-                  onChange={e => setFicheEmpId(e.target.value)}
-                  className={`border rounded-xl px-4 py-2 text-sm focus:outline-none ${selectCls}`}
-                >
+                <select value={ficheEmpId} onChange={e => setFicheEmpId(e.target.value)}
+                  className={`border rounded-xl px-4 py-2 text-sm focus:outline-none ${selectCls}`}>
                   {employees.length === 0
                     ? <option value="">Aucun employé</option>
-                    : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)
-                  }
+                    : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
                 </select>
                 {ficheEmpId && (
-                  <button
-                    onClick={saveProfile}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${profileSaved ? 'bg-green-500/20 text-green-400' : 'bg-violet-600 hover:bg-violet-700 text-white'}`}
-                  >
+                  <button onClick={saveAll}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${profileSaved ? 'bg-green-500/20 text-green-400' : 'bg-violet-600 hover:bg-violet-700 text-white'}`}>
                     <Save className="w-3.5 h-3.5" />
-                    {profileSaved ? 'Enregistré !' : 'Enregistrer'}
+                    {profileSaved ? 'Enregistré !' : 'Tout enregistrer'}
                   </button>
                 )}
               </div>
@@ -265,96 +377,82 @@ export default function AdminBoarding() {
 
             {ficheEmpId && (
               <div className="space-y-5">
-                {/* Photo + Identity */}
+                {/* Identité */}
                 <div className={`border rounded-2xl p-5 ${card}`}>
                   <h3 className={`text-sm font-semibold mb-4 ${textPrimary}`}>Identité</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <Field label="Prénom" value={profile.firstName} onChange={v => setProfile(p => ({ ...p, firstName: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="Nom" value={profile.lastName} onChange={v => setProfile(p => ({ ...p, lastName: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="Date de naissance" type="date" value={profile.birthDate} onChange={v => setProfile(p => ({ ...p, birthDate: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="Lieu de naissance" value={profile.birthPlace} onChange={v => setProfile(p => ({ ...p, birthPlace: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="Nationalité" value={profile.nationality} onChange={v => setProfile(p => ({ ...p, nationality: v }))} cls={inputCls} labelCls={labelCls} />
+                    <PF label="Prénom"           field="firstName"     profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                    <PF label="Nom"              field="lastName"      profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                    <PF label="Date de naissance" field="birthDate"    profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} type="date" />
+                    <PF label="Lieu de naissance" field="birthPlace"   profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                    <PF label="Nationalité"      field="nationality"   profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
                     <div>
                       <label className={`block text-xs font-medium mb-1.5 ${labelCls}`}>État civil</label>
                       <select
                         value={profile.maritalStatus}
-                        onChange={e => setProfile(p => ({ ...p, maritalStatus: e.target.value }))}
-                        className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none ${selectCls}`}
-                      >
+                        onChange={e => { const v = e.target.value; setProfile(p => ({ ...p, maritalStatus: v })); Store.saveEmployeeProfile(ficheEmpId, { ...profile, maritalStatus: v }) }}
+                        className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none ${selectCls}`}>
                         <option value="">— Sélectionner —</option>
                         {['Célibataire', 'Marié(e)', 'Pacsé(e)', 'Divorcé(e)', 'Veuf/Veuve'].map(v => <option key={v} value={v}>{v}</option>)}
                       </select>
                     </div>
-                    <Field label="NAS (Numéro d'assurance sociale)" value={profile.sin} onChange={v => setProfile(p => ({ ...p, sin: v }))} cls={inputCls} labelCls={labelCls} placeholder="XXX-XXX-XXX" />
-                    <Field label="Téléphone" value={profile.phone} onChange={v => setProfile(p => ({ ...p, phone: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="URL photo" value={profile.photo} onChange={v => setProfile(p => ({ ...p, photo: v }))} cls={inputCls} labelCls={labelCls} placeholder="https://..." />
+                    <PF label="NAS (Numéro d'assurance sociale)" field="sin"  profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} placeholder="XXX-XXX-XXX" />
+                    <PF label="Téléphone"        field="phone"         profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                    <PF label="URL photo"         field="photo"        profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} placeholder="https://..." />
                   </div>
                 </div>
 
-                {/* Address */}
+                {/* Adresse */}
                 <div className={`border rounded-2xl p-5 ${card}`}>
                   <h3 className={`text-sm font-semibold mb-4 ${textPrimary}`}>Adresse</h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    <Field label="Adresse (numéro et rue)" value={profile.address} onChange={v => setProfile(p => ({ ...p, address: v }))} cls={inputCls} labelCls={labelCls} />
+                  <div className="space-y-4">
+                    <PF label="Adresse (numéro et rue)" field="address" profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
                     <div className="grid grid-cols-3 gap-4">
-                      <Field label="Ville" value={profile.city} onChange={v => setProfile(p => ({ ...p, city: v }))} cls={inputCls} labelCls={labelCls} />
-                      <Field label="Province / État" value={profile.province} onChange={v => setProfile(p => ({ ...p, province: v }))} cls={inputCls} labelCls={labelCls} />
-                      <Field label="Code postal" value={profile.postalCode} onChange={v => setProfile(p => ({ ...p, postalCode: v }))} cls={inputCls} labelCls={labelCls} />
+                      <PF label="Ville"            field="city"       profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                      <PF label="Province / État"  field="province"   profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                      <PF label="Code postal"      field="postalCode" profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
                     </div>
                   </div>
                 </div>
 
-                {/* Emergency contact */}
+                {/* Urgence */}
                 <div className={`border rounded-2xl p-5 ${card}`}>
                   <h3 className={`text-sm font-semibold mb-4 ${textPrimary}`}>Personne à contacter en cas d'urgence</h3>
                   <div className="grid grid-cols-3 gap-4">
-                    <Field label="Nom complet" value={profile.emergencyName} onChange={v => setProfile(p => ({ ...p, emergencyName: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="Téléphone" value={profile.emergencyPhone} onChange={v => setProfile(p => ({ ...p, emergencyPhone: v }))} cls={inputCls} labelCls={labelCls} />
-                    <Field label="Relation" value={profile.emergencyRelation} onChange={v => setProfile(p => ({ ...p, emergencyRelation: v }))} cls={inputCls} labelCls={labelCls} placeholder="Ex : Conjoint(e), Parent..." />
+                    <PF label="Nom complet"  field="emergencyName"     profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                    <PF label="Téléphone"    field="emergencyPhone"    profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} />
+                    <PF label="Relation"     field="emergencyRelation" profile={profile} onCommit={commitProfile} inputCls={inputCls} labelCls={labelCls} placeholder="Ex : Conjoint(e), Parent..." />
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div className={`border rounded-2xl p-5 ${card}`}>
                   <h3 className={`text-sm font-semibold mb-3 ${textPrimary}`}>Notes internes</h3>
-                  <textarea
-                    value={profile.notes}
-                    onChange={e => setProfile(p => ({ ...p, notes: e.target.value }))}
-                    rows={4}
-                    className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none ${inputCls}`}
-                    placeholder="Notes confidentielles sur cet employé..."
-                  />
+                  <NotesField value={profile.notes} onCommit={v => commitProfile('notes', v)} inputCls={inputCls} />
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* ══ COMPTES ════════════════════════════════════════════════════════════ */}
+        {/* ══ COMPTES ════════════════════════════════════════════════════════ */}
         {tab === 'comptes' && (
           <div className="space-y-5">
-            {/* Employee selector */}
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 className={`font-bold text-lg ${textPrimary}`}>Comptes & Licences logiciels</h2>
-                <p className={`text-xs ${textSecondary}`}>Logiciels attribués, machines, mots de passe</p>
+                <p className={`text-xs ${textSecondary}`}>Sauvegarde automatique à la sortie de chaque champ</p>
               </div>
               <div className="flex items-center gap-3">
-                <select
-                  value={compteEmpId}
-                  onChange={e => setCompteEmpId(e.target.value)}
-                  className={`border rounded-xl px-4 py-2 text-sm focus:outline-none ${selectCls}`}
-                >
+                <select value={compteEmpId} onChange={e => setCompteEmpId(e.target.value)}
+                  className={`border rounded-xl px-4 py-2 text-sm focus:outline-none ${selectCls}`}>
                   {employees.length === 0
                     ? <option value="">Aucun employé</option>
-                    : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)
-                  }
+                    : employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} — {emp.role}</option>)}
                 </select>
                 {compteEmpId && (
-                  <button
-                    onClick={addSoftwareRow}
-                    className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-                  >
+                  <button onClick={addRow}
+                    className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                     <Plus className="w-4 h-4" /> Ajouter
                   </button>
                 )}
@@ -363,7 +461,7 @@ export default function AdminBoarding() {
 
             {compteEmpId && (
               <div className={`border rounded-2xl overflow-hidden ${card}`}>
-                <table className="w-full">
+                <table className="w-full" style={{ borderColor: isDark ? '#27272a' : '#e5e7eb' }}>
                   <thead>
                     <tr className={`border-b text-xs font-semibold ${tableHead}`}>
                       <th className="text-left px-4 py-3">Logiciel</th>
@@ -376,79 +474,21 @@ export default function AdminBoarding() {
                   </thead>
                   <tbody>
                     {software.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className={`px-5 py-8 text-center text-sm ${textSecondary}`}>
-                          Aucun logiciel enregistré — cliquez sur « Ajouter »
-                        </td>
-                      </tr>
+                      <tr><td colSpan={6} className={`px-5 py-8 text-center text-sm ${textSecondary}`}>
+                        Aucun logiciel enregistré — cliquez sur « Ajouter »
+                      </td></tr>
                     )}
                     {software.map((row, idx) => (
-                      <tr key={row.id || idx} className={`border-b ${tableRow}`}>
-                        <td className="px-3 py-2">
-                          <input
-                            value={row.name}
-                            onChange={e => updateSoftwareRow(idx, 'name', e.target.value)}
-                            placeholder="Ex : Adobe CC"
-                            className={`w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${inputCls}`}
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              value={row.password}
-                              onChange={e => updateSoftwareRow(idx, 'password', e.target.value)}
-                              type={visiblePwd[idx] ? 'text' : 'password'}
-                              placeholder="Mot de passe"
-                              className={`flex-1 border rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none ${inputCls}`}
-                            />
-                            <button
-                              onClick={() => setVisiblePwd(v => ({ ...v, [idx]: !v[idx] }))}
-                              className={`${textSecondary} hover:text-violet-400 transition-colors`}
-                            >
-                              {visiblePwd[idx] ? <EyeOff size={13} /> : <Eye size={13} />}
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 hidden md:table-cell">
-                          <input
-                            value={row.machine}
-                            onChange={e => updateSoftwareRow(idx, 'machine', e.target.value)}
-                            placeholder="Ex : MacBook Pro Joe"
-                            className={`w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${inputCls}`}
-                          />
-                        </td>
-                        <td className="px-3 py-2 hidden lg:table-cell">
-                          <input
-                            value={row.price}
-                            onChange={e => updateSoftwareRow(idx, 'price', e.target.value)}
-                            placeholder="Ex : 59.99 CAD"
-                            className={`w-36 border rounded-lg px-3 py-1.5 text-sm focus:outline-none ${inputCls}`}
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <select
-                            value={row.active === true ? 'actif' : row.active === false ? 'inactif' : 'supprimé'}
-                            onChange={e => updateSoftwareRow(idx, 'active', e.target.value === 'actif' ? true : e.target.value === 'inactif' ? false : 'deleted')}
-                            className={`border rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none ${
-                              row.active === true ? 'bg-green-500/10 text-green-400 border-green-500/30' :
-                              row.active === false ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' :
-                              'bg-red-500/10 text-red-400 border-red-500/30'
-                            }`}
-                          >
-                            <option value="actif">Actif</option>
-                            <option value="inactif">Inactif</option>
-                            <option value="supprimé">Supprimé</option>
-                          </select>
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <button
-                            onClick={() => deleteSoftwareRow(idx)}
-                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </td>
-                      </tr>
+                      <SoftwareRow
+                        key={row._key}
+                        rowKey={row._key}
+                        initialRow={row}
+                        inputCls={inputCls}
+                        selectCls={selectCls}
+                        textSecondary={textSecondary}
+                        onSave={(updated) => saveRow(idx, updated)}
+                        onDelete={() => deleteRow(idx)}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -461,18 +501,40 @@ export default function AdminBoarding() {
   )
 }
 
-// ── Reusable field ─────────────────────────────────────────────────────────────
-function Field({ label, value, onChange, cls, labelCls, type = 'text', placeholder }) {
+// ─── Profile field wrapper — own local state, commits on blur ─────────────────
+function PF({ label, field, profile, onCommit, inputCls, labelCls, type = 'text', placeholder }) {
+  const [val, setVal] = useState(profile[field] ?? '')
+  // Sync when profile reloads (employee change)
+  const prev = useRef(profile[field])
+  if (prev.current !== profile[field]) { prev.current = profile[field]; setVal(profile[field] ?? '') }
   return (
     <div>
       <label className={`block text-xs font-medium mb-1.5 ${labelCls}`}>{label}</label>
       <input
         type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={() => onCommit(field, val)}
         placeholder={placeholder}
-        className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none ${cls}`}
+        className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none ${inputCls}`}
       />
     </div>
+  )
+}
+
+// ─── Notes textarea — own local state ────────────────────────────────────────
+function NotesField({ value, onCommit, inputCls }) {
+  const [val, setVal] = useState(value ?? '')
+  const prev = useRef(value)
+  if (prev.current !== value) { prev.current = value; setVal(value ?? '') }
+  return (
+    <textarea
+      value={val}
+      onChange={e => setVal(e.target.value)}
+      onBlur={() => onCommit(val)}
+      rows={4}
+      className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none ${inputCls}`}
+      placeholder="Notes confidentielles sur cet employé..."
+    />
   )
 }
