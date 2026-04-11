@@ -81,8 +81,9 @@ seedIfEmpty()
 
 // Generic CRUD operations
 export const Store = {
-  // Reservations
-  getReservations: () => getAll(KEYS.reservations),
+  // Reservations — excludes trashed by default
+  getReservations: () => getAll(KEYS.reservations).filter(r => !r.trashed),
+  getAllReservations: () => getAll(KEYS.reservations), // includes trashed (used by AdminReservations corbeille)
   addReservation: (data) => {
     const items = getAll(KEYS.reservations)
     const item = { id: generateResId(), created_at: new Date().toISOString(), ...data }

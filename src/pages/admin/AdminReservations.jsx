@@ -53,7 +53,7 @@ function calcEndTime(start, dur) {
 export default function AdminReservations() {
   const { theme } = useApp()
   const isDark = theme === 'dark'
-  const [reservations, setReservations] = useState(Store.getReservations())
+  const [reservations, setReservations] = useState(Store.getAllReservations())
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [view, setView] = useState('list') // 'list' | 'corbeille'
@@ -86,7 +86,7 @@ export default function AdminReservations() {
   const optionsPrice = form.options.reduce((sum, key) => sum + (OPTIONS_LIST.find(o => o.key === key)?.price || 0), 0)
   const total = basePrice + optionsPrice
 
-  const refresh = () => setReservations(Store.getReservations())
+  const refresh = () => setReservations(Store.getAllReservations())
 
   const trashedReservations = reservations.filter(r => r.trashed)
   const activeReservations  = reservations.filter(r => !r.trashed)
