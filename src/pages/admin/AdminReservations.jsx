@@ -5,6 +5,8 @@ import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
 import { formatPrice, cn, STATUS_CONFIG, getTierConfig } from '../../utils'
 import { useApp } from '../../contexts/AppContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { useReservations } from '../../hooks/useReservations'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse', 'absent']
 const STATUS_MAP = STATUS_CONFIG
@@ -52,8 +54,9 @@ function calcEndTime(start, dur) {
 
 export default function AdminReservations() {
   const { theme } = useApp()
+  const { user } = useAuth()
   const isDark = theme === 'dark'
-  const [reservations, setReservations] = useState(Store.getAllReservations())
+  const { reservations, reload } = useReservations({ includeTrash: true })
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [view, setView] = useState('list') // 'list' | 'corbeille'
@@ -86,7 +89,7 @@ export default function AdminReservations() {
   const optionsPrice = form.options.reduce((sum, key) => sum + (OPTIONS_LIST.find(o => o.key === key)?.price || 0), 0)
   const total = basePrice + optionsPrice
 
-  const refresh = () => setReservations(Store.getAllReservations())
+  const refresh = reload
 
   const trashedReservations = reservations.filter(r => r.trashed)
   const activeReservations  = reservations.filter(r => !r.trashed)
@@ -100,7 +103,7 @@ export default function AdminReservations() {
   })
 
   const updateStatus = (id, status) => {
-    Store.updateReservation(id, { status })
+    Store.updateReservation(id, { status, modified_by: user?.email || 'admin' })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
   }

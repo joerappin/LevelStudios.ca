@@ -206,7 +206,9 @@ function localReservationsPlugin() {
         const filterEmail = url.searchParams.get('client_email')
 
         if (req.method === 'GET') {
+          const includeTrashed = url.searchParams.get('include_trashed') === '1'
           let all = readReservations(publicDir)
+          if (!includeTrashed) all = all.filter(r => !r.trashed)
           if (filterEmail) all = all.filter(r => r.client_email === filterEmail)
           all.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
           res.end(JSON.stringify(all))

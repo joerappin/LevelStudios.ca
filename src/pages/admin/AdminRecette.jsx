@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { useReservations } from '../../hooks/useReservations'
 import {
   Receipt, TrendingUp, ChevronLeft, ChevronRight,
   RotateCcw, Tag, BarChart2, Building2, CalendarDays,
@@ -75,14 +76,13 @@ export default function AdminRecette() {
   const { theme } = useApp()
   const isDark = theme === 'dark'
 
-  const [allRes, setAllRes] = useState([])
+  const { reservations: allRes } = useReservations({ interval: 60000 })
   const [trashedEmails, setTrashedEmails] = useState(new Set())
   const [period, setPeriod] = useState('year')  // day | week | month | year | all
   const [chartYear, setChartYear] = useState(new Date().getFullYear())
   const [chartMonth, setChartMonth] = useState(new Date().getMonth())
 
   useEffect(() => {
-    setAllRes(Store.getReservations())
     fetch('/api/accounts.php?trash=1')
       .then(r => r.json())
       .then(trashed => setTrashedEmails(new Set(trashed.map(a => a.email))))

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useReservations } from '../../hooks/useReservations'
 import { useNavigate } from 'react-router-dom'
 import {
   Bell, X, Search, ChevronLeft, ChevronRight,
@@ -41,7 +42,7 @@ export default function ClientDashboard() {
 
   const ARGENT_PACKS = buildArgentPacks()
 
-  const [reservations, setReservations] = useState([])
+  const { reservations, reload: reloadRes } = useReservations({ clientEmail: user?.email })
   const [packs, setPacks]               = useState([])
   const [popup, setPopup]               = useState(null)
   const [search, setSearch]             = useState('')
@@ -57,8 +58,6 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     if (!user) return
-    const resas = Store.getReservations().filter(r => r.client_email === user.email)
-    setReservations(resas)
     setPacks(Store.getHourPacks().filter(p => p.client_email === user.email && p.hours_used < p.hours_total))
     const popups = Store.getPopupMessages()
     if (popups.length > 0) setPopup(popups[0])
@@ -126,13 +125,13 @@ export default function ClientDashboard() {
 
   const handleCancel = (resa) => {
     Store.updateReservation(resa.id, { status: 'annulee' })
-    setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+    reloadRes()
     setCancelModal(null)
   }
 
   const handlePay = (resa) => {
     Store.updateReservation(resa.id, { status: 'validee', paid_at: new Date().toISOString() })
-    setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+    reloadRes()
   }
 
   const handleBuyPack = (pack) => {
@@ -158,7 +157,7 @@ export default function ClientDashboard() {
       duration, date: quickDate, start_time: quickTime, end_time: endTime,
       status: 'a_payer', options: lastReservation.options || {},
     })
-    setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+    reloadRes()
     setQuickModal(false); setQuickDate(''); setQuickTime('09:00')
   }
 

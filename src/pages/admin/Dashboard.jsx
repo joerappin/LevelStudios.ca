@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useReservations } from '../../hooks/useReservations'
 import { useNavigate } from 'react-router-dom'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
@@ -117,7 +118,7 @@ export default function AdminDashboard() {
   const isDark = theme === 'dark'
   const navigate = useNavigate()
   const [period, setPeriod] = useState('month')
-  const [allRes, setAllRes] = useState([])
+  const { reservations: allRes } = useReservations({ interval: 60000 })
   const [accounts, setAccounts] = useState([])
   const [checkIns, setCheckIns] = useState([])
   const [employees, setEmployees] = useState([])
@@ -133,7 +134,6 @@ export default function AdminDashboard() {
     : isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
 
   useEffect(() => {
-    setAllRes(Store.getReservations())
     setCheckIns(Store.getCheckIns())
     setEmployees(Store.getEmployees())
     // Load accounts from file API (source of truth) + trash in parallel

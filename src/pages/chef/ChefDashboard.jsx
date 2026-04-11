@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useReservations } from '../../hooks/useReservations'
 import { useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Calendar, ClipboardList, FolderOpen,
@@ -46,7 +47,7 @@ export default function ChefDashboard() {
   const isDark = theme === 'dark'
   const navigate = useNavigate()
   const [period, setPeriod] = useState('mois')
-  const [reservations, setReservations] = useState([])
+  const { reservations } = useReservations({ interval: 60000 })
   const [checkIns, setCheckIns] = useState([])
   const [alertCount, setAlertCount] = useState(0)
   const [trashedEmails, setTrashedEmails] = useState(new Set())
@@ -57,7 +58,6 @@ export default function ChefDashboard() {
   const divider = isDark ? 'border-zinc-800' : 'border-gray-100'
 
   useEffect(() => {
-    setReservations(Store.getReservations())
     setCheckIns(Store.getCheckIns())
     const unread = Store.getAlerts().filter(a => a.status === 'sent').length
     setAlertCount(unread)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Search, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import ClientLayout from '../../components/ClientLayout'
 import { Store } from '../../data/store'
@@ -6,6 +6,7 @@ import { formatDate, STATUS_CONFIG, getTierConfig } from '../../utils'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { translations } from '../../i18n/translations'
+import { useReservations } from '../../hooks/useReservations'
 
 
 const STUDIOS = ['Cambridge', 'Nook', 'Loft', 'Rooftop']
@@ -16,7 +17,7 @@ export default function ClientReservations() {
   const t = (k) => translations[lang]?.[k] || k
   const isDark = theme === 'dark'
 
-  const [reservations, setReservations] = useState([])
+  const { reservations, reload } = useReservations({ clientEmail: user?.email })
   const [search, setSearch] = useState('')
   const [studioFilter, setStudioFilter] = useState('')
   const [dateFilter, setDateFilter] = useState('')
@@ -24,20 +25,15 @@ export default function ClientReservations() {
   const [page, setPage] = useState(1)
   const PER_PAGE = 8
 
-  useEffect(() => {
-    if (!user) return
-    setReservations(Store.getReservations().filter(r => r.client_email === user.email))
-  }, [user])
-
   const handleCancel = (resa) => {
     Store.updateReservation(resa.id, { status: 'annulee' })
-    setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+    reload()
     setCancelModal(null)
   }
 
   const handlePay = (resa) => {
     Store.updateReservation(resa.id, { status: 'validee', paid_at: new Date().toISOString() })
-    setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+    reload()
   }
 
   const filtered = reservations.filter(r => {
@@ -157,9 +153,14 @@ export default function ClientReservations() {
                         {r.start_time} – {r.end_time}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${st.cls}`}>
-                          {lang === 'fr' ? st.label_fr : st.label_en}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${st.cls}`}>
+                            {lang === 'fr' ? st.label_fr : st.label_en}
+                          </span>
+                          {r.modified_by && r.modified_by !== user?.email && (
+                            <span className="text-[10px] text-orange-400 font-medium">Modifiée par l'équipe</span>
+                          )}
+                        </div>
                       </td>
                       <td className={`px-4 py-3 hidden md:table-cell ${textSecondary}`}>{r.duration}h</td>
                       <td className="px-4 py-3">

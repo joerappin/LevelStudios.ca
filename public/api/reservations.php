@@ -63,6 +63,10 @@ $body   = json_decode(file_get_contents('php://input'), true) ?: [];
 
 if ($method === 'GET') {
   $all = readAllReservations($root);
+  // Exclude soft-deleted by default; pass ?include_trashed=1 to include them
+  if (empty($_GET['include_trashed'])) {
+    $all = array_values(array_filter($all, fn($r) => empty($r['trashed'])));
+  }
   if (!empty($_GET['client_email'])) {
     $email = $_GET['client_email'];
     $all = array_values(array_filter($all, fn($r) => ($r['client_email'] ?? '') === $email));

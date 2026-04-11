@@ -120,7 +120,12 @@ export const Store = {
   updateReservation: (id, data) => {
     const items = getAll(KEYS.reservations)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.reservations, items) }
+    if (idx !== -1) {
+      // If caller provides modified_by, stamp the modification time automatically
+      const extra = data.modified_by && !data.modified_at ? { modified_at: new Date().toISOString() } : {}
+      items[idx] = { ...items[idx], ...data, ...extra }
+      saveAll(KEYS.reservations, items)
+    }
     const updated = items[idx]
     if (updated) fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }).catch(() => {})
     return updated
