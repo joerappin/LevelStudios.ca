@@ -256,7 +256,7 @@ export default function ChefDashboard() {
         <div className={cn('border rounded-2xl p-5', card)}>
           <h3 className={cn('font-semibold text-sm mb-4', textPrimary)}>Accès rapide</h3>
           <button
-            onClick={() => navigate('/reservation')}
+            onClick={() => navigate('/chef/reservations', { state: { openCreate: true } })}
             className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors"
           >
             <PlusCircle className="w-4 h-4" />

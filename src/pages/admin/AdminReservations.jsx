@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX, RotateCcw, Pencil } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -56,6 +57,7 @@ function calcEndTime(start, dur) {
 export default function AdminReservations() {
   const { theme } = useApp()
   const { user } = useAuth()
+  const location = useLocation()
   const isDark = theme === 'dark'
   const { reservations, reload } = useReservations({ includeTrash: true })
   const [search, setSearch] = useState('')
@@ -67,6 +69,17 @@ export default function AdminReservations() {
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(null)
+  const [clients, setClients] = useState([])
+  const [clientSearch, setClientSearch] = useState('')
+
+  useEffect(() => {
+    setClients(Store.getAccounts().filter(a => a.type === 'client' && !a.trashed))
+  }, [])
+
+  // Auto-open create modal when navigated with state { openCreate: true }
+  useEffect(() => {
+    if (location.state?.openCreate) setShowCreate(true)
+  }, [location.state])
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const inputCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 focus:ring-violet-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-violet-500'
@@ -90,6 +103,26 @@ export default function AdminReservations() {
   const basePrice = serviceRate * Number(form.duration)
   const optionsPrice = form.options.reduce((sum, key) => sum + (OPTIONS_LIST.find(o => o.key === key)?.price || 0), 0)
   const total = basePrice + optionsPrice
+
+  const filteredClients = clientSearch.trim()
+    ? clients.filter(c =>
+        (c.name || '').toLowerCase().includes(clientSearch.toLowerCase()) ||
+        (c.email || '').toLowerCase().includes(clientSearch.toLowerCase())
+      )
+    : []
+
+  const pickClient = (client) => {
+    const parts = (client.name || '').trim().split(' ')
+    const firstName = parts[0] || ''
+    const lastName = parts.slice(1).join(' ') || ''
+    const clientRes = reservations
+      .filter(r => r.client_email === client.email && r.status !== 'annulee' && !r.trashed)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+    const prefStudio = clientRes[0]?.studio || 'Studio A'
+    const prefService = clientRes[0]?.service || 'ARGENT'
+    setForm(f => ({ ...f, firstName, lastName, email: client.email || '', phone: client.phone || '', company: client.company || '', studio: prefStudio, service: prefService }))
+    setClientSearch('')
+  }
 
   const refresh = reload
 
@@ -469,6 +502,30 @@ export default function AdminReservations() {
                     {/* Section 1: Client info */}
                     <div className={cn('border rounded-2xl p-6', card)}>
                       <SectionHeader icon={<User size={16} />} title="Informations client" />
+                      {/* Client picker */}
+                      <div className="mb-4 relative">
+                        <label className={cn('block text-xs font-medium mb-1.5', textPrimary)}>Client existant</label>
+                        <div className="relative">
+                          <Search className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
+                          <input
+                            value={clientSearch}
+                            onChange={e => setClientSearch(e.target.value)}
+                            placeholder="Rechercher un client..."
+                            className={cn('w-full pl-8 pr-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-colors', inputCls)}
+                          />
+                        </div>
+                        {filteredClients.length > 0 && (
+                          <div className={cn('absolute z-10 mt-1 w-full rounded-xl border overflow-hidden max-h-44 overflow-y-auto shadow-lg', isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200')}>
+                            {filteredClients.map(c => (
+                              <button key={c.id} type="button" onClick={() => pickClient(c)}
+                                className={cn('w-full text-left px-3 py-2.5 text-sm transition-colors border-b last:border-0', isDark ? 'hover:bg-zinc-700 border-zinc-700' : 'hover:bg-gray-50 border-gray-100')}>
+                                <div className={cn('font-medium', textPrimary)}>{c.name}</div>
+                                <div className={cn('text-xs', textSecondary)}>{c.email}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <Field label="Prénom *" error={errors.firstName}>
                           <Input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="Jean" />
