@@ -129,17 +129,26 @@ export const Store = {
     const updated = items[idx]
     if (updated) fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }).catch(() => {})
 
-    // Sync linked project card if scheduling/service changed
+    // Sync linked project card on status or schedule/service change
     const scheduleFields = ['date', 'start_time', 'end_time', 'service', 'studio', 'client_name']
     const hasScheduleChange = scheduleFields.some(f => f in data)
-    if (hasScheduleChange && updated) {
+    const hasStatusChange = 'status' in data
+
+    if ((hasScheduleChange || hasStatusChange) && updated) {
       const projects = getAll(KEYS.projects)
       const pIdx = projects.findIndex(p => p.reservation_id === id)
       if (pIdx !== -1) {
-        const today = new Date().toISOString().split('T')[0]
-        const newStatus = (projects[pIdx].status === 'Booking' || projects[pIdx].status === 'Todo')
-          ? (updated.date === today ? 'Todo' : 'Booking')
-          : projects[pIdx].status
+        // Determine new project column
+        let newStatus = projects[pIdx].status
+        if (updated.status === 'annulee') {
+          newStatus = 'Annulé'
+        } else if (updated.status === 'absent') {
+          newStatus = 'Absent'
+        } else if (hasScheduleChange && (projects[pIdx].status === 'Booking' || projects[pIdx].status === 'Todo')) {
+          const today = new Date().toISOString().split('T')[0]
+          newStatus = updated.date === today ? 'Todo' : 'Booking'
+        }
+
         projects[pIdx] = {
           ...projects[pIdx],
           title: `${updated.client_name || projects[pIdx].client_name} — ${updated.studio || projects[pIdx].studio}`,
