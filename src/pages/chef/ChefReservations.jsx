@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings } from 'lucide-react'
+import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Pencil } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { CHEF_NAV } from './ChefDashboard'
 import { Store } from '../../data/store'
@@ -7,6 +7,7 @@ import { formatPrice, cn, STATUS_CONFIG, getTierConfig } from '../../utils'
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useReservations } from '../../hooks/useReservations'
+import ReservationEditModal from '../../components/ReservationEditModal'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee']
 const STATUS_MAP = STATUS_CONFIG
@@ -60,6 +61,7 @@ export default function ChefReservations() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [selected, setSelected] = useState(null)
+  const [editingRes, setEditingRes] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
@@ -102,6 +104,12 @@ export default function ChefReservations() {
     Store.updateReservation(id, { status, modified_by: user?.email || 'chef' })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
+  }
+
+  const handleEditSave = (id, patch) => {
+    Store.updateReservation(id, { ...patch, modified_by: user?.email || 'chef' })
+    refresh()
+    if (selected?.id === id) setSelected(s => ({ ...s, ...patch }))
   }
 
   function validate() {
@@ -230,6 +238,7 @@ export default function ChefReservations() {
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1.5">
                         <button onClick={() => setSelected(r)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}><Eye className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setEditingRes(r)} title="Modifier" className="p-1.5 bg-violet-500/20 hover:bg-violet-500/30 rounded-lg text-violet-400 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                         {r.status === 'en_attente' && (
                           <button onClick={() => updateStatus(r.id, 'validee')} className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
                         )}
@@ -294,6 +303,16 @@ export default function ChefReservations() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit reservation modal */}
+      {editingRes && (
+        <ReservationEditModal
+          reservation={editingRes}
+          modifiedBy={user?.email || 'chef'}
+          onSave={handleEditSave}
+          onClose={() => setEditingRes(null)}
+        />
       )}
 
       {/* Create reservation modal */}

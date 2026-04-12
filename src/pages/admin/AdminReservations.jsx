@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX, RotateCcw } from 'lucide-react'
+import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX, RotateCcw, Pencil } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -7,6 +7,7 @@ import { formatPrice, cn, STATUS_CONFIG, getTierConfig } from '../../utils'
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useReservations } from '../../hooks/useReservations'
+import ReservationEditModal from '../../components/ReservationEditModal'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse', 'absent']
 const STATUS_MAP = STATUS_CONFIG
@@ -61,6 +62,7 @@ export default function AdminReservations() {
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [view, setView] = useState('list') // 'list' | 'corbeille'
   const [selected, setSelected] = useState(null)
+  const [editingRes, setEditingRes] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
@@ -136,6 +138,12 @@ export default function AdminReservations() {
     if (!confirm(`Vider la corbeille (${n} réservation${n > 1 ? 's' : ''}) ? Cette action est irréversible.`)) return
     trashedReservations.forEach(r => Store.deleteReservation(r.id))
     refresh()
+  }
+
+  const handleEditSave = (id, patch) => {
+    Store.updateReservation(id, { ...patch, modified_by: user?.email || 'admin' })
+    refresh()
+    if (selected?.id === id) setSelected(s => ({ ...s, ...patch }))
   }
 
   function validate() {
@@ -321,6 +329,7 @@ export default function AdminReservations() {
                         ) : (
                           <>
                             <button onClick={() => setSelected(r)} title="Voir le détail" className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}><Eye className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => setEditingRes(r)} title="Modifier" className="p-1.5 bg-violet-500/20 hover:bg-violet-500/30 rounded-lg text-violet-400 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                             {r.status === 'en_attente' && (
                               <button onClick={() => updateStatus(r.id, 'validee')} title="Valider" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
                             )}
@@ -406,6 +415,16 @@ export default function AdminReservations() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit reservation modal */}
+      {editingRes && (
+        <ReservationEditModal
+          reservation={editingRes}
+          modifiedBy={user?.email || 'admin'}
+          onSave={handleEditSave}
+          onClose={() => setEditingRes(null)}
+        />
       )}
 
       {/* Create reservation modal — same form as ChefManual */}

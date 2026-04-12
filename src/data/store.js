@@ -128,6 +128,32 @@ export const Store = {
     }
     const updated = items[idx]
     if (updated) fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }).catch(() => {})
+
+    // Sync linked project card if scheduling/service changed
+    const scheduleFields = ['date', 'start_time', 'end_time', 'service', 'studio', 'client_name']
+    const hasScheduleChange = scheduleFields.some(f => f in data)
+    if (hasScheduleChange && updated) {
+      const projects = getAll(KEYS.projects)
+      const pIdx = projects.findIndex(p => p.reservation_id === id)
+      if (pIdx !== -1) {
+        const today = new Date().toISOString().split('T')[0]
+        const newStatus = (projects[pIdx].status === 'Booking' || projects[pIdx].status === 'Todo')
+          ? (updated.date === today ? 'Todo' : 'Booking')
+          : projects[pIdx].status
+        projects[pIdx] = {
+          ...projects[pIdx],
+          title: `${updated.client_name || projects[pIdx].client_name} — ${updated.studio || projects[pIdx].studio}`,
+          date: updated.date ?? projects[pIdx].date,
+          start_time: updated.start_time ?? projects[pIdx].start_time,
+          end_time: updated.end_time ?? projects[pIdx].end_time,
+          service: updated.service ?? projects[pIdx].service,
+          studio: updated.studio ?? projects[pIdx].studio,
+          status: newStatus,
+        }
+        saveAll(KEYS.projects, projects)
+      }
+    }
+
     return updated
   },
   deleteReservation: (id) => {

@@ -6,6 +6,7 @@ import { Store } from '../../data/store'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { cn } from '../../utils'
+import { useReservations } from '../../hooks/useReservations'
 
 const ALERT_TYPES = [
   { key: 'Retard',  label: 'Retard',  icon: Clock,          cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
@@ -21,8 +22,8 @@ export default function AdminAlerts() {
   const { user } = useAuth()
   const { theme } = useApp()
   const isDark = theme === 'dark'
+  const { reservations } = useReservations({ interval: 60000 })
   const [employees, setEmployees] = useState([])
-  const [reservations, setReservations] = useState([])
   const [alerts, setAlerts] = useState([])
   const [selectedRecipients, setSelectedRecipients] = useState([])
   const [alertType, setAlertType] = useState('Urgent')
@@ -39,7 +40,6 @@ export default function AdminAlerts() {
 
   useEffect(() => {
     setEmployees(Store.getEmployees())
-    setReservations(Store.getReservations().sort((a, b) => new Date(b.date) - new Date(a.date)))
     setAlerts(Store.getAlerts())
   }, [])
 
@@ -169,7 +169,7 @@ export default function AdminAlerts() {
                   className={cn('w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-colors', inputClass)}
                 >
                   <option value="">— Aucun tournage spécifique</option>
-                  {reservations.map(r => (
+                  {[...reservations].sort((a, b) => new Date(b.date) - new Date(a.date)).map(r => (
                     <option key={r.id} value={r.id}>{reservationLabel(r)}</option>
                   ))}
                 </select>

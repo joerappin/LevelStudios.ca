@@ -11,6 +11,7 @@ import { Store } from '../data/store'
 import { useApp } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import VideoReviewModal from './VideoReviewModal'
+import { useReservations } from '../hooks/useReservations'
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B'
@@ -311,6 +312,7 @@ export default function RushesPanel({ navItems, title, userEmail }) {
   const rowHover = isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-gray-50'
   const divider = isDark ? 'border-zinc-800' : 'border-gray-100'
 
+  const { reservations: allReservations } = useReservations({ interval: 60000 })
   const [reservations, setReservations] = useState([])
   const [folders, setFolders] = useState({})
   const [selected, setSelected] = useState(null)
@@ -385,12 +387,11 @@ export default function RushesPanel({ navItems, title, userEmail }) {
   }
 
   useEffect(() => {
-    const allRes = Store.getReservations()
-    let filtered = allRes
+    let filtered = allReservations
     if (userEmail) {
       const projects = Store.getProjects().filter(p => p.assigned_to === userEmail)
       const assignedEmails = projects.map(p => p.client_email).filter(Boolean)
-      if (assignedEmails.length > 0) filtered = allRes.filter(r => assignedEmails.includes(r.client_email))
+      if (assignedEmails.length > 0) filtered = allReservations.filter(r => assignedEmails.includes(r.client_email))
     }
     setReservations(filtered)
     const syncList = filtered.map(r => ({ email: r.client_email, resId: r.id }))
@@ -399,7 +400,7 @@ export default function RushesPanel({ navItems, title, userEmail }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(syncList),
     }).then(() => fetchFolders(filtered)).catch(() => fetchFolders(filtered))
-  }, [userEmail])
+  }, [userEmail, allReservations])
 
   // Auto-open VideoReviewModal when navigated from a Retour alert
   useEffect(() => {
