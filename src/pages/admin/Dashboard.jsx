@@ -437,14 +437,9 @@ export default function AdminDashboard() {
                   >
                     <div className={`text-[10px] font-medium mb-1 ${isToday ? 'text-violet-200' : textSecondary}`}>{d}</div>
                     <div className={`text-sm font-bold ${isToday ? 'text-white' : textPrimary}`}>{date.getDate()}</div>
-                    {dayRes.length > 0 && (
-                      <div className="flex justify-center gap-0.5 mt-1 flex-wrap">
-                        {dayRes.slice(0, 3).map((_, j) => (
-                          <div key={j} className={`w-1.5 h-1.5 rounded-full ${isToday ? 'bg-violet-300' : 'bg-violet-500'}`} />
-                        ))}
-                        {dayRes.length > 3 && <div className={`text-[8px] font-bold ${isToday ? 'text-violet-200' : 'text-violet-400'}`}>+{dayRes.length - 3}</div>}
-                      </div>
-                    )}
+                    <div className={`mt-1 text-[10px] font-bold px-1 rounded-full ${isToday ? 'bg-white/20 text-white' : dayRes.length > 0 ? 'bg-violet-500/20 text-violet-400' : isDark ? 'text-zinc-600' : 'text-gray-300'}`}>
+                      {dayRes.length}
+                    </div>
                   </div>
                 )
               })}

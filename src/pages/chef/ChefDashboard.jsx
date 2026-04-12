@@ -243,11 +243,9 @@ export default function ChefDashboard() {
                 <div key={i} className={cn('rounded-xl p-2 text-center', isToday ? 'bg-violet-600' : isDark ? 'bg-zinc-800' : 'bg-gray-100')}>
                   <div className={cn('text-[10px] font-medium mb-1', isToday ? 'text-white/70' : textSecondary)}>{DAY_LABELS[i]}</div>
                   <div className={cn('text-sm font-bold', isToday ? 'text-white' : textPrimary)}>{day.getDate()}</div>
-                  {dayRes.length > 0 && (
-                    <div className={cn('mt-1 text-[10px] font-bold px-1 rounded-full', isToday ? 'bg-white/20 text-white' : 'bg-violet-500/20 text-violet-400')}>
-                      {dayRes.length}
-                    </div>
-                  )}
+                  <div className={cn('mt-1 text-[10px] font-bold px-1 rounded-full', isToday ? 'bg-white/20 text-white' : dayRes.length > 0 ? 'bg-violet-500/20 text-violet-400' : isDark ? 'text-zinc-600' : 'text-gray-300')}>
+                    {dayRes.length}
+                  </div>
                 </div>
               )
             })}
