@@ -346,8 +346,7 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
             </div>
 
             {/* Ref footer */}
-            <div className={cn('px-4 py-2.5 border-t flex-shrink-0 flex items-center justify-between', divider)}>
-              <p className={cn('text-[11px] font-mono', ts)}>#{selected.id}</p>
+            <div className={cn('px-4 py-2.5 border-t flex-shrink-0 flex items-center gap-2', divider)}>
               {onDelete && (
                 <button
                   onClick={() => {
@@ -362,6 +361,7 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
                   <Trash2 size={14} />
                 </button>
               )}
+              <p className={cn('text-[11px] font-mono', ts)}>#{selected.id}</p>
             </div>
           </>
         ) : (
