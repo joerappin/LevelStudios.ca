@@ -1,7 +1,40 @@
 import React, { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, X, Phone, Mail, Building2, Users, Clock, CalendarDays, Tag, Banknote, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, Phone, Mail, Building2, Users, Clock, CalendarDays, Tag, Banknote, Trash2, Pencil, Check } from 'lucide-react'
 import { useApp } from '../contexts/AppContext'
-import { cn } from '../utils'
+import { cn, STATUS_CONFIG } from '../utils'
+import { Store } from '../data/store'
+
+const TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
+const DURATIONS = [1,2,3,4,5,6,8,10]
+
+function calcEndTime(start, dur) {
+  const [h, m] = start.split(':').map(Number)
+  const total = h * 60 + m + dur * 60
+  return `${String(Math.floor(total / 60) % 24).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`
+}
+
+function buildOptions() {
+  const p = Store.getPrices()
+  const priceOf = (id, fb) => p.options.find(o => o.id === id)?.price ?? fb
+  return [
+    { key: 'Photo',     label: 'Photo',            price: priceOf('Photo', 44) },
+    { key: 'Short',     label: 'Short vidéo',       price: priceOf('Short', 44) },
+    { key: 'Miniature', label: 'Miniature',         price: priceOf('Miniature', 44) },
+    { key: 'Live',      label: 'Live stream',       price: priceOf('Live', 662) },
+    { key: 'Replay',    label: 'Replay',            price: priceOf('Replay', 74) },
+    { key: 'CM',        label: 'Community manager', price: priceOf('CommunityManager', 147) },
+    { key: 'Coaching',  label: 'Coaching',          price: priceOf('Coaching', 588) },
+  ]
+}
+
+function buildServices() {
+  const p = Store.getPrices()
+  const priceOf = (id, fb) => p.services.find(s => s.id === id)?.price ?? fb
+  return [
+    { key: 'ARGENT', label: `ARGENT — ${priceOf('ARGENT', 221)} CAD/h`, rate: priceOf('ARGENT', 221) },
+    { key: 'GOLD',   label: `GOLD — ${priceOf('GOLD', 587)} CAD/h`,     rate: priceOf('GOLD', 587) },
+  ]
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
@@ -53,7 +86,7 @@ function useStudioColors(studios) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function StudioCalendar({ reservations = [], showClientDetails = true, onDelete }) {
+export default function StudioCalendar({ reservations = [], showClientDetails = true, onDelete, onUpdate }) {
   const { theme } = useApp()
   const isDark = theme === 'dark'
 
@@ -63,7 +96,9 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
   const [year,    setYear]    = useState(now.getFullYear())
   const [month,   setMonth]   = useState(now.getMonth())
   const [filter,  setFilter]  = useState('Tous')
-  const [selected, setSelected] = useState(null) // reservation object
+  const [selected, setSelected] = useState(null)
+  const [editing,  setEditing]  = useState(false)
+  const [editForm, setEditForm] = useState({})
 
   // Derive studio list from reservations
   const studios = useMemo(() => {
@@ -280,10 +315,7 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: selectedCol?.bg }}
-                    />
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: selectedCol?.bg }} />
                     <span className="text-xs font-bold" style={{ color: selectedCol?.text }}>{selected.studio}</span>
                   </div>
                   {showClientDetails && (
@@ -293,16 +325,134 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
                     {selectedSt?.label || selected.status}
                   </span>
                 </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  className={cn('p-1 rounded-lg flex-shrink-0 transition-colors mt-0.5', isDark ? 'text-zinc-500 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200')}
-                >
-                  <X size={15} />
-                </button>
+                <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                  {onUpdate && !editing && (
+                    <button
+                      onClick={() => {
+                        setEditForm({
+                          date:       selected.date       || '',
+                          startTime:  selected.start_time || '10:00',
+                          duration:   selected.duration   || 2,
+                          service:    selected.service    || 'ARGENT',
+                          persons:    selected.persons    || 1,
+                          options:    selected.additional_services || [],
+                        })
+                        setEditing(true)
+                      }}
+                      title="Modifier"
+                      className={cn('p-1 rounded-lg transition-colors', isDark ? 'text-zinc-400 hover:text-violet-400 hover:bg-violet-500/10' : 'text-gray-400 hover:text-violet-600 hover:bg-violet-50')}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setSelected(null); setEditing(false) }}
+                    className={cn('p-1 rounded-lg transition-colors', isDark ? 'text-zinc-500 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200')}
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Info rows */}
+            {/* ── Edit form ── */}
+            {editing ? (() => {
+              const SERVICES = buildServices()
+              const OPTIONS  = buildOptions()
+              const ef = editForm
+              const set = (k, v) => setEditForm(f => ({ ...f, [k]: v }))
+              const toggleOpt = key => set('options', ef.options.includes(key) ? ef.options.filter(o => o !== key) : [...ef.options, key])
+              const inputCls = cn('w-full px-2.5 py-1.5 text-xs rounded-lg border focus:outline-none focus:ring-1 focus:ring-violet-500',
+                isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-gray-300 text-gray-900')
+              const labelCls = cn('block text-[11px] font-semibold uppercase tracking-wide mb-1', ts)
+
+              const handleSave = () => {
+                const endTime = calcEndTime(ef.startTime, Number(ef.duration))
+                const svc = SERVICES.find(s => s.key === ef.service)
+                const optPrice = ef.options.reduce((s, k) => s + (OPTIONS.find(o => o.key === k)?.price || 0), 0)
+                const price = (svc?.rate || 221) * Number(ef.duration) + optPrice
+                const patch = {
+                  date: ef.date,
+                  start_time: ef.startTime,
+                  end_time: endTime,
+                  duration: Number(ef.duration),
+                  service: ef.service,
+                  persons: Number(ef.persons),
+                  additional_services: ef.options,
+                  price,
+                }
+                onUpdate(selected.id, patch)
+                setSelected(s => ({ ...s, ...patch }))
+                setEditing(false)
+              }
+
+              return (
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div>
+                    <label className={labelCls}>Date</label>
+                    <input type="date" value={ef.date} onChange={e => set('date', e.target.value)} className={inputCls} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className={labelCls}>Heure début</label>
+                      <select value={ef.startTime} onChange={e => set('startTime', e.target.value)} className={inputCls}>
+                        {TIMES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>Durée</label>
+                      <select value={ef.duration} onChange={e => set('duration', Number(e.target.value))} className={inputCls}>
+                        {DURATIONS.map(d => <option key={d} value={d}>{d}h</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Personnes</label>
+                    <input type="number" min={1} max={20} value={ef.persons} onChange={e => set('persons', e.target.value)} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Formule</label>
+                    <div className="flex gap-2">
+                      {SERVICES.map(s => (
+                        <button key={s.key} type="button" onClick={() => set('service', s.key)}
+                          className={cn('flex-1 py-1.5 text-[11px] font-bold rounded-lg border transition-all',
+                            ef.service === s.key
+                              ? 'bg-violet-600 border-violet-600 text-white'
+                              : isDark ? 'border-zinc-700 text-zinc-400 hover:border-violet-500' : 'border-gray-300 text-gray-600 hover:border-violet-400'
+                          )}>
+                          {s.key}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Options</label>
+                    <div className="space-y-1">
+                      {OPTIONS.map(opt => (
+                        <label key={opt.key} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={ef.options.includes(opt.key)} onChange={() => toggleOpt(opt.key)}
+                            className="w-3.5 h-3.5 accent-violet-600" />
+                          <span className={cn('text-xs flex-1', tp)}>{opt.label}</span>
+                          <span className={cn('text-[11px]', ts)}>{opt.price} CAD</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={handleSave}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2 rounded-lg transition-colors">
+                      <Check size={13} /> Enregistrer
+                    </button>
+                    <button onClick={() => setEditing(false)}
+                      className={cn('flex-1 text-xs font-medium py-2 rounded-lg border transition-colors',
+                        isDark ? 'border-zinc-700 text-zinc-400 hover:bg-zinc-800' : 'border-gray-200 text-gray-500 hover:bg-gray-50')}>
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )
+            })() : (
+            /* ── View mode ── */
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {[
                 { icon: CalendarDays, label: 'Date',       value: selected.date },
@@ -325,7 +475,6 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
                   </div>
                 </div>
               ))}
-
               {selected.additional_services?.length > 0 && (
                 <div className="flex items-start gap-3">
                   <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0', isDark ? 'bg-zinc-800' : 'bg-gray-100')}>
@@ -335,20 +484,19 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
                     <p className={cn('text-[11px] font-semibold uppercase tracking-wide', ts)}>Options</p>
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {selected.additional_services.map(s => (
-                        <span key={s} className={cn('text-[11px] px-2 py-0.5 rounded-full', isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-gray-100 text-gray-600')}>
-                          {s}
-                        </span>
+                        <span key={s} className={cn('text-[11px] px-2 py-0.5 rounded-full', isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-gray-100 text-gray-600')}>{s}</span>
                       ))}
                     </div>
                   </div>
                 </div>
               )}
             </div>
+            )}
 
             {/* Ref footer */}
             <div className={cn('px-4 py-2.5 border-t flex-shrink-0 flex items-center gap-2', divider)}>
               <p className={cn('text-[11px] font-mono', ts)}>#{selected.id}</p>
-              {onDelete && (
+              {onDelete && !editing && (
                 <button
                   onClick={() => {
                     if (confirm('Mettre cette réservation à la corbeille ?')) {
