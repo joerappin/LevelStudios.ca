@@ -3,12 +3,19 @@ import Layout from '../../components/Layout'
 import { CHEF_NAV } from './ChefDashboard'
 import { Store } from '../../data/store'
 import StudioCalendar from '../../components/StudioCalendar'
+import { useReservations } from '../../hooks/useReservations'
 
 export default function ChefCalendar() {
-  const reservations = Store.getReservations()
+  const { reservations, reload } = useReservations()
+
+  const handleDelete = (id) => {
+    Store.updateReservation(id, { trashed: true })
+    reload()
+  }
+
   return (
     <Layout navItems={CHEF_NAV} title="Calendrier">
-      <StudioCalendar reservations={reservations} showClientDetails={true} />
+      <StudioCalendar reservations={reservations} showClientDetails={true} onDelete={handleDelete} />
     </Layout>
   )
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, X, Phone, Mail, Building2, Users, Clock, CalendarDays, Tag, Banknote } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, Phone, Mail, Building2, Users, Clock, CalendarDays, Tag, Banknote, Trash2 } from 'lucide-react'
 import { useApp } from '../contexts/AppContext'
 import { cn } from '../utils'
 
@@ -53,7 +53,7 @@ function useStudioColors(studios) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function StudioCalendar({ reservations = [], showClientDetails = true }) {
+export default function StudioCalendar({ reservations = [], showClientDetails = true, onDelete }) {
   const { theme } = useApp()
   const isDark = theme === 'dark'
 
@@ -346,8 +346,22 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
             </div>
 
             {/* Ref footer */}
-            <div className={cn('px-4 py-2.5 border-t flex-shrink-0', divider)}>
+            <div className={cn('px-4 py-2.5 border-t flex-shrink-0 flex items-center justify-between', divider)}>
               <p className={cn('text-[11px] font-mono', ts)}>#{selected.id}</p>
+              {onDelete && (
+                <button
+                  onClick={() => {
+                    if (confirm('Mettre cette réservation à la corbeille ?')) {
+                      onDelete(selected.id)
+                      setSelected(null)
+                    }
+                  }}
+                  title="Mettre à la corbeille"
+                  className={cn('p-1.5 rounded-lg transition-colors', isDark ? 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50')}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           </>
         ) : (
