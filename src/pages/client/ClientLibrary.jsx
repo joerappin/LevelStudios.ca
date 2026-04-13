@@ -209,18 +209,27 @@ export default function ClientLibrary() {
 
   useEffect(() => {
     if (!user) return
-    const allRes = Store.getReservations().filter(r => r.client_email === user.email)
-    setReservations(allRes)
     fetch(`/api/list-sessions.php?email=${encodeURIComponent(user.email)}`)
       .then(r => r.json())
       .then(data => {
+        const sessions = data.sessions || []
         const map = { [user.email]: {} }
-        for (const session of (data.sessions || [])) {
+        for (const session of sessions) {
           map[user.email][session.id] = session.files.map(f => ({ name: f.name, url: f.url }))
         }
         setFolders(map)
+
+        // Only show reservations that have a physical folder in the client's directory
+        const folderIds = new Set(sessions.map(s => String(s.id)))
+        const allRes = Store.getReservations().filter(r =>
+          r.client_email === user.email && folderIds.has(String(r.id))
+        )
+        setReservations(allRes)
       })
-      .catch(() => {})
+      .catch(() => {
+        // Fallback: show all client reservations if API unavailable
+        setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+      })
   }, [user])
 
   // Load fileSettings when selected changes

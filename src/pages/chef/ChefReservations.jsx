@@ -246,6 +246,7 @@ export default function ChefReservations() {
                   <th className="text-left text-xs font-semibold px-5 py-3 hidden md:table-cell">Date</th>
                   <th className="text-left text-xs font-semibold px-5 py-3 hidden lg:table-cell">Montant</th>
                   <th className="text-left text-xs font-semibold px-5 py-3">Statut</th>
+                  <th className="text-left text-xs font-semibold px-5 py-3 hidden xl:table-cell">Source</th>
                   <th className="text-left text-xs font-semibold px-5 py-3">Actions</th>
                 </tr>
               </thead>
@@ -266,6 +267,12 @@ export default function ChefReservations() {
                       <span className={`text-xs px-2 py-1 rounded-md font-medium ${STATUS_MAP[r.status]?.cls || (isDark ? 'bg-zinc-700 text-zinc-300' : 'bg-gray-100 text-gray-600')}`}>
                         {STATUS_MAP[r.status]?.label_fr || r.status}
                       </span>
+                    </td>
+                    <td className="px-5 py-3.5 hidden xl:table-cell">
+                      {r.manual
+                        ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400">Équipe</span>
+                        : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">Client</span>
+                      }
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1.5">

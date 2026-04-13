@@ -30,11 +30,17 @@ export function useReservations({ clientEmail, includeTrash = false, interval = 
       if (!res.ok) throw new Error('api-error')
       const data = await res.json()
 
-      // Refresh the full localStorage cache so other pages benefit too
-      // (only when fetching everything, not a per-client subset)
+      // File system is source of truth — purge localStorage of any reservation
+      // not returned by the API (deleted files, trashed reservations, orphans)
       if (!clientEmail) {
-        const full = includeTrash ? data : [...data, ...Store.getAllReservations().filter(r => r.trashed)]
-        localStorage.setItem('ls_reservations', JSON.stringify(full))
+        // Build set of IDs present in file system
+        const fileIds = new Set(data.map(r => String(r.id)))
+        // Keep only trashed entries (soft-deleted, still in LS) + file-backed entries
+        const cached = Store.getAllReservations()
+        const synced = cached.filter(r => fileIds.has(String(r.id)) || r.trashed)
+        // Merge: use file-system data as authoritative, keep trashed from LS
+        const trashedOnly = synced.filter(r => r.trashed && !fileIds.has(String(r.id)))
+        localStorage.setItem('ls_reservations', JSON.stringify([...data, ...trashedOnly]))
       }
 
       setReservations(data)
