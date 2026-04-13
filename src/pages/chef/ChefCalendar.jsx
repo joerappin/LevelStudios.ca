@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { CHEF_NAV } from './ChefDashboard'
 import { Store } from '../../data/store'
@@ -9,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext'
 export default function ChefCalendar() {
   const { user } = useAuth()
   const { reservations, reload } = useReservations()
+  const navigate = useNavigate()
 
   const handleDelete = (id) => {
     Store.updateReservation(id, { trashed: true })
@@ -27,6 +29,7 @@ export default function ChefCalendar() {
         showClientDetails={true}
         onDelete={handleDelete}
         onUpdate={handleUpdate}
+        onDayDoubleClick={(date) => navigate('/chef/reservations', { state: { openCreate: true, date } })}
       />
     </Layout>
   )

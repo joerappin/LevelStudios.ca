@@ -86,7 +86,7 @@ function useStudioColors(studios) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function StudioCalendar({ reservations = [], showClientDetails = true, onDelete, onUpdate }) {
+export default function StudioCalendar({ reservations = [], showClientDetails = true, onDelete, onUpdate, onDayDoubleClick }) {
   const { theme } = useApp()
   const isDark = theme === 'dark'
 
@@ -224,12 +224,14 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
                 return (
                   <div
                     key={ci}
+                    onDoubleClick={() => cell && ds && onDayDoubleClick?.(ds)}
                     className={cn(
                       'p-1.5 border-r border-b transition-colors',
                       divider,
                       !cell ? cellOff : cellBase,
                       isLastRow ? 'border-b-0' : '',
                       ci === 6 ? 'border-r-0' : '',
+                      cell && onDayDoubleClick ? 'cursor-pointer' : '',
                     )}
                   >
                     {cell && (

@@ -9,6 +9,7 @@ import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useReservations } from '../../hooks/useReservations'
 import ReservationEditModal from '../../components/ReservationEditModal'
+import DatePicker from '../../components/DatePicker'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee']
 const STATUS_MAP = STATUS_CONFIG
@@ -76,7 +77,10 @@ export default function ChefReservations() {
   }, [])
 
   useEffect(() => {
-    if (location.state?.openCreate) setShowCreate(true)
+    if (location.state?.openCreate) {
+      if (location.state.date) setForm(f => ({ ...f, date: location.state.date }))
+      setShowCreate(true)
+    }
   }, [location.state])
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
@@ -442,7 +446,10 @@ export default function ChefReservations() {
                           <Select value={form.studio} onChange={e => set('studio', e.target.value)} options={STUDIOS} />
                         </Field>
                         <Field label="Date *" error={errors.date}>
-                          <Input type="date" value={form.date} onChange={e => set('date', e.target.value)} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
+                          <div className="flex gap-2">
+                            <Input type="date" value={form.date} onChange={e => set('date', e.target.value)} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
+                            <DatePicker value={form.date} onChange={v => set('date', v)} isDark={isDark} />
+                          </div>
                         </Field>
                         <Field label="Heure de début">
                           <Select value={form.startTime} onChange={e => set('startTime', e.target.value)} options={TIMES} />
