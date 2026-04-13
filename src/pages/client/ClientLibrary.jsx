@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { getTierConfig } from '../../utils'
 import VideoReviewModal from '../../components/VideoReviewModal'
+import { useReservations } from '../../hooks/useReservations'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatBytes(bytes) {
@@ -199,14 +200,21 @@ export default function ClientLibrary() {
   const divider = isDark ? 'border-zinc-800' : 'border-gray-100'
   const rowHover = isDark ? 'hover:bg-zinc-800/60' : 'hover:bg-gray-50'
 
-  const [reservations, setReservations] = useState([])
+  const { reservations: allLiveRes } = useReservations({ clientEmail: user?.email })
+  const [folderIds, setFolderIds] = useState(new Set())
   const [folders, setFolders] = useState({})
   const [selected, setSelected] = useState(null)
+
+  // Cross-reference live reservations with physical folders
+  const reservations = folderIds.size > 0
+    ? allLiveRes.filter(r => folderIds.has(String(r.id)))
+    : allLiveRes
   const [search, setSearch] = useState('')
   const [preview, setPreview] = useState(null)
   const [videoReview, setVideoReview] = useState(null)
   const [fileSettings, setFileSettings] = useState({})
 
+  // Fetch physical folder structure (determines which sessions have files)
   useEffect(() => {
     if (!user) return
     fetch(`/api/list-sessions.php?email=${encodeURIComponent(user.email)}`)
@@ -218,19 +226,17 @@ export default function ClientLibrary() {
           map[user.email][session.id] = session.files.map(f => ({ name: f.name, url: f.url }))
         }
         setFolders(map)
-
-        // Only show reservations that have a physical folder in the client's directory
-        const folderIds = new Set(sessions.map(s => String(s.id)))
-        const allRes = Store.getReservations().filter(r =>
-          r.client_email === user.email && folderIds.has(String(r.id))
-        )
-        setReservations(allRes)
+        setFolderIds(new Set(sessions.map(s => String(s.id))))
       })
-      .catch(() => {
-        // Fallback: show all client reservations if API unavailable
-        setReservations(Store.getReservations().filter(r => r.client_email === user.email))
-      })
+      .catch(() => {})
   }, [user])
+
+  // Keep selected card in sync with live reservation updates
+  useEffect(() => {
+    if (!selected) return
+    const updated = allLiveRes.find(r => String(r.id) === String(selected.id))
+    if (updated) setSelected(updated)
+  }, [allLiveRes])
 
   // Load fileSettings when selected changes
   useEffect(() => {

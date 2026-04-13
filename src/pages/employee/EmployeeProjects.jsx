@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { X, ArrowRightLeft } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { EMPLOYEE_NAV } from './EmployeeDashboard'
@@ -6,6 +6,9 @@ import { Store } from '../../data/store'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { cn } from '../../utils'
+
+// Columns visible to ALL employees regardless of assignment
+const PUBLIC_COLS = new Set(['Booking', 'Todo'])
 
 const PROD_COLUMNS = ['Booking','Todo','En ligne','Pré à faire','Retour de livraison','En cours','Export','Level OK','Montage','Argent Livré','Annulé','Absent','Problème']
 const POST_COLUMNS = ['En attente de brief','Assigné Monteur','En cours','Retour','V1','V2','V3','Level OK','Problème']
@@ -29,6 +32,7 @@ export default function EmployeeProjects() {
   const [mode, setMode] = useState('PROD')
   const [projects, setProjects] = useState([])
   const [selectedCard, setSelectedCard] = useState(null)
+  const timerRef = useRef(null)
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
@@ -37,16 +41,31 @@ export default function EmployeeProjects() {
     ? 'bg-zinc-800 border-zinc-700 text-white'
     : 'bg-white border-gray-300 text-gray-900'
 
-  const reload = () => setProjects(Store.getProjects().filter(p => p.assigned_to === user?.email))
+  const reload = () => {
+    const today = new Date().toISOString().split('T')[0]
+    // Auto-promote Booking → Todo on day-of
+    Store.getProjects().forEach(p => {
+      if (p.status === 'Booking' && p.date === today) Store.updateProject(p.id, { status: 'Todo' })
+    })
+    // Load all projects — visibility filtered in render
+    setProjects(Store.getProjects())
+  }
 
   useEffect(() => {
     reload()
+    timerRef.current = setInterval(reload, 30000)
+    return () => clearInterval(timerRef.current)
   }, [user])
 
   const columns = mode === 'PROD' ? PROD_COLUMNS : POST_COLUMNS
 
+  // Visibility: Booking + Todo → all employees; other columns → only when assigned
+  const visible = projects.filter(p =>
+    PUBLIC_COLS.has(p.status) || p.assigned_to === user?.email
+  )
+
   // Show only projects that belong to the current pipeline tab
-  const filtered = projects.filter(p => (p.pipeline || 'PROD') === mode)
+  const filtered = visible.filter(p => (p.pipeline || 'PROD') === mode)
 
   const moveCard = (project, targetCol) => {
     const updates = { status: targetCol }
@@ -60,8 +79,8 @@ export default function EmployeeProjects() {
     if (targetCol === 'Montage' || targetCol === 'Retour') setMode('POST')
   }
 
-  const postCount = projects.filter(p => (p.pipeline || 'PROD') === 'POST').length
-  const prodCount = projects.filter(p => (p.pipeline || 'PROD') === 'PROD').length
+  const postCount = visible.filter(p => (p.pipeline || 'PROD') === 'POST').length
+  const prodCount = visible.filter(p => (p.pipeline || 'PROD') === 'PROD').length
 
   return (
     <Layout navItems={EMPLOYEE_NAV} title="To do">

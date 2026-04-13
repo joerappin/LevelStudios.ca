@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, FolderOpen, MessageSquare, Clock, Calendar, Umbrella, UserCircle, Bell, Film, HardDrive, Medal } from 'lucide-react'
 import Layout from '../../components/Layout'
@@ -36,6 +36,7 @@ export default function EmployeeDashboard() {
     return                  { label: 'Bronze', icon: '🥉', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30' }
   }
 
+  const timerRef = useRef(null)
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
   const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
@@ -46,23 +47,30 @@ export default function EmployeeDashboard() {
       navigate('/chef/dashboard')
       return
     }
-    const projects = Store.getProjects().filter(p => p.assigned_to === user?.email)
-    const today = new Date().toISOString().split('T')[0]
-    const now = new Date()
-    const checkIns = Store.getCheckIns().filter(c => c.employee_email === user?.email)
-    const todayCheck = checkIns.find(c => c.date === today)
-    const leaveRequests = Store.getLeaveRequests().filter(l => l.employee_email === user?.email)
-    const messages = Store.getInternalMessages().filter(m => m.to_email === user?.email && !m.read)
-    const alerts = Store.getAlerts().filter(a => a.to_email === user?.email)
-    // Performance du mois
-    const monthProjects = projects.filter(p => {
-      const d = new Date(p.created_at)
-      return (p.status === 'Livré' || p.status === 'Archivé') && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    })
-    const argent = monthProjects.filter(p => p.formule === 'ARGENT' || p.service === 'ARGENT').length
-    const gold   = monthProjects.filter(p => p.formule === 'GOLD'   || p.service === 'GOLD').length
-    setData({ projects, checkIns, todayCheck, leaveRequests, messages, alerts, monthProjects, argent, gold })
-  }, [user])
+
+    const loadData = () => {
+      const projects = Store.getProjects().filter(p => p.assigned_to === user?.email)
+      const today = new Date().toISOString().split('T')[0]
+      const now = new Date()
+      const checkIns = Store.getCheckIns().filter(c => c.employee_email === user?.email)
+      const todayCheck = checkIns.find(c => c.date === today)
+      const leaveRequests = Store.getLeaveRequests().filter(l => l.employee_email === user?.email)
+      const messages = Store.getInternalMessages().filter(m => m.to_email === user?.email && !m.read)
+      const alerts = Store.getAlerts().filter(a => a.to_email === user?.email)
+      // Performance du mois
+      const monthProjects = projects.filter(p => {
+        const d = new Date(p.created_at)
+        return (p.status === 'Livré' || p.status === 'Archivé') && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      })
+      const argent = monthProjects.filter(p => p.formule === 'ARGENT' || p.service === 'ARGENT').length
+      const gold   = monthProjects.filter(p => p.formule === 'GOLD'   || p.service === 'GOLD').length
+      setData({ projects, checkIns, todayCheck, leaveRequests, messages, alerts, monthProjects, argent, gold })
+    }
+
+    loadData()
+    timerRef.current = setInterval(loadData, 30000)
+    return () => clearInterval(timerRef.current)
+  }, [user, navigate])
 
   return (
     <Layout navItems={NAV} title="Mon espace">
