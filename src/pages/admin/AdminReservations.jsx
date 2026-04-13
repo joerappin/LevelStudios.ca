@@ -562,7 +562,7 @@ export default function AdminReservations() {
                           <Select value={form.studio} onChange={e => set('studio', e.target.value)} options={STUDIOS} />
                         </Field>
                         <Field label="Date *" error={errors.date}>
-                          <Input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+                          <Input type="date" value={form.date} onChange={e => set('date', e.target.value)} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
                         </Field>
                         <Field label="Heure de début">
                           <Select value={form.startTime} onChange={e => set('startTime', e.target.value)} options={TIMES} />

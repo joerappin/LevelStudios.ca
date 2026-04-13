@@ -237,10 +237,10 @@ export default function AdminDashboard() {
   ]
 
   const QUICK = [
-    { label: 'Nouvelle réservation', icon: <Plus className="w-5 h-5" />,      path: '/admin/reservations',     color: 'text-violet-400', bg: isDark ? 'bg-violet-500/10' : 'bg-violet-50' },
-    { label: 'Créer un compte',      icon: <UserPlus className="w-5 h-5" />,  path: '/admin/accounts',         color: 'text-blue-400',   bg: isDark ? 'bg-blue-500/10' : 'bg-blue-50' },
-    { label: 'Nouveau code promo',   icon: <Tag className="w-5 h-5" />,       path: '/admin/promo',            color: 'text-green-400',  bg: isDark ? 'bg-green-500/10' : 'bg-green-50' },
-    { label: 'Nouvelle communication', icon: <Megaphone className="w-5 h-5" />, path: '/admin/communication', color: 'text-orange-400', bg: isDark ? 'bg-orange-500/10' : 'bg-orange-50' },
+    { label: 'Nouvelle réservation', icon: <Plus className="w-5 h-5" />,        action: () => navigate('/admin/reservations', { state: { openCreate: true } }), color: 'text-violet-400', bg: isDark ? 'bg-violet-500/10' : 'bg-violet-50' },
+    { label: 'Créer un compte',      icon: <UserPlus className="w-5 h-5" />,    path: '/admin/accounts',         color: 'text-blue-400',   bg: isDark ? 'bg-blue-500/10' : 'bg-blue-50' },
+    { label: 'Nouveau code promo',   icon: <Tag className="w-5 h-5" />,         path: '/admin/promo',            color: 'text-green-400',  bg: isDark ? 'bg-green-500/10' : 'bg-green-50' },
+    { label: 'Nouvelle communication', icon: <Megaphone className="w-5 h-5" />, path: '/admin/communication',   color: 'text-orange-400', bg: isDark ? 'bg-orange-500/10' : 'bg-orange-50' },
   ]
 
   const [kpiOrder, setKpiOrder] = useState(() => {
@@ -507,7 +507,7 @@ export default function AdminDashboard() {
             {QUICK.map((a, i) => (
               <button
                 key={i}
-                onClick={() => navigate(a.path)}
+                onClick={() => a.action ? a.action() : navigate(a.path)}
                 className={`rounded-xl p-4 flex flex-col items-center gap-2.5 text-xs font-semibold transition-all border ${
                   isDark
                     ? 'border-zinc-700 hover:border-zinc-500 bg-zinc-800/50 hover:bg-zinc-800'
