@@ -36,11 +36,9 @@ export function useReservations({ clientEmail, includeTrash = false, interval = 
       const cached = Store.getAllReservations()
 
       if (clientEmail) {
-        // For a per-client fetch: remove from LS any entry for this client not in file system
-        const cleaned = cached.filter(r =>
-          r.client_email !== clientEmail || fileIds.has(String(r.id))
-        )
-        localStorage.setItem('ls_reservations', JSON.stringify(cleaned))
+        // For a per-client fetch: replace all LS entries for this client with fresh PHP data
+        const others = cached.filter(r => r.client_email !== clientEmail)
+        localStorage.setItem('ls_reservations', JSON.stringify([...others, ...data]))
       } else {
         // Global fetch: keep only file-backed entries + soft-deleted (trashed) LS entries
         const trashedOnly = cached.filter(r => r.trashed && !fileIds.has(String(r.id)))

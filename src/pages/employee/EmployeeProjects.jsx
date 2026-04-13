@@ -138,7 +138,12 @@ export default function EmployeeProjects() {
                         <div className={cn('text-xs font-semibold mb-1 truncate', textPrimary)}>{p.title}</div>
                         <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
                         {p.studio && (
-                          <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-2">{p.studio}</div>
+                          <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-1">{p.studio}</div>
+                        )}
+                        {p.date && (
+                          <div className={cn('text-[10px] mb-1', textSecondary)}>
+                            {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
+                          </div>
                         )}
                         {/* Move select */}
                         <div className="mt-2" onClick={e => e.stopPropagation()}>
@@ -183,6 +188,8 @@ export default function EmployeeProjects() {
               {[
                 ['Client', selectedCard.client_name],
                 ['Studio', selectedCard.studio],
+                ['Date', selectedCard.date || '—'],
+                ['Horaire', selectedCard.start_time ? `${selectedCard.start_time}${selectedCard.end_time ? `–${selectedCard.end_time}` : ''}` : '—'],
                 ['Pipeline', selectedCard.pipeline || mode],
                 ['Statut', selectedCard.status],
                 ['Fichiers', selectedCard.files?.length ? `${selectedCard.files.length} fichier(s)` : '—'],

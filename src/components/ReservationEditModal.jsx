@@ -3,6 +3,7 @@ import { X, Check } from 'lucide-react'
 import { Store } from '../data/store'
 import { cn } from '../utils'
 import { useApp } from '../contexts/AppContext'
+import DatePicker from './DatePicker'
 
 const TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
 const DURATIONS = [1,2,3,4,5,6,8,10]
@@ -120,7 +121,10 @@ export default function ReservationEditModal({ reservation, modifiedBy, onSave, 
           {/* Date */}
           <div>
             <label className={labelCls}>Date</label>
-            <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={fieldCls} />
+            <div className="flex gap-2">
+              <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={fieldCls} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
+              <DatePicker value={form.date} onChange={v => set('date', v)} isDark={isDark} />
+            </div>
           </div>
 
           {/* Heure + Durée */}

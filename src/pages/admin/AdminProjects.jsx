@@ -204,6 +204,8 @@ export default function AdminProjects() {
                 ['Client', selectedCard.client_name],
                 ['Email', selectedCard.client_email],
                 ['Studio', selectedCard.studio],
+                ['Date', selectedCard.date || '—'],
+                ['Horaire', selectedCard.start_time ? `${selectedCard.start_time}${selectedCard.end_time ? `–${selectedCard.end_time}` : ''}` : '—'],
                 ['Statut', selectedCard.status],
                 ['Pipeline', selectedCard.pipeline || mode],
                 ['Technicien', employees.find(e => e.email === selectedCard.assigned_to)?.name || selectedCard.assigned_to || '—'],
