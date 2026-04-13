@@ -84,11 +84,12 @@ if ($method === 'POST') {
 
 if ($method === 'PATCH') {
   if (empty($body['id'])) { http_response_code(400); echo json_encode(['error' => 'id required']); exit; }
+  // Upsert: find existing file to merge into, or create from scratch if not yet on file system
   $all = readAllReservations($root);
   $existing = null;
   foreach ($all as $r) { if ((string)$r['id'] === (string)$body['id']) { $existing = $r; break; } }
-  if (!$existing) { http_response_code(404); echo json_encode(['error' => 'Not found']); exit; }
-  writeReservation(array_merge($existing, $body), $root);
+  $merged = $existing ? array_merge($existing, $body) : $body;
+  writeReservation($merged, $root);
   echo json_encode(['success' => true]);
   exit;
 }

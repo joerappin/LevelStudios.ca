@@ -127,7 +127,14 @@ export const Store = {
       saveAll(KEYS.reservations, items)
     }
     const updated = items[idx]
-    if (updated) fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }).catch(() => {})
+    if (updated) {
+      fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+        .then(r => {
+          // If file didn't exist yet, retry as POST to create it
+          if (!r.ok) fetch('/api/reservations.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) }).catch(() => {})
+        })
+        .catch(() => {})
+    }
 
     // Sync linked project card on status or schedule/service change
     const scheduleFields = ['date', 'start_time', 'end_time', 'service', 'studio', 'client_name']
