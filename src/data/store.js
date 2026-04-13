@@ -90,9 +90,9 @@ export const Store = {
     items.unshift(item)
     saveAll(KEYS.reservations, items)
 
-    // Auto-create project card in Kanban
-    const today = new Date().toISOString().split('T')[0]
-    const projectStatus = item.date === today ? 'Todo' : 'Booking'
+    // Auto-create project card in Kanban — always starts in Booking
+    // (auto-promoted to Todo on the day by AdminProjects/ChefProjects useEffect)
+    const projectStatus = 'Booking'
     const projects = getAll(KEYS.projects)
     const project = {
       id: generateId('PROJ'),

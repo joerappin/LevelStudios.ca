@@ -31,15 +31,19 @@ export function useReservations({ clientEmail, includeTrash = false, interval = 
       const data = await res.json()
 
       // File system is source of truth — purge localStorage of any reservation
-      // not returned by the API (deleted files, trashed reservations, orphans)
-      if (!clientEmail) {
-        // Build set of IDs present in file system
-        const fileIds = new Set(data.map(r => String(r.id)))
-        // Keep only trashed entries (soft-deleted, still in LS) + file-backed entries
-        const cached = Store.getAllReservations()
-        const synced = cached.filter(r => fileIds.has(String(r.id)) || r.trashed)
-        // Merge: use file-system data as authoritative, keep trashed from LS
-        const trashedOnly = synced.filter(r => r.trashed && !fileIds.has(String(r.id)))
+      // not returned by the API (deleted files, orphans, etc.)
+      const fileIds = new Set(data.map(r => String(r.id)))
+      const cached = Store.getAllReservations()
+
+      if (clientEmail) {
+        // For a per-client fetch: remove from LS any entry for this client not in file system
+        const cleaned = cached.filter(r =>
+          r.client_email !== clientEmail || fileIds.has(String(r.id))
+        )
+        localStorage.setItem('ls_reservations', JSON.stringify(cleaned))
+      } else {
+        // Global fetch: keep only file-backed entries + soft-deleted (trashed) LS entries
+        const trashedOnly = cached.filter(r => r.trashed && !fileIds.has(String(r.id)))
         localStorage.setItem('ls_reservations', JSON.stringify([...data, ...trashedOnly]))
       }
 
