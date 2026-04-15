@@ -59,6 +59,16 @@ import ChefPerf from './pages/chef/ChefPerf'
 // Rushes pages
 import EmployeeRushes from './pages/employee/EmployeeRushes'
 
+// Client Test pages (Netflix-style UI)
+import ClientTestLogin        from './pages/clienttest/ClientTestLogin'
+import ClientTestDashboard    from './pages/clienttest/ClientTestDashboard'
+import ClientTestReservations from './pages/clienttest/ClientTestReservations'
+import ClientTestLibrary      from './pages/clienttest/ClientTestLibrary'
+import ClientTestSubscription from './pages/clienttest/ClientTestSubscription'
+import ClientTestInvoices     from './pages/clienttest/ClientTestInvoices'
+import ClientTestContact      from './pages/clienttest/ClientTestContact'
+import ClientTestAccount      from './pages/clienttest/ClientTestAccount'
+
 // Client pages
 import ClientDashboard from './pages/client/ClientDashboard'
 import ClientAccount from './pages/client/ClientAccount'
@@ -77,6 +87,17 @@ function ProtectedRoute({ children, requiredType }) {
   )
   if (!user) return <Navigate to="/" replace />
   if (requiredType && user.type !== requiredType) return <Navigate to="/" replace />
+  return children
+}
+
+function ClientTestRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#00bcd4', borderTopColor: 'transparent' }} />
+    </div>
+  )
+  if (!user || (user.type !== 'clienttest' && user.type !== 'client')) return <Navigate to="/clienttest" replace />
   return children
 }
 
@@ -132,13 +153,24 @@ function AppRoutes() {
       <Route path="/chef/sav" element={<ProtectedRoute requiredType="employee"><ChefSav /></ProtectedRoute>} />
       <Route path="/chef/perf" element={<ProtectedRoute requiredType="employee"><ChefPerf /></ProtectedRoute>} />
 
-      <Route path="/client/dashboard" element={<ProtectedRoute requiredType="client"><ClientDashboard /></ProtectedRoute>} />
-      <Route path="/client/account" element={<ProtectedRoute requiredType="client"><ClientAccount /></ProtectedRoute>} />
-      <Route path="/client/reservations" element={<ProtectedRoute requiredType="client"><ClientReservations /></ProtectedRoute>} />
-      <Route path="/client/library" element={<ProtectedRoute requiredType="client"><ClientLibrary /></ProtectedRoute>} />
-      <Route path="/client/subscription" element={<ProtectedRoute requiredType="client"><ClientSubscription /></ProtectedRoute>} />
-      <Route path="/client/invoices" element={<ProtectedRoute requiredType="client"><ClientInvoices /></ProtectedRoute>} />
-      <Route path="/client/contact" element={<ProtectedRoute requiredType="client"><ClientContact /></ProtectedRoute>} />
+      {/* Legacy /client/* routes — redirect to Netflix pages */}
+      <Route path="/client/dashboard"    element={<Navigate to="/clienttest/dashboard"    replace />} />
+      <Route path="/client/account"      element={<Navigate to="/clienttest/account"      replace />} />
+      <Route path="/client/reservations" element={<Navigate to="/clienttest/reservations" replace />} />
+      <Route path="/client/library"      element={<Navigate to="/clienttest/library"      replace />} />
+      <Route path="/client/subscription" element={<Navigate to="/clienttest/subscription" replace />} />
+      <Route path="/client/invoices"     element={<Navigate to="/clienttest/invoices"     replace />} />
+      <Route path="/client/contact"      element={<Navigate to="/clienttest/contact"      replace />} />
+
+      {/* Client Test — Netflix-style UI */}
+      <Route path="/clienttest"                  element={<ClientTestLogin />} />
+      <Route path="/clienttest/dashboard"        element={<ClientTestRoute><ClientTestDashboard /></ClientTestRoute>} />
+      <Route path="/clienttest/reservations"     element={<ClientTestRoute><ClientTestReservations /></ClientTestRoute>} />
+      <Route path="/clienttest/library"          element={<ClientTestRoute><ClientTestLibrary /></ClientTestRoute>} />
+      <Route path="/clienttest/subscription"     element={<ClientTestRoute><ClientTestSubscription /></ClientTestRoute>} />
+      <Route path="/clienttest/invoices"         element={<ClientTestRoute><ClientTestInvoices /></ClientTestRoute>} />
+      <Route path="/clienttest/contact"          element={<ClientTestRoute><ClientTestContact /></ClientTestRoute>} />
+      <Route path="/clienttest/account"          element={<ClientTestRoute><ClientTestAccount /></ClientTestRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

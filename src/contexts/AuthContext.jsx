@@ -3,7 +3,8 @@ import { Store } from '../data/store'
 
 // Hardcoded admin account (never stored in files — always available)
 const TEST_ACCOUNTS = [
-  { email: 'joe.rappin@gmail.com', password: 'Mandrier88', type: 'admin', name: 'Joe Rappin', id: 'LVL10001' },
+  { email: 'joe.rappin@gmail.com', password: 'Mandrier88', type: 'admin',      name: 'Joe Rappin',   id: 'LVL10001' },
+  { email: 'clienttest@gmail.com',  password: 'Mandrier88', type: 'clienttest', name: 'Client Test',  id: 'LVL4TEST'  },
 ]
 
 const AuthContext = createContext(null)

@@ -20,6 +20,12 @@ const STUDIO_PHOTOS = {
   'studio c': '/studios/studio-c.png',
 }
 
+const SLIDES = [
+  '/studios/studio-a.jpg',
+  '/studios/studio-b.jpg',
+  '/studios/studio-c.png',
+]
+
 
 function buildArgentPacks() {
   const p = Store.getPrices()
@@ -41,6 +47,8 @@ export default function ClientDashboard() {
   const navigate = useNavigate()
 
   const ARGENT_PACKS = buildArgentPacks()
+  const firstName = user?.name?.split(' ')[0] || 'vous'
+  const [slide, setSlide] = useState(0)
 
   const { reservations, reload: reloadRes } = useReservations({ clientEmail: user?.email })
   const [packs, setPacks]               = useState([])
@@ -62,6 +70,11 @@ export default function ClientDashboard() {
     const popups = Store.getPopupMessages()
     if (popups.length > 0) setPopup(popups[0])
   }, [user])
+
+  useEffect(() => {
+    const t = setInterval(() => setSlide(s => (s + 1) % SLIDES.length), 6000)
+    return () => clearInterval(t)
+  }, [])
 
   const lastReservation = [...reservations].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
 
@@ -178,7 +191,79 @@ export default function ClientDashboard() {
   const flags     = Store.getFeatureFlags()
 
   return (
-    <ClientLayout title="Accueil">
+    <ClientLayout transparent>
+
+      {/* ── Hero slideshow ───────────────────────────────────────────────── */}
+      <div style={{ position: 'relative', height: '60vh', minHeight: 380, overflow: 'hidden' }}>
+        {SLIDES.map((src, i) => (
+          <div key={src} style={{
+            position: 'absolute', inset: 0,
+            opacity: i === slide ? 1 : 0,
+            transition: 'opacity 1s ease',
+          }}>
+            <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+        ))}
+
+        {/* Dark overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to top, rgba(20,20,20,0.95) 0%, rgba(20,20,20,0.35) 50%, rgba(0,0,0,0.2) 100%)',
+        }} />
+
+        {/* Welcome text */}
+        <div style={{
+          position: 'absolute', bottom: 48, left: 0, right: 0, padding: '0 4%',
+        }}>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: '#fff', margin: '0 0 8px', fontFamily: 'Montserrat, sans-serif', lineHeight: 1.2 }}>
+            Bienvenue chez Level Studios, {firstName} !
+          </h1>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', margin: 0 }}>
+            Voici un aperçu de votre espace.
+          </p>
+        </div>
+
+        {/* Slide dots */}
+        <div style={{
+          position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', gap: 6,
+        }}>
+          {SLIDES.map((_, i) => (
+            <button key={i} onClick={() => setSlide(i)} style={{
+              width: i === slide ? 20 : 6, height: 6, borderRadius: 3,
+              background: i === slide ? '#fff' : 'rgba(255,255,255,0.35)',
+              border: 'none', cursor: 'pointer', padding: 0,
+              transition: 'all 0.3s',
+            }} />
+          ))}
+        </div>
+
+        {/* Prev / Next arrows */}
+        <button onClick={() => setSlide(s => (s - 1 + SLIDES.length) % SLIDES.length)} style={{
+          position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+          width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
+          background: 'rgba(0,0,0,0.45)', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'background 0.2s',
+        }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.45)'}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <button onClick={() => setSlide(s => (s + 1) % SLIDES.length)} style={{
+          position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
+          width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
+          background: 'rgba(0,0,0,0.45)', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'background 0.2s',
+        }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.45)'}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
 
       {/* ── Popup notification ─────────────────────────────────────────────── */}
       {popup && (
@@ -198,13 +283,8 @@ export default function ClientDashboard() {
         </div>
       )}
 
+      <div style={{ padding: '32px 24px 40px' }}>
       <div className="space-y-4">
-
-        {/* ── Greeting ───────────────────────────────────────────────────────── */}
-        <div>
-          <h2 className={`text-2xl font-bold ${textPrimary}`}>Bonjour, {user?.name?.split(' ')[0]} 👋</h2>
-          <p className={`text-sm mt-0.5 ${textSecondary}`}>Voici un aperçu de votre espace Level Studios.</p>
-        </div>
 
         {/* ── Stats ──────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -473,6 +553,7 @@ export default function ClientDashboard() {
           )}
         </div>
       </div>
+      </div>{/* end padding wrapper */}
 
       {/* ── Modal : Réserver à nouveau ─────────────────────────────────────── */}
       {quickModal && lastReservation && (

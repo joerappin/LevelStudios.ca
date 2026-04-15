@@ -1,0 +1,14 @@
+{
+  "id": "LVL4TEST",
+  "email": "clienttest@gmail.com",
+  "name": "Client Test",
+  "type": "client",
+  "clientType": "particulier",
+  "company": null,
+  "tps": null,
+  "tvq": null,
+  "password": "Mandrier88",
+  "googleAuth": false,
+  "pending": false,
+  "created_at": "2025-01-01T00:00:00.000Z"
+}

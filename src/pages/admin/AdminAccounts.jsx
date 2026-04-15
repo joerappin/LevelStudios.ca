@@ -97,7 +97,7 @@ export default function AdminAccounts() {
     const isEmployee = account.type === 'employee' || (!account.type && account.role)
     const normalized = { ...account, type: isEmployee ? 'employee' : 'client' }
     impersonate(normalized)
-    if (!isEmployee) return navigate('/client/dashboard')
+    if (!isEmployee) return navigate('/clienttest/dashboard')
     if (normalized.roleKey === 'chef_projet' || normalized.role === 'Chef de projet') return navigate('/chef/dashboard')
     navigate('/employee/dashboard')
   }

@@ -25,12 +25,12 @@ export function createPageUrl(pageName) {
     'EmployeeCheck': '/employee/check',
     'EmployeeCalendar': '/employee/calendar',
     'EmployeeLeave': '/employee/leave',
-    'ClientDashboard': '/client/dashboard',
-    'ClientAccount': '/client/account',
-    'ClientReservations': '/client/reservations',
-    'ClientLibrary': '/client/library',
-    'ClientSubscription': '/client/subscription',
-    'ClientContact': '/client/contact',
+    'ClientDashboard': '/clienttest/dashboard',
+    'ClientAccount': '/clienttest/account',
+    'ClientReservations': '/clienttest/reservations',
+    'ClientLibrary': '/clienttest/library',
+    'ClientSubscription': '/clienttest/subscription',
+    'ClientContact': '/clienttest/contact',
   }
   return routes[pageName] || '/'
 }

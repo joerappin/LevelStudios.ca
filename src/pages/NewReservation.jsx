@@ -255,7 +255,7 @@ export default function NewReservation() {
               Accueil
             </button>
             {user && (
-              <button onClick={() => navigate('/client/reservations')} className="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors">
+              <button onClick={() => navigate('/clienttest/reservations')} className="flex-1 bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors">
                 Mes réservations
               </button>
             )}
