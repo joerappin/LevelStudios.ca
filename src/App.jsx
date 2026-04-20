@@ -153,14 +153,14 @@ function AppRoutes() {
       <Route path="/chef/sav" element={<ProtectedRoute requiredType="employee"><ChefSav /></ProtectedRoute>} />
       <Route path="/chef/perf" element={<ProtectedRoute requiredType="employee"><ChefPerf /></ProtectedRoute>} />
 
-      {/* Legacy /client/* routes — redirect to Netflix pages */}
-      <Route path="/client/dashboard"    element={<Navigate to="/clienttest/dashboard"    replace />} />
-      <Route path="/client/account"      element={<Navigate to="/clienttest/account"      replace />} />
-      <Route path="/client/reservations" element={<Navigate to="/clienttest/reservations" replace />} />
-      <Route path="/client/library"      element={<Navigate to="/clienttest/library"      replace />} />
-      <Route path="/client/subscription" element={<Navigate to="/clienttest/subscription" replace />} />
-      <Route path="/client/invoices"     element={<Navigate to="/clienttest/invoices"     replace />} />
-      <Route path="/client/contact"      element={<Navigate to="/clienttest/contact"      replace />} />
+      {/* Client pages — classic sidebar layout (used when admin/chef impersonates a client) */}
+      <Route path="/client/dashboard"    element={<ProtectedRoute requiredType="client"><ClientDashboard /></ProtectedRoute>} />
+      <Route path="/client/account"      element={<ProtectedRoute requiredType="client"><ClientAccount /></ProtectedRoute>} />
+      <Route path="/client/reservations" element={<ProtectedRoute requiredType="client"><ClientReservations /></ProtectedRoute>} />
+      <Route path="/client/library"      element={<ProtectedRoute requiredType="client"><ClientLibrary /></ProtectedRoute>} />
+      <Route path="/client/subscription" element={<ProtectedRoute requiredType="client"><ClientSubscription /></ProtectedRoute>} />
+      <Route path="/client/invoices"     element={<ProtectedRoute requiredType="client"><ClientInvoices /></ProtectedRoute>} />
+      <Route path="/client/contact"      element={<ProtectedRoute requiredType="client"><ClientContact /></ProtectedRoute>} />
 
       {/* Client Test — Netflix-style UI */}
       <Route path="/clienttest"                  element={<ClientTestLogin />} />

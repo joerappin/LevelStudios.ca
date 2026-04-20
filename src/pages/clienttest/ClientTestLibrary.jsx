@@ -7,6 +7,18 @@ import ClientTestLayout from '../../components/ClientTestLayout'
 import { useAuth } from '../../contexts/AuthContext'
 import { useReservations } from '../../hooks/useReservations'
 import { formatDate } from '../../utils'
+import VideoReviewModal from '../../components/VideoReviewModal'
+
+const MOCK_RESERVATION = {
+  id: 'DEMO001',
+  studio: 'Studio A',
+  date: new Date().toISOString().split('T')[0],
+  duration: 2,
+  service: 'argent',
+}
+const MOCK_FILES = [
+  { name: 'rushes_demo.mp4', url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+]
 
 const ACCENT = '#00bcd4'
 
@@ -44,6 +56,9 @@ export default function ClientTestLibrary() {
   const { reservations } = useReservations({ clientEmail: user?.email })
   const [folders, setFolders] = useState([])
   const [search, setSearch]   = useState('')
+  const [videoReview, setVideoReview]   = useState(null)
+  const [videoReservation, setVideoReservation] = useState(null)
+  const [videoFiles, setVideoFiles]     = useState([])
 
   useEffect(() => {
     if (!user) return
@@ -57,12 +72,17 @@ export default function ClientTestLibrary() {
   }, [user])
 
   // Build sections: one per reservation that has files
-  const sections = reservations
+  const realSections = reservations
     .map(r => {
       const files = folders[r.id] || []
       return { reservation: r, files }
     })
     .filter(s => s.files.length > 0)
+
+  // When no real files exist, show a demo section
+  const sections = realSections.length > 0
+    ? realSections
+    : [{ reservation: MOCK_RESERVATION, files: MOCK_FILES }]
 
   const allFiles = sections.flatMap(s => s.files.map(f => ({ ...f, reservation: s.reservation })))
 
@@ -114,7 +134,11 @@ export default function ClientTestLibrary() {
               {filtered.length} résultat{filtered.length !== 1 ? 's' : ''} pour «&nbsp;{search}&nbsp;»
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-              {filtered.map((f, i) => <FileCard key={i} file={f} />)}
+              {filtered.map((f, i) => (
+                <FileCard key={i} file={f}
+                  onVideoClick={file => { setVideoReview(file); setVideoReservation(f.reservation); setVideoFiles(allFiles.filter(x => x.reservation?.id === f.reservation?.id)) }}
+                />
+              ))}
             </div>
           </div>
         ) : (
@@ -140,27 +164,42 @@ export default function ClientTestLibrary() {
                     </div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
                       {files.length} fichier{files.length !== 1 ? 's' : ''}
+                      {r.id === 'DEMO001' && <span style={{ marginLeft: 8, color: ACCENT, fontSize: 10, fontWeight: 700 }}>DÉMO</span>}
                     </div>
                   </div>
                 </div>
 
                 {/* Files grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
-                  {files.map((f, i) => <FileCard key={i} file={f} />)}
+                  {files.map((f, i) => (
+                    <FileCard key={i} file={f}
+                      onVideoClick={file => { setVideoReview(file); setVideoReservation(r); setVideoFiles(files) }}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {videoReview && videoReservation && (
+        <VideoReviewModal
+          reservation={videoReservation}
+          allFiles={videoFiles}
+          initialFile={videoReview}
+          onClose={() => { setVideoReview(null); setVideoReservation(null) }}
+        />
+      )}
     </ClientTestLayout>
   )
 }
 
-function FileCard({ file }) {
+function FileCard({ file, onVideoClick }) {
   const [hover, setHover] = useState(false)
   const type = getType(file.name || '')
   const isMedia = type === 'video' || type === 'audio' || type === 'image'
+  const isVideo = type === 'video'
 
   const typeBg = {
     video: 'rgba(239,68,68,0.08)',
@@ -174,12 +213,14 @@ function FileCard({ file }) {
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={() => isVideo && onVideoClick && onVideoClick(file)}
       style={{
         borderRadius: 12, overflow: 'hidden',
         background: '#181818', border: '1px solid rgba(255,255,255,0.05)',
         transition: 'transform 0.15s, box-shadow 0.15s',
         transform: hover ? 'translateY(-2px)' : 'none',
         boxShadow: hover ? '0 8px 28px rgba(0,0,0,0.5)' : 'none',
+        cursor: isVideo ? 'pointer' : 'default',
       }}
     >
       {/* Preview area */}
@@ -215,13 +256,18 @@ function FileCard({ file }) {
             {formatBytes(file.size)}
           </div>
         )}
-        {file.url && hover && (
-          <a href={file.url} download={file.name} style={{
+        {file.url && hover && !isVideo && (
+          <a href={file.url} download={file.name} onClick={e => e.stopPropagation()} style={{
             display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8,
             fontSize: 11, fontWeight: 700, color: ACCENT, textDecoration: 'none',
           }}>
             <Download size={11} /> Télécharger
           </a>
+        )}
+        {isVideo && hover && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8, fontSize: 11, fontWeight: 700, color: ACCENT }}>
+            <Play size={11} fill={ACCENT} /> Voir la vidéo
+          </div>
         )}
       </div>
     </div>

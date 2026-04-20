@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle } from 'lucide-react'
+import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, LayoutDashboard, Film } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -93,11 +93,11 @@ export default function AdminAccounts() {
 
   const closeModal = () => setModal(null)
 
-  const handleImpersonate = (account) => {
+  const handleImpersonate = (account, dest) => {
     const isEmployee = account.type === 'employee' || (!account.type && account.role)
     const normalized = { ...account, type: isEmployee ? 'employee' : 'client' }
     impersonate(normalized)
-    if (!isEmployee) return navigate('/clienttest/dashboard')
+    if (!isEmployee) return navigate(dest || '/clienttest/dashboard')
     if (normalized.roleKey === 'chef_projet' || normalized.role === 'Chef de projet') return navigate('/chef/dashboard')
     navigate('/employee/dashboard')
   }
@@ -332,7 +332,8 @@ export default function AdminAccounts() {
                     <td className={`px-5 py-3.5 hidden lg:table-cell text-xs font-mono ${textSecondary}`}>{c.id}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => handleImpersonate(c)} title="Voir en tant que" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Eye size={15} /></button>
+                        <button onClick={() => handleImpersonate(c, '/client/dashboard')} title="Vue standard (sidebar)" className="p-1.5 rounded-lg transition-colors text-violet-400 hover:bg-violet-500/10"><LayoutDashboard size={15} /></button>
+                        <button onClick={() => handleImpersonate(c, '/clienttest/dashboard')} title="Vue Netflix" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Film size={15} /></button>
                         <button onClick={() => toggleSuspend(c.id, false)} title={c.suspended ? 'Réactiver' : 'Suspendre'} className={`p-1.5 rounded-lg transition-colors ${c.suspended ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
                         <button onClick={() => handleTrash(c.id, false)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>

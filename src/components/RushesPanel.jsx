@@ -297,6 +297,21 @@ function FileViewer({ file, url, allFiles, onNavigate, onClose, isDark }) {
   )
 }
 
+// ─── Demo data for clienttest@gmail.com ──────────────────────────────────────
+const DEMO_EMAIL = 'clienttest@gmail.com'
+const DEMO_RES_ID = 'DEMO_VIDEO_001'
+const DEMO_RESERVATION = {
+  id: DEMO_RES_ID,
+  client_email: DEMO_EMAIL,
+  client_name: 'Client Test',
+  studio: 'Studio A',
+  date: '2025-04-20',
+  service: 'argent',
+}
+const DEMO_FILES = [
+  { name: 'session_demo_edite.mp4', url: 'https://www.w3schools.com/html/mov_bbb.mp4', size: 1900000 },
+]
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
 export default function RushesPanel({ navItems, title, userEmail }) {
   const { theme } = useApp()
@@ -336,11 +351,16 @@ export default function RushesPanel({ navItems, title, userEmail }) {
     return map
   }
 
+  function injectDemo(map) {
+    map[DEMO_EMAIL] = { ...(map[DEMO_EMAIL] || {}), [DEMO_RES_ID]: DEMO_FILES }
+    return map
+  }
+
   async function fetchFolders(storeReservations) {
     try {
       const res = await fetch('/api/folders')
       const data = await res.json()
-      const map = buildFoldersMap(data)
+      const map = injectDemo(buildFoldersMap(data))
       setFolders(map)
 
       // Merge orphaned folders (exist on disk but not in Store)
@@ -383,6 +403,7 @@ export default function RushesPanel({ navItems, title, userEmail }) {
       }
     } catch (e) {
       console.error('fetchFolders error', e)
+      setFolders(injectDemo({}))
     }
   }
 
@@ -393,6 +414,7 @@ export default function RushesPanel({ navItems, title, userEmail }) {
       const assignedEmails = projects.map(p => p.client_email).filter(Boolean)
       if (assignedEmails.length > 0) filtered = allReservations.filter(r => assignedEmails.includes(r.client_email))
     }
+    if (!filtered.some(r => r.id === DEMO_RES_ID)) filtered = [...filtered, DEMO_RESERVATION]
     setReservations(filtered)
     const syncList = filtered.map(r => ({ email: r.client_email, resId: r.id }))
     fetch('/api/folders/sync', {

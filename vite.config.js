@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import path from 'path'
 import fs from 'fs'
 
@@ -256,9 +257,9 @@ function localReservationsPlugin() {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 export default defineConfig({
-  plugins: [react(), localAccountsPlugin(), localReservationsPlugin()],
+  plugins: [react(), basicSsl(), localAccountsPlugin(), localReservationsPlugin()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
-  server: { host: true },
+  server: { host: true, https: true },
 })
