@@ -46,7 +46,7 @@ export default function ClientTestLayout({ children, transparent = false }) {
   // Close mobile menu on route change
   useEffect(() => { setMobile(false) }, [location.pathname])
 
-  const doLogout = () => { logout(); navigate('/clienttest') }
+  const doLogout = () => { logout(); navigate('/') }
 
   const navBg = transparent && !scrolled
     ? 'linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%)'

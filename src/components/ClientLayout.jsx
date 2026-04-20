@@ -45,10 +45,11 @@ export default function ClientLayout({ children, transparent = false, title }) {
   const navigate  = useNavigate()
   const location  = useLocation()
 
-  // viewMode: 'netflix' for real client sessions, 'classic' when impersonating
+  // viewMode: 'netflix' for real clients, 'classic' when impersonating (unless ?netflix=1)
+  const startNetflix = new URLSearchParams(location.search).get('netflix') === '1'
   const [viewMode, setViewMode] = useState('netflix')
   useEffect(() => {
-    if (impersonatedBy) setViewMode('classic')
+    if (impersonatedBy) setViewMode(startNetflix ? 'netflix' : 'classic')
   }, [!!impersonatedBy])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const [scrolled,    setScrolled]    = useState(false)
