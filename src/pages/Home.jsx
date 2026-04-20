@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Menu, X, Users, Star, Check, ChevronDown, ArrowRight,
-  Zap, Shield, Award, Camera, Mic, Sun, CheckCircle
+  Zap, Shield, Award, Camera, Mic, Sun, CheckCircle, LogOut
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { createPageUrl } from '../utils'
@@ -247,7 +247,7 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   const [slideIndex, setSlideIndex] = useState(0)
 
@@ -434,6 +434,15 @@ export default function Home() {
               >
                 {user ? 'Mon espace' : 'Réserver'}
               </button>
+              {user && (
+                <button
+                  onClick={() => { logout(); navigate('/') }}
+                  title="Se déconnecter"
+                  className="text-zinc-500 hover:text-white transition-colors"
+                >
+                  <LogOut size={18} />
+                </button>
+              )}
             </div>
 
             {/* Mobile burger */}
