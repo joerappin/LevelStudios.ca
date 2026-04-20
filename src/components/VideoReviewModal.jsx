@@ -6,10 +6,12 @@ import {
   Eye, EyeOff, Lock, Unlock, Square, Circle, ArrowUpRight,
   ArrowLeft, Droplets, Type, GripVertical, ZoomIn, ZoomOut,
   LayoutGrid, List, Layers, Highlighter, Undo2, Flag,
-  Camera, Repeat2, SlidersHorizontal, Scissors,
+  Camera, Repeat2, SlidersHorizontal, Scissors, Home,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
+import { createPageUrl } from '../utils'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const FPS = 25
@@ -161,8 +163,10 @@ function drawShape(ctx, shape) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function VideoReviewModal({ reservation, allFiles, initialFile, onClose }) {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const isStaff = user?.type === 'admin' || user?.type === 'employee'
   const isChefOrAdmin = user?.type === 'admin' || user?.roleKey === 'chef_projet'
+  const isClient = user?.type === 'client' || user?.type === 'clienttest'
 
   const videoFiles = allFiles.filter(f => isVideo(f.name))
   const [currentFile, setCurrentFile] = useState(initialFile)
@@ -1233,6 +1237,17 @@ export default function VideoReviewModal({ reservation, allFiles, initialFile, o
     >
       {/* ── Top bar ── */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800 flex-shrink-0" onClick={e => e.stopPropagation()}>
+        {/* Home button — client only */}
+        {isClient && (
+          <button
+            onClick={() => { onClose(); navigate(createPageUrl('ClientDashboard')) }}
+            title="Accueil espace client"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex-shrink-0"
+          >
+            <Home className="w-3.5 h-3.5" />
+            Accueil
+          </button>
+        )}
         {/* Back button — left */}
         <button onClick={onClose}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex-shrink-0">
