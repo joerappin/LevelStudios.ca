@@ -150,13 +150,13 @@ export default function AdminReservations() {
     Store.updateReservation(id, { status, modified_by: user?.email || 'admin' })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     if (res) syncUpdate({ ...res, status })
   }
 
   // Soft-delete → corbeille
   const handleDelete = (id) => {
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     Store.updateReservation(id, { trashed: true })
     refresh()
     if (selected?.id === id) setSelected(null)
@@ -190,7 +190,7 @@ export default function AdminReservations() {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'admin' })
     refresh()
     if (selected?.id === id) setSelected(s => ({ ...s, ...patch }))
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     if (res) syncUpdate({ ...res, ...patch })
   }
 

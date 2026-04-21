@@ -142,7 +142,7 @@ export default function ChefReservations() {
     Store.updateReservation(id, { status, modified_by: user?.email || 'chef' })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     if (res) syncUpdate({ ...res, status })
   }
 
@@ -150,7 +150,7 @@ export default function ChefReservations() {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'chef' })
     refresh()
     if (selected?.id === id) setSelected(s => ({ ...s, ...patch }))
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     if (res) syncUpdate({ ...res, ...patch })
   }
 

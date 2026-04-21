@@ -100,7 +100,7 @@ export default function AdminCalendar() {
   const { connected, tokenExpired, connect, disconnect, syncUpdate, syncDelete } = useGoogleCalendar()
 
   const handleDelete = (id) => {
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     Store.updateReservation(id, { trashed: true })
     reload()
     if (res) syncDelete(res)
@@ -109,7 +109,7 @@ export default function AdminCalendar() {
   const handleUpdate = (id, patch) => {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'admin' })
     reload()
-    const res = reservations.find(r => r.id === id)
+    const res = Store.getAllReservations().find(r => r.id === id)
     if (res) syncUpdate({ ...res, ...patch })
   }
 
