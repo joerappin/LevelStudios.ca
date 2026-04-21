@@ -1,12 +1,12 @@
 const CALENDAR_ID = 'f199f2899b15df6880648254217b1598362bf1c9bb9949f3acc3aef3404c999e@group.calendar.google.com'
 const SCOPE = 'https://www.googleapis.com/auth/calendar.events'
-const TOKEN_KEY    = 'ls_gcal_token'
-const EXPIRY_KEY   = 'ls_gcal_expiry'
+const TOKEN_KEY  = 'ls_gcal_token'
+const EXPIRY_KEY = 'ls_gcal_expiry'
 
-let _tokenClient = null
+let _tokenClient  = null
 let _onStateChange = null
 
-// ─── Token storage (sessionStorage: cleared on tab close) ────────────────────
+// ─── Token ────────────────────────────────────────────────────────────────────
 
 function getToken() {
   const t = sessionStorage.getItem(TOKEN_KEY)
@@ -48,7 +48,7 @@ export function init({ onSuccess, onError, onStateChange }) {
   })
 }
 
-export function connect() { _tokenClient?.requestAccessToken({ prompt: '' }) }
+export function connect()    { _tokenClient?.requestAccessToken({ prompt: '' }) }
 
 export function disconnect() {
   const t = getToken()
@@ -63,13 +63,12 @@ const STATUS_LABEL = {
   tournee: 'Tournée', 'post-prod': 'Post-production', livree: 'Livrée',
   annulee: 'Annulée', rembourse: 'Remboursée', absent: 'Absent',
 }
-
 const STATUS_COLOR = {
   validee: '2', livree: '7', tournee: '6', 'post-prod': '1',
   annulee: '4', rembourse: '4', absent: '6',
 }
 
-function endTime(r) {
+function calcEndTime(r) {
   if (r.end_time) return r.end_time
   const [h, m] = r.start_time.split(':').map(Number)
   const mins = h * 60 + m + (Number(r.duration) || 1) * 60
@@ -77,7 +76,7 @@ function endTime(r) {
 }
 
 function buildEvent(r) {
-  const name = (r.client_name?.trim()) || `${r.client_first_name || ''} ${r.client_last_name || ''}`.trim()
+  const name = r.client_name?.trim() || `${r.client_first_name || ''} ${r.client_last_name || ''}`.trim()
   return {
     summary: `${r.studio || 'Studio'} — ${name}`,
     location: `Level Studios — ${r.studio || ''}`,
@@ -87,17 +86,19 @@ function buildEvent(r) {
       `Prix : ${r.price || 0} CAD`,
       `Personnes : ${r.persons || 1}`,
       r.additional_services?.length ? `Options : ${r.additional_services.join(', ')}` : '',
-      r.company ? `Société : ${r.company}` : '',
-      r.client_email ? `Email : ${r.client_email}` : '',
+      r.company  ? `Société : ${r.company}`          : '',
+      r.client_email ? `Email : ${r.client_email}`   : '',
       `ID : ${r.id}`,
     ].filter(Boolean).join('\n'),
     start: { dateTime: `${r.date}T${r.start_time}:00`, timeZone: 'America/Toronto' },
-    end:   { dateTime: `${r.date}T${endTime(r)}:00`,   timeZone: 'America/Toronto' },
+    end:   { dateTime: `${r.date}T${calcEndTime(r)}:00`, timeZone: 'America/Toronto' },
     colorId: STATUS_COLOR[r.status] || '1',
+    // Mark as app-created so we skip it when polling
+    extendedProperties: { private: { levelstudios_id: String(r.id) } },
   }
 }
 
-// ─── API calls ────────────────────────────────────────────────────────────────
+// ─── API ──────────────────────────────────────────────────────────────────────
 
 async function api(method, path, body) {
   const token = getToken()
@@ -131,4 +132,54 @@ export async function updateEvent(googleEventId, reservation) {
 export async function deleteEvent(googleEventId) {
   if (!googleEventId) return
   await api('DELETE', `/events/${googleEventId}`)
+}
+
+// ─── Fetch events from Google Calendar (Google → App direction) ───────────────
+
+export async function getEvents(timeMin, timeMax) {
+  const params = new URLSearchParams({
+    timeMin:       timeMin.toISOString(),
+    timeMax:       timeMax.toISOString(),
+    singleEvents:  'true',
+    orderBy:       'startTime',
+    maxResults:    '250',
+  })
+  const r = await api('GET', `/events?${params}`)
+  return r?.items || []
+}
+
+// Parse a Google Calendar event into a reservation-compatible object
+export function parseGoogleEvent(event) {
+  const summary  = event.summary || 'Réservation'
+  // Try to match "Studio X — Client Name" format
+  const match    = summary.match(/^(Studio\s+\S+)\s*[—–-]\s*(.+)$/)
+  const studio   = match ? match[1] : 'Studio A'
+  const clientName = match ? match[2].trim() : summary
+
+  const startDT  = event.start?.dateTime || ''
+  const endDT    = event.end?.dateTime   || ''
+  const date     = startDT.substring(0, 10)
+  const startTime = startDT.substring(11, 16)
+  const endTime   = endDT.substring(11, 16)
+
+  const durationH = startTime && endTime
+    ? Math.max(1, parseInt(endTime.split(':')[0]) - parseInt(startTime.split(':')[0]))
+    : 1
+
+  return {
+    client_name:         clientName,
+    client_email:        '',
+    studio,
+    date,
+    start_time:          startTime || '10:00',
+    end_time:            endTime   || '11:00',
+    duration:            durationH,
+    service:             'ARGENT',
+    price:               0,
+    persons:             1,
+    status:              'en_attente',
+    additional_services: [],
+    manual:              false,
+    google_event_id:     event.id,
+  }
 }
