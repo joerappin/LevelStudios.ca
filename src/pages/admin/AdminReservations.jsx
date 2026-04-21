@@ -11,6 +11,7 @@ import { useReservations } from '../../hooks/useReservations'
 import ReservationEditModal from '../../components/ReservationEditModal'
 import DatePicker from '../../components/DatePicker'
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
+import { isGoogleImport } from '../../services/googleCalendarService'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse', 'absent']
 const STATUS_MAP = STATUS_CONFIG
@@ -74,6 +75,8 @@ export default function AdminReservations() {
   const { syncCreate, syncUpdate, syncDelete } = useGoogleCalendar()
   const [clients, setClients] = useState([])
   const [clientSearch, setClientSearch] = useState('')
+  const [emailQuery, setEmailQuery] = useState('')
+  const [showEmailDrop, setShowEmailDrop] = useState(false)
 
   useEffect(() => {
     setClients(Store.getAccounts().filter(a => a.type === 'client' && !a.trashed))
@@ -339,7 +342,12 @@ export default function AdminReservations() {
                   <tr key={r.id} className={`border-b transition-colors ${tableRow}`}>
                     <td className="px-5 py-3.5">
                       <div className={`text-sm font-medium ${textPrimary}`}>{r.client_name}</div>
-                      <div className={`text-xs font-mono ${textSecondary}`}>{r.id}</div>
+                      <div className={`text-xs font-mono flex items-center gap-1.5 ${textSecondary}`}>
+                        {r.id}
+                        {isGoogleImport(r) && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/20">Google</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 hidden sm:table-cell">
                         <span className={`text-sm ${isDark ? 'text-zinc-300' : 'text-gray-600'}`}>{r.studio}</span>
@@ -417,10 +425,77 @@ export default function AdminReservations() {
               <button onClick={() => setSelected(null)} className={textSecondary}><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3 text-sm">
+              {/* ID row with Google badge */}
+              <div className={`flex justify-between border-b pb-2 ${divider}`}>
+                <span className={textSecondary}>ID</span>
+                <span className={`font-medium font-mono flex items-center gap-1.5 ${textPrimary}`}>
+                  {selected.id}
+                  {isGoogleImport(selected) && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/20">Google</span>
+                  )}
+                </span>
+              </div>
               {[
-                ['ID', selected.id],
                 ['Client', selected.client_name],
-                ['Email', selected.client_email],
+              ].map(([k, v]) => v != null && (
+                <div key={k} className={`flex justify-between border-b pb-2 ${divider}`}>
+                  <span className={textSecondary}>{k}</span>
+                  <span className={`font-medium ${textPrimary}`}>{v}</span>
+                </div>
+              ))}
+
+              {/* Email : combobox pour réservations Google, texte statique sinon */}
+              {isGoogleImport(selected) ? (
+                <div className={`border-b pb-3 ${divider}`}>
+                  <div className={`text-xs font-medium mb-1.5 ${textSecondary}`}>Email client</div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={emailQuery !== '' ? emailQuery : (selected.client_email || '')}
+                      onChange={e => { setEmailQuery(e.target.value); setShowEmailDrop(true) }}
+                      onFocus={() => setShowEmailDrop(true)}
+                      onBlur={() => setTimeout(() => setShowEmailDrop(false), 150)}
+                      placeholder="Saisir ou sélectionner un email..."
+                      className={cn('w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2', inputCls)}
+                    />
+                    {showEmailDrop && (
+                      <div className={`absolute z-20 w-full mt-1 rounded-xl border shadow-xl max-h-48 overflow-y-auto ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'}`}>
+                        {clients
+                          .filter(c => !emailQuery || (c.email || '').toLowerCase().includes(emailQuery.toLowerCase()) || (c.name || '').toLowerCase().includes(emailQuery.toLowerCase()))
+                          .slice(0, 15)
+                          .map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onMouseDown={() => {
+                                Store.updateReservation(selected.id, { client_email: c.email, client_name: c.name || selected.client_name, modified_by: user?.email || 'admin' })
+                                setSelected(s => ({ ...s, client_email: c.email, client_name: c.name || s.client_name }))
+                                setEmailQuery('')
+                                setShowEmailDrop(false)
+                                reload()
+                              }}
+                              className={`w-full text-left px-3 py-2.5 text-sm transition-colors ${isDark ? 'hover:bg-violet-500/10' : 'hover:bg-violet-50'}`}
+                            >
+                              <div className={`font-medium ${textPrimary}`}>{c.email}</div>
+                              {c.name && <div className={`text-xs ${textSecondary}`}>{c.name}</div>}
+                            </button>
+                          ))
+                        }
+                        {clients.filter(c => !emailQuery || (c.email || '').toLowerCase().includes(emailQuery.toLowerCase()) || (c.name || '').toLowerCase().includes(emailQuery.toLowerCase())).length === 0 && (
+                          <div className={`px-3 py-3 text-xs ${textSecondary}`}>Aucun client trouvé</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className={`flex justify-between border-b pb-2 ${divider}`}>
+                  <span className={textSecondary}>Email</span>
+                  <span className={`font-medium ${textPrimary}`}>{selected.client_email}</span>
+                </div>
+              )}
+
+              {[
                 ['Studio', selected.studio],
                 ['Formule', selected.service],
                 ['Date', selected.date],
