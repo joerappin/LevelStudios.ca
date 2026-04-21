@@ -39,7 +39,17 @@ export default function AdminAlerts() {
     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-violet-500'
 
   useEffect(() => {
-    setEmployees(Store.getEmployees())
+    fetch('/api/accounts.php')
+      .then(r => r.json())
+      .then(accounts => setEmployees(accounts.filter(a => a.type !== 'client' && !a.deleted)))
+      .catch(() => {
+        const cached = JSON.parse(localStorage.getItem('ls_accounts') || '[]')
+        setEmployees(
+          cached.length > 0
+            ? cached.filter(a => a.type !== 'client' && !a.deleted)
+            : Store.getEmployees()
+        )
+      })
     setAlerts(Store.getAlerts())
   }, [])
 
