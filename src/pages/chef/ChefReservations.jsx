@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useReservations } from '../../hooks/useReservations'
 import ReservationEditModal from '../../components/ReservationEditModal'
 import DatePicker from '../../components/DatePicker'
+import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee']
 const STATUS_MAP = STATUS_CONFIG
@@ -126,6 +127,7 @@ export default function ChefReservations() {
     setClientSearch('')
   }
 
+  const { syncCreate, syncUpdate } = useGoogleCalendar()
   const refresh = reload
 
   const filtered = reservations.filter(r => {
@@ -140,12 +142,16 @@ export default function ChefReservations() {
     Store.updateReservation(id, { status, modified_by: user?.email || 'chef' })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
+    const res = reservations.find(r => r.id === id)
+    if (res) syncUpdate({ ...res, status })
   }
 
   const handleEditSave = (id, patch) => {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'chef' })
     refresh()
     if (selected?.id === id) setSelected(s => ({ ...s, ...patch }))
+    const res = reservations.find(r => r.id === id)
+    if (res) syncUpdate({ ...res, ...patch })
   }
 
   function validate() {
@@ -182,6 +188,7 @@ export default function ChefReservations() {
     refresh()
     setSuccess(res)
     setForm(emptyForm)
+    syncCreate(res)
   }
 
   function closeCreate() {

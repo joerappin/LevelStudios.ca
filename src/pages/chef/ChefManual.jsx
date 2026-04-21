@@ -5,6 +5,7 @@ import { CHEF_NAV } from './ChefDashboard'
 import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 import { cn } from '../../utils'
+import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 
 const STUDIOS = ['Studio A', 'Studio B', 'Studio C']
 const SERVICES = [
@@ -34,6 +35,7 @@ const emptyForm = {
 
 export default function ChefManual() {
   const { theme } = useApp()
+  const { syncCreate } = useGoogleCalendar()
   const isDark = theme === 'dark'
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
@@ -104,6 +106,7 @@ export default function ChefManual() {
     })
     setSuccess(res)
     setForm(emptyForm)
+    syncCreate(res)
   }
 
   const SectionHeader = ({ icon, title }) => (

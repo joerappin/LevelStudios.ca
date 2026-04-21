@@ -97,16 +97,20 @@ export default function AdminCalendar() {
   const { reservations, reload } = useReservations()
   const navigate = useNavigate()
   const [view, setView] = useState('internal')
-  const { connected, tokenExpired, connect, disconnect } = useGoogleCalendar()
+  const { connected, tokenExpired, connect, disconnect, syncUpdate, syncDelete } = useGoogleCalendar()
 
   const handleDelete = (id) => {
+    const res = reservations.find(r => r.id === id)
     Store.updateReservation(id, { trashed: true })
     reload()
+    if (res) syncDelete(res)
   }
 
   const handleUpdate = (id, patch) => {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'admin' })
     reload()
+    const res = reservations.find(r => r.id === id)
+    if (res) syncUpdate({ ...res, ...patch })
   }
 
   return (
