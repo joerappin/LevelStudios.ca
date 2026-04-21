@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useReservations } from '../../hooks/useReservations'
 import ReservationEditModal from '../../components/ReservationEditModal'
 import DatePicker from '../../components/DatePicker'
+import { useGoogleCalendar } from '../../hooks/useGoogleCalendar'
 
 const STATUS_OPTIONS = ['Tous', 'en_attente', 'a_payer', 'validee', 'tournee', 'post-prod', 'livree', 'annulee', 'rembourse', 'absent']
 const STATUS_MAP = STATUS_CONFIG
@@ -70,6 +71,7 @@ export default function AdminReservations() {
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(null)
+  const { syncCreate, syncUpdate, syncDelete } = useGoogleCalendar()
   const [clients, setClients] = useState([])
   const [clientSearch, setClientSearch] = useState('')
 
@@ -145,13 +147,17 @@ export default function AdminReservations() {
     Store.updateReservation(id, { status, modified_by: user?.email || 'admin' })
     refresh()
     if (selected?.id === id) setSelected({ ...selected, status })
+    const res = reservations.find(r => r.id === id)
+    if (res) syncUpdate({ ...res, status })
   }
 
   // Soft-delete → corbeille
   const handleDelete = (id) => {
+    const res = reservations.find(r => r.id === id)
     Store.updateReservation(id, { trashed: true })
     refresh()
     if (selected?.id === id) setSelected(null)
+    if (res) syncDelete(res)
   }
 
   // Restore from trash
@@ -181,6 +187,8 @@ export default function AdminReservations() {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'admin' })
     refresh()
     if (selected?.id === id) setSelected(s => ({ ...s, ...patch }))
+    const res = reservations.find(r => r.id === id)
+    if (res) syncUpdate({ ...res, ...patch })
   }
 
   function validate() {
@@ -217,6 +225,7 @@ export default function AdminReservations() {
     refresh()
     setSuccess(res)
     setForm(emptyForm)
+    syncCreate(res)
   }
 
   function closeCreate() {
