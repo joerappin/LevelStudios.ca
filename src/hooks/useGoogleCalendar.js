@@ -5,24 +5,35 @@ import { Store } from '../data/store'
 const POLL_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 export function useGoogleCalendar() {
-  const [connected, setConnected]     = useState(GCal.isConnected)
+  const [connected, setConnected]       = useState(GCal.isConnected)
   const [tokenExpired, setTokenExpired] = useState(false)
+  const [initError, setInitError]       = useState(null)
+  const [gisReady, setGisReady]         = useState(false)
   const pollRef = useRef(null)
 
   // ─── Init GIS ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    let attempts = 0
     const tryInit = () => {
       if (!window.google?.accounts?.oauth2) return false
       GCal.init({
-        onSuccess:     () => { setConnected(true); setTokenExpired(false) },
-        onError:       () => {},
+        onSuccess:     () => { setConnected(true); setTokenExpired(false); setInitError(null) },
+        onError:       (err) => setInitError(String(err)),
         onStateChange: () => setConnected(GCal.isConnected()),
       })
+      setGisReady(true)
       return true
     }
     if (!tryInit()) {
-      const id = setInterval(() => { if (tryInit()) clearInterval(id) }, 300)
+      const id = setInterval(() => {
+        attempts++
+        if (tryInit()) { clearInterval(id); return }
+        if (attempts > 30) { // 10s timeout
+          clearInterval(id)
+          setInitError('Le script Google Identity Services ne s\'est pas chargé. Vérifiez votre connexion internet.')
+        }
+      }, 300)
       return () => clearInterval(id)
     }
   }, [])
@@ -105,5 +116,5 @@ export function useGoogleCalendar() {
     try { await GCal.deleteEvent(reservation.google_event_id) } catch (err) { handleError(err) }
   }, [handleError])
 
-  return { connected, tokenExpired, connect, disconnect, syncCreate, syncUpdate, syncDelete }
+  return { connected, tokenExpired, initError, gisReady, connect, disconnect, syncCreate, syncUpdate, syncDelete }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, ExternalLink, Copy, Check, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import { Calendar, ExternalLink, Copy, Check, Wifi, WifiOff, RefreshCw, AlertCircle, Loader } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -13,7 +13,17 @@ const GOOGLE_CALENDAR_ID  = 'f199f2899b15df6880648254217b1598362bf1c9bb9949f3acc
 const GOOGLE_EMBED_URL    = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(GOOGLE_CALENDAR_ID)}&ctz=America%2FToronto&hl=fr&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&mode=MONTH`
 const GOOGLE_OPEN_URL     = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(GOOGLE_CALENDAR_ID)}`
 
-function GoogleStatusBadge({ connected, tokenExpired, onConnect, onDisconnect }) {
+function GoogleStatusBadge({ connected, tokenExpired, initError, gisReady, onConnect, onDisconnect }) {
+  if (initError) return (
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium" title={initError}>
+      <AlertCircle size={12} /> Erreur Google : {initError.length > 50 ? initError.slice(0, 50) + '…' : initError}
+    </div>
+  )
+  if (!gisReady) return (
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 text-xs font-medium">
+      <Loader size={12} className="animate-spin" /> Chargement…
+    </div>
+  )
   if (tokenExpired) return (
     <button
       onClick={onConnect}
@@ -97,7 +107,7 @@ export default function AdminCalendar() {
   const { reservations, reload } = useReservations()
   const navigate = useNavigate()
   const [view, setView] = useState('internal')
-  const { connected, tokenExpired, connect, disconnect, syncUpdate, syncDelete } = useGoogleCalendar()
+  const { connected, tokenExpired, initError, gisReady, connect, disconnect, syncUpdate, syncDelete } = useGoogleCalendar()
 
   const handleDelete = (id) => {
     const res = Store.getAllReservations().find(r => r.id === id)
@@ -139,6 +149,8 @@ export default function AdminCalendar() {
         <GoogleStatusBadge
           connected={connected}
           tokenExpired={tokenExpired}
+          initError={initError}
+          gisReady={gisReady}
           onConnect={connect}
           onDisconnect={disconnect}
         />

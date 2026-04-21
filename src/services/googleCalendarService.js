@@ -44,7 +44,7 @@ export function init({ onSuccess, onError, onStateChange }) {
     },
   })
 }
-export function connect()    { _tokenClient?.requestAccessToken({ prompt: '' }) }
+export function connect()    { _tokenClient?.requestAccessToken({ prompt: 'select_account' }) }
 export function disconnect() {
   const t = getToken()
   if (t) window.google?.accounts?.oauth2?.revoke(t)
