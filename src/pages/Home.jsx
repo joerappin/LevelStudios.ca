@@ -736,11 +736,10 @@ export default function Home() {
                     { text: 'Éclairage Godox SL300III-K2', ok: true },
                   ]},
                   { label: 'Services', items: [
-                    { text: 'Pré-montage', ok: false },
-                    { text: 'Montage multicaméra', ok: false },
-                    { text: 'Suppression des silences', ok: false },
                     { text: 'Fichiers bruts livrés sur votre espace instantanément après le tournage', ok: true },
-                    { text: 'Export WAV qualité studio', ok: true },
+                    { text: 'Pré-montage multicaméra', ok: true },
+                    { text: 'Suppression des silences', ok: true },
+                    { text: 'Export WAV mixé qualité studio', ok: false },
                     { text: 'Sauvegarde 7 jours', ok: true },
                   ]},
                 ].map(group => (
