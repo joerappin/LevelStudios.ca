@@ -599,6 +599,13 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Prix de départ */}
+        <div style={{ textAlign: 'center', padding: '10px 0 4px', background: '#080808' }}>
+          <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 600 }}>à partir de </span>
+          <span style={{ color: '#fff', fontSize: '1rem', fontWeight: 900 }}>149$</span>
+          <span style={{ color: '#555', fontSize: '0.72rem', marginLeft: '5px' }}>+tx.</span>
+        </div>
+
         {/* ── Logo banner infini ── */}
         <div style={{ overflow: 'hidden', padding: '22px 0', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="marquee-track" style={{ display: 'flex', alignItems: 'center', gap: 0, whiteSpace: 'nowrap', width: 'max-content', userSelect: 'none' }}>
@@ -706,10 +713,6 @@ export default function Home() {
             <div className="reveal reveal-d1" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: '24px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Bronze</span>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>149 $</span>
-                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>HT / h</span>
-                </div>
                 <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>L'essentiel pour vos productions.</p>
               </div>
 
@@ -736,9 +739,9 @@ export default function Home() {
                   { label: 'Services', items: [
                     { text: 'Pré-montage', ok: false },
                     { text: 'Montage multicaméra', ok: false },
+                    { text: 'Suppression des silences', ok: false },
                     { text: 'Fichiers bruts livrés sous 24h', ok: true },
                     { text: 'Export WAV qualité studio', ok: true },
-                    { text: 'Suppression des silences', ok: false },
                     { text: 'Sauvegarde 7 jours', ok: true },
                   ]},
                 ].map(group => (
@@ -773,10 +776,6 @@ export default function Home() {
 
               <div style={{ marginBottom: '24px', marginTop: '20px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#e8175d', background: 'rgba(232,23,93,0.08)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(232,23,93,0.2)' }}>Argent</span>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>199 $</span>
-                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>HT / h</span>
-                </div>
                 <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>La référence pour vos productions.</p>
               </div>
 
@@ -802,7 +801,7 @@ export default function Home() {
                   ]},
                   { label: 'Services', items: [
                     { text: 'Pré-montage' },
-                    { text: 'Montage multicaméra & synchro audio/vidéo' },
+                    { text: 'multicaméra & synchro audio/vidéo' },
                     { text: 'Introduction dynamique', ok: false },
                     { text: 'Motion design', ok: false },
                     { text: 'Fichiers bruts livrés sous 24h' },
@@ -835,10 +834,6 @@ export default function Home() {
             <div className="reveal reveal-d3" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: '24px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8860b', background: 'rgba(255,193,7,0.1)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(255,193,7,0.3)' }}>Or</span>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>499 $</span>
-                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>HT / h</span>
-                </div>
                 <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Votre épisode prêt à publier.</p>
               </div>
 
@@ -863,12 +858,14 @@ export default function Home() {
                     { text: 'Éclairage Godox SL300III-K2' },
                   ]},
                   { label: 'Services', items: [
+                    { text: 'Pré-montage' },
+                    { text: 'multicaméra & synchro audio/vidéo' },
                     { text: 'Introduction dynamique' },
                     { text: 'Motion design, animation logo' },
                     { text: 'Fichiers bruts livrés sous 24h' },
                     { text: 'Export WAV qualité studio' },
-                    { text: 'Sauvegarde 2 mois' },
                     { text: 'Montage finalisé + 2 révisions' },
+                    { text: 'Sauvegarde 2 mois' },
                   ]},
                 ].map(group => (
                   <div key={group.label}>
