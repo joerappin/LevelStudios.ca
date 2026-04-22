@@ -713,9 +713,9 @@ export default function Home() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.14)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
             >
-              <div style={{ marginBottom: '24px' }}>
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Bronze</span>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>L'essentiel pour vos productions.</p>
+              <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+                <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-0.02em', color: '#888', marginBottom: '8px', fontFamily: 'Georgia, serif' }}>Bronze</span>
+                <p style={{ fontSize: '12px', color: '#aaa' }}>L'essentiel pour vos productions.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
@@ -775,12 +775,12 @@ export default function Home() {
               <div style={{ position: 'absolute', top: '14px', left: '50%', transform: 'translateX(-50%)', borderRadius: '999px', padding: '6px 20px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                 background: 'linear-gradient(90deg, #ff0040, #ff6a00, #ffe000, #00e676, #00b0ff, #7c4dff, #e91e63, #ff4d8d, #ff0040)',
                 backgroundSize: '400% 100%', animation: 'rainbow-drift 15s linear infinite' }}>
-                ✦ Recommandé
+                ✦ Best seller
               </div>
 
-              <div style={{ marginBottom: '24px', marginTop: '20px' }}>
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#e8175d', background: 'rgba(232,23,93,0.08)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(232,23,93,0.2)' }}>Argent</span>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>La référence pour vos productions.</p>
+              <div style={{ marginBottom: '24px', marginTop: '20px', textAlign: 'center' }}>
+                <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-0.02em', color: '#e8175d', marginBottom: '8px', fontFamily: 'Georgia, serif' }}>Argent</span>
+                <p style={{ fontSize: '12px', color: '#aaa' }}>La référence pour vos productions.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
@@ -838,9 +838,9 @@ export default function Home() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(184,134,11,0.18)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
             >
-              <div style={{ marginBottom: '24px' }}>
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8860b', background: 'rgba(255,193,7,0.1)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(255,193,7,0.3)' }}>Or</span>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Votre épisode prêt à publier.</p>
+              <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+                <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-0.02em', color: '#b8860b', marginBottom: '8px', fontFamily: 'Georgia, serif' }}>Or</span>
+                <p style={{ fontSize: '12px', color: '#aaa' }}>Votre épisode prêt à publier.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
