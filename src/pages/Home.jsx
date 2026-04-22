@@ -902,7 +902,7 @@ export default function Home() {
                 <div key={g.label}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', margin: 0 }}>{g.label}</p>
-                    {g.label === 'Accompagnement' && (
+                    {(g.label === 'Accompagnement' || g.label === 'Live') && (
                       <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'rgba(232,23,93,0.12)', color: '#e8175d', border: '1px solid rgba(232,23,93,0.3)', borderRadius: '999px', padding: '2px 8px' }}>Bientôt</span>
                     )}
                   </div>
