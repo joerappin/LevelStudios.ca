@@ -21,7 +21,7 @@ const GOOGLE_ICON = (
 
 /* ─── LOGIN MODAL ──────────────────────────────────────────── */
 function LoginModal({ onClose, initialTab = 'login' }) {
-  const { login, register } = useAuth()
+  const { login, register, logout } = useAuth()
   const navigate = useNavigate()
 
   const [tab, setTab] = useState(initialTab)
@@ -81,11 +81,14 @@ function LoginModal({ onClose, initialTab = 'login' }) {
     setLoginError('')
     const result = await login(loginForm.email, loginForm.password)
     if (result.success) {
+      if (result.user.type === 'employee') {
+        logout()
+        setLoginError('Accès équipe : utilisez le logo en bas de page.')
+        return
+      }
       onClose()
       if (result.user.type === 'admin') navigate('/admin/dashboard')
-      else if (result.user.type === 'employee') {
-        navigate(result.user.roleKey === 'chef_projet' ? '/chef/dashboard' : '/employee/dashboard')
-      } else navigate(createPageUrl('ClientDashboard'))
+      else navigate(createPageUrl('ClientDashboard'))
     } else setLoginError(result.error)
   }
 
@@ -418,7 +421,7 @@ export default function Home() {
               {!user && (
                 <button onClick={() => setLoginOpen(true)}
                   className="text-zinc-400 hover:text-white transition-colors text-center leading-tight">
-                  <div className="text-sm font-medium">Connexion</div>
+                  <div className="text-sm font-medium">Connexion client</div>
                   <div className="text-[10px] opacity-50 font-normal">Créer son compte</div>
                 </button>
               )}
@@ -459,7 +462,7 @@ export default function Home() {
             {[['#studios','Studios'],['#tarifs','Services'],['#materiel','Matériel'],['#avis','Avis']].map(([href, label]) => (
               <a key={href} href={href} className="block text-zinc-300 py-2 text-sm font-medium" onClick={() => setMenuOpen(false)}>{label}</a>
             ))}
-            <button onClick={() => { setMenuOpen(false); setLoginOpen(true) }} className="block w-full text-left text-zinc-400 py-2 text-sm">Connexion</button>
+            <button onClick={() => { setMenuOpen(false); setLoginOpen(true) }} className="block w-full text-left text-zinc-400 py-2 text-sm">Connexion client</button>
             <button
               onClick={() => { setMenuOpen(false); navigate(createPageUrl('Reservation')) }}
               className="block w-full text-white font-bold rounded-xl py-3 text-center text-sm"
@@ -1061,10 +1064,16 @@ export default function Home() {
       {/* ── FOOTER ──────────────────────────────────────────── */}
       <footer style={{ padding: '40px 24px', background: '#080808', borderTop: '1px solid #111' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => navigate('/login')}
+            title="Accès équipe"
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, opacity: 1, transition: 'opacity 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.65'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
             <img src="/logo.png" style={{ height: '56px', width: '56px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} alt="Level Studios" />
             <span style={{ color: '#fff', fontWeight: 800, fontSize: '14px' }}>Level Studios</span>
-          </div>
+          </button>
           <p style={{ color: '#333', fontSize: '12px' }}>© 2026 Level Studios — Tous droits réservés.</p>
           <div style={{ display: 'flex', gap: '24px' }}>
             <button onClick={() => navigate(createPageUrl('Contact'))} style={{ color: '#444', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#444'}>Contact</button>
