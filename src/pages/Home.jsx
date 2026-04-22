@@ -738,8 +738,8 @@ export default function Home() {
                     { text: 'Montage multicaméra', ok: false },
                     { text: 'Fichiers bruts livrés sous 24h', ok: true },
                     { text: 'Export WAV qualité studio', ok: true },
-                    { text: 'Sauvegarde 7 jours', ok: true },
                     { text: 'Suppression des silences', ok: false },
+                    { text: 'Sauvegarde 7 jours', ok: true },
                   ]},
                 ].map(group => (
                   <div key={group.label}>
@@ -799,12 +799,12 @@ export default function Home() {
                     { text: '3 caméras Sony FX30 4K multi-angles' },
                     { text: "Jusqu'à 4 micros Shure SM7B" },
                     { text: 'Éclairage Godox SL300III-K2' },
+                  ]},
+                  { label: 'Services', items: [
                     { text: 'Pré-montage' },
                     { text: 'Montage multicaméra & synchro audio/vidéo' },
                     { text: 'Introduction dynamique', ok: false },
                     { text: 'Motion design', ok: false },
-                  ]},
-                  { label: 'Livraison', items: [
                     { text: 'Fichiers bruts livrés sous 24h' },
                     { text: 'Export WAV qualité studio' },
                     { text: 'Suppression des silences et parties indésirables' },
@@ -861,14 +861,14 @@ export default function Home() {
                     { text: '3 caméras Sony FX30 4K multi-angles' },
                     { text: "Jusqu'à 4 micros Shure SM7B" },
                     { text: 'Éclairage Godox SL300III-K2' },
-                    { text: 'Introduction dynamique' },
-                    { text: 'Motion design' },
                   ]},
-                  { label: 'Livraison', items: [
+                  { label: 'Services', items: [
+                    { text: 'Introduction dynamique' },
+                    { text: 'Motion design, animation logo' },
                     { text: 'Fichiers bruts livrés sous 24h' },
                     { text: 'Export WAV qualité studio' },
-                    { text: 'Sauvegarde 14 jours' },
-                    { text: 'Montage finalisé + 1 révision' },
+                    { text: 'Sauvegarde 2 mois' },
+                    { text: 'Montage finalisé + 2 révisions' },
                   ]},
                 ].map(group => (
                   <div key={group.label}>
