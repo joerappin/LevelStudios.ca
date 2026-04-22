@@ -706,10 +706,13 @@ export default function Home() {
           </div>
 
           {/* 3-column pricing cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px', alignItems: 'stretch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px', alignItems: 'stretch', overflow: 'visible' }}>
 
             {/* ── BRONZE ── */}
-            <div className="reveal reveal-d1" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
+            <div className="reveal reveal-d1" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.14)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+            >
               <div style={{ marginBottom: '24px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Bronze</span>
                 <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>L'essentiel pour vos productions.</p>
@@ -764,7 +767,10 @@ export default function Home() {
             </div>
 
             {/* ── ARGENT (featured) ── */}
-            <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)' }}>
+            <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)', transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 20px 80px rgba(232,23,93,0.38)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.6)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 8px 60px rgba(232,23,93,0.18)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.25)' }}
+            >
               {/* Rainbow badge */}
               <div style={{ position: 'absolute', top: '14px', left: '50%', transform: 'translateX(-50%)', borderRadius: '999px', padding: '6px 20px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                 background: 'linear-gradient(90deg, #ff0040, #ff6a00, #ffe000, #00e676, #00b0ff, #7c4dff, #e91e63, #ff4d8d, #ff0040)',
@@ -828,7 +834,10 @@ export default function Home() {
             </div>
 
             {/* ── OR ── */}
-            <div className="reveal reveal-d3" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
+            <div className="reveal reveal-d3" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', transition: 'transform 0.25s ease, box-shadow 0.25s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(184,134,11,0.18)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+            >
               <div style={{ marginBottom: '24px' }}>
                 <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8860b', background: 'rgba(255,193,7,0.1)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(255,193,7,0.3)' }}>Or</span>
                 <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Votre épisode prêt à publier.</p>
