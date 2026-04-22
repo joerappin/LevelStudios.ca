@@ -536,7 +536,7 @@ export default function Home() {
           <div className="fade-up-1 inline-flex items-center gap-2 rounded-full mb-8"
             style={{ background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.3)', color: '#e8175d', padding: '8px 18px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#e8175d', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-            Studios disponibles maintenant
+            3 Studios disponibles maintenant
           </div>
 
           {/* Headline massif */}
