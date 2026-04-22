@@ -600,10 +600,9 @@ export default function Home() {
         </div>
 
         {/* Prix de départ */}
-        <div style={{ textAlign: 'center', padding: '10px 0 4px', background: '#080808' }}>
-          <span style={{ color: '#fff', fontSize: '0.8rem', fontWeight: 600 }}>à partir de </span>
-          <span style={{ color: '#fff', fontSize: '1rem', fontWeight: 900 }}>149$</span>
-          <span style={{ color: '#555', fontSize: '0.72rem', marginLeft: '5px' }}>+tx.</span>
+        <div style={{ textAlign: 'center', padding: '18px 0 8px', background: '#080808' }}>
+          <span style={{ color: '#fff', fontSize: 'clamp(2rem, 4vw, 3.2rem)', fontWeight: 900, letterSpacing: '-0.03em' }}>à partir de 149$</span>
+          <span style={{ color: '#555', fontSize: 'clamp(1rem, 2vw, 1.5rem)', fontWeight: 700, marginLeft: '8px' }}>+tx.</span>
         </div>
 
         {/* ── Logo banner infini ── */}
@@ -740,7 +739,7 @@ export default function Home() {
                     { text: 'Pré-montage', ok: false },
                     { text: 'Montage multicaméra', ok: false },
                     { text: 'Suppression des silences', ok: false },
-                    { text: 'Fichiers bruts livrés sous 24h', ok: true },
+                    { text: 'Fichiers bruts livrés sur votre espace instantanément après le tournage', ok: true },
                     { text: 'Export WAV qualité studio', ok: true },
                     { text: 'Sauvegarde 7 jours', ok: true },
                   ]},
@@ -768,7 +767,7 @@ export default function Home() {
             {/* ── ARGENT (featured) ── */}
             <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)' }}>
               {/* Rainbow badge */}
-              <div style={{ position: 'absolute', top: '-1px', left: '50%', transform: 'translateX(-50%)', borderRadius: '0 0 14px 14px', padding: '7px 22px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+              <div style={{ position: 'absolute', top: '14px', left: '50%', transform: 'translateX(-50%)', borderRadius: '999px', padding: '6px 20px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
                 background: 'linear-gradient(90deg, #ff0040, #ff6a00, #ffe000, #00e676, #00b0ff, #7c4dff, #e91e63, #ff4d8d, #ff0040)',
                 backgroundSize: '400% 100%', animation: 'rainbow-drift 15s linear infinite' }}>
                 ✦ Recommandé
@@ -804,7 +803,8 @@ export default function Home() {
                     { text: 'multicaméra & synchro audio/vidéo' },
                     { text: 'Introduction dynamique', ok: false },
                     { text: 'Motion design', ok: false },
-                    { text: 'Fichiers bruts livrés sous 24h' },
+                    { text: 'Fichiers bruts livrés sur votre espace instantanément après le tournage' },
+                    { text: 'Fichiers prémontage livrés sous 48h' },
                     { text: 'Export WAV qualité studio' },
                     { text: 'Suppression des silences et parties indésirables' },
                     { text: 'Sauvegarde 14 jours' },
@@ -862,9 +862,11 @@ export default function Home() {
                     { text: 'multicaméra & synchro audio/vidéo' },
                     { text: 'Introduction dynamique' },
                     { text: 'Motion design, animation logo' },
-                    { text: 'Fichiers bruts livrés sous 24h' },
+                    { text: 'Fichiers bruts livrés sur votre espace instantanément après le tournage' },
+                    { text: 'Fichiers prémontage livrés sous 48h' },
                     { text: 'Export WAV qualité studio' },
-                    { text: 'Montage finalisé + 2 révisions' },
+                    { text: 'Montage finalisé livré sous 5 jours' },
+                    { text: "Jusqu'à 2 révisions possible" },
                     { text: 'Sauvegarde 2 mois' },
                   ]},
                 ].map(group => (
