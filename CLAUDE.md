@@ -1,5 +1,9 @@
 # Level Studios — Contexte projet
 
+## Instructions Claude
+
+- **Auto-push** : À chaque modification de code, créer un commit et pusher automatiquement sur `main` sans attendre que l'utilisateur le demande.
+
 ## Business
 
 - **Nom** : Level Studios

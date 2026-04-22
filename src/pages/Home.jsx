@@ -801,6 +801,8 @@ export default function Home() {
                     { text: 'Éclairage Godox SL300III-K2' },
                     { text: 'Pré-montage' },
                     { text: 'Montage multicaméra & synchro audio/vidéo' },
+                    { text: 'Introduction dynamique', ok: false },
+                    { text: 'Motion design', ok: false },
                   ]},
                   { label: 'Livraison', items: [
                     { text: 'Fichiers bruts livrés sous 24h' },
@@ -813,10 +815,15 @@ export default function Home() {
                     <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(232,23,93,0.4)', marginBottom: '10px' }}>{group.label}</p>
                     {group.items.map(item => (
                       <div key={item.text} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', marginBottom: '8px' }}>
-                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                          <Check size={9} style={{ color: '#e8175d' }} />
-                        </span>
-                        <span style={{ fontSize: '12.5px', color: '#222', lineHeight: 1.5 }}>{item.text}</span>
+                        {item.ok === false
+                          ? <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#f4f4f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                              <X size={8} style={{ color: '#ccc' }} />
+                            </span>
+                          : <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                              <Check size={9} style={{ color: '#e8175d' }} />
+                            </span>
+                        }
+                        <span style={{ fontSize: '12.5px', color: item.ok === false ? '#ccc' : '#222', lineHeight: 1.5, textDecoration: item.ok === false ? 'line-through' : 'none' }}>{item.text}</span>
                       </div>
                     ))}
                   </div>
