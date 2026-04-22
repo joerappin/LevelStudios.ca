@@ -737,8 +737,8 @@ export default function Home() {
                   ]},
                   { label: 'Services', items: [
                     { text: 'Fichiers bruts livrés sur votre espace instantanément après le tournage', ok: true },
-                    { text: 'Pré-montage multicaméra', ok: true },
-                    { text: 'Suppression des silences', ok: true },
+                    { text: 'Pré-montage multicaméra', ok: false },
+                    { text: 'Suppression des silences', ok: false },
                     { text: 'Export WAV mixé qualité studio', ok: false },
                     { text: 'Sauvegarde 7 jours', ok: true },
                   ]},
