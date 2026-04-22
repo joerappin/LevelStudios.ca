@@ -78,8 +78,11 @@ function readReservations(publicDir) {
 }
 
 function writeReservation(reservation, publicDir) {
-  if (!reservation.client_email) return
-  const clientDir = path.join(publicDir, 'customers', sanitizeEmail(reservation.client_email), String(reservation.id))
+  const folder = reservation.client_email
+    ? sanitizeEmail(reservation.client_email)
+    : '_unassigned'
+  deleteReservationFile(reservation.id, publicDir) // move if email changed
+  const clientDir = path.join(publicDir, 'customers', folder, String(reservation.id))
   fs.mkdirSync(clientDir, { recursive: true })
   fs.writeFileSync(path.join(clientDir, 'reservation.json'), JSON.stringify(reservation, null, 2))
 }
@@ -255,9 +258,69 @@ function localReservationsPlugin() {
   }
 }
 
+// ─── Local ICS plugin ─────────────────────────────────────────────────────────
+function localIcsPlugin() {
+  const publicDir = path.resolve(__dirname, 'public')
+
+  const STATUS_LABEL = {
+    a_payer: 'À payer', en_attente: 'En attente', validee: 'Validée',
+    tournee: 'Tournée', 'post-prod': 'Post-production', livree: 'Livrée',
+    annulee: 'Annulée', rembourse: 'Remboursée', absent: 'Absent',
+  }
+  const statusToICS = s => ['validee','tournee','post-prod','livree'].includes(s) ? 'CONFIRMED'
+    : ['annulee','rembourse'].includes(s) ? 'CANCELLED' : 'TENTATIVE'
+  const esc = s => String(s || '').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')
+  const fmtDT = (d, t) => d.replace(/-/g,'') + 'T' + t.replace(/:/g,'') + '00'
+  const calcEnd = (t, dur) => { const [h,m]=t.split(':'); return `${String(+h+(+dur||1)).padStart(2,'0')}:${m}` }
+
+  return {
+    name: 'local-ics-api',
+    configureServer(server) {
+      server.middlewares.use('/api/calendar.ics.php', (req, res) => {
+        if (req.method !== 'GET') { res.statusCode = 405; res.end(); return }
+        res.setHeader('Content-Type', 'text/calendar; charset=utf-8')
+        res.setHeader('Content-Disposition', 'inline; filename="level-studios.ics"')
+        res.setHeader('Access-Control-Allow-Origin', '*')
+
+        const reservations = readReservations(publicDir).filter(r => !r.trashed && r.date && r.start_time)
+        const now = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')
+        const lines = [
+          'BEGIN:VCALENDAR','VERSION:2.0',
+          'PRODID:-//Level Studios//Réservations//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+          'X-WR-CALNAME:Level Studios — Réservations','X-WR-TIMEZONE:America/Toronto',
+          'BEGIN:VTIMEZONE','TZID:America/Toronto',
+          'BEGIN:STANDARD','DTSTART:19701101T020000','RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11',
+          'TZOFFSETFROM:-0400','TZOFFSETTO:-0500','TZNAME:EST','END:STANDARD',
+          'BEGIN:DAYLIGHT','DTSTART:19700308T020000','RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3',
+          'TZOFFSETFROM:-0500','TZOFFSETTO:-0400','TZNAME:EDT','END:DAYLIGHT',
+          'END:VTIMEZONE',
+        ]
+        for (const r of reservations) {
+          const end = r.end_time || calcEnd(r.start_time, r.duration)
+          const name = (r.client_name || `${r.client_first_name||''} ${r.client_last_name||''}`).trim()
+          lines.push(
+            'BEGIN:VEVENT',
+            `UID:res-${r.id}@levelstudios.ca`,
+            `DTSTAMP:${now}Z`,
+            `DTSTART;TZID=America/Toronto:${fmtDT(r.date, r.start_time)}`,
+            `DTEND;TZID=America/Toronto:${fmtDT(r.date, end)}`,
+            `SUMMARY:${esc((r.studio||'Studio') + ' — ' + name)}`,
+            `DESCRIPTION:Formule: ${esc(r.service||'')}\\nStatut: ${esc(STATUS_LABEL[r.status]||r.status||'')}\\nPrix: ${r.price||0} CAD\\nID: ${r.id}`,
+            `LOCATION:Level Studios — ${esc(r.studio||'')}`,
+            `STATUS:${statusToICS(r.status)}`,
+            'END:VEVENT',
+          )
+        }
+        lines.push('END:VCALENDAR')
+        res.end(lines.join('\r\n') + '\r\n')
+      })
+    },
+  }
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 export default defineConfig({
-  plugins: [react(), basicSsl(), localAccountsPlugin(), localReservationsPlugin()],
+  plugins: [react(), basicSsl(), localAccountsPlugin(), localReservationsPlugin(), localIcsPlugin()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },

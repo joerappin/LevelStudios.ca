@@ -37,8 +37,11 @@ function readAllReservations($root) {
 }
 
 function writeReservation($reservation, $root) {
-  if (empty($reservation['client_email'])) return;
-  $clientDir = $root . '/customers/' . sanitizeEmail($reservation['client_email']) . '/' . $reservation['id'];
+  $folder = !empty($reservation['client_email'])
+    ? sanitizeEmail($reservation['client_email'])
+    : '_unassigned';
+  deleteReservationFile($reservation['id'], $root); // move if email changed
+  $clientDir = $root . '/customers/' . $folder . '/' . $reservation['id'];
   if (!is_dir($clientDir)) mkdir($clientDir, 0755, true);
   file_put_contents($clientDir . '/reservation.json', json_encode($reservation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }

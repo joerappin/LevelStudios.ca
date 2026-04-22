@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, ExternalLink, Copy, Check, Wifi, WifiOff, RefreshCw, AlertCircle, Loader } from 'lucide-react'
 import Layout from '../../components/Layout'
@@ -50,7 +50,7 @@ function GoogleStatusBadge({ connected, tokenExpired, initError, gisReady, onCon
   )
 }
 
-function GoogleAgendaView() {
+function GoogleAgendaView({ refreshKey, onRefresh }) {
   const icsUrl = `${window.location.origin}/api/calendar.ics.php`
   const [copied, setCopied] = useState(false)
 
@@ -62,6 +62,7 @@ function GoogleAgendaView() {
     <div className="flex flex-col gap-6">
       <div className="rounded-xl overflow-hidden border border-white/10" style={{ height: 600 }}>
         <iframe
+          key={refreshKey}
           src={GOOGLE_EMBED_URL}
           style={{ border: 0, width: '100%', height: '100%' }}
           frameBorder="0"
@@ -74,14 +75,22 @@ function GoogleAgendaView() {
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
           <p className="text-white font-medium text-sm">Ouvrir dans Google Agenda</p>
           <p className="text-white/50 text-xs">Accéder directement au calendrier partagé Level Studios.</p>
-          <a
-            href={GOOGLE_OPEN_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-fit"
-          >
-            <ExternalLink size={14} /> Ouvrir Google Agenda
-          </a>
+          <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href={GOOGLE_OPEN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              <ExternalLink size={14} /> Ouvrir Google Agenda
+            </a>
+            <button
+              onClick={onRefresh}
+              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              <RefreshCw size={14} /> Actualiser l'aperçu
+            </button>
+          </div>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
@@ -107,20 +116,23 @@ export default function AdminCalendar() {
   const { reservations, reload } = useReservations()
   const navigate = useNavigate()
   const [view, setView] = useState('internal')
+  const [iframeKey, setIframeKey] = useState(0)
   const { connected, tokenExpired, initError, gisReady, connect, disconnect, syncUpdate, syncDelete } = useGoogleCalendar()
+
+  const refreshIframe = useCallback(() => setIframeKey(k => k + 1), [])
 
   const handleDelete = (id) => {
     const res = Store.getAllReservations().find(r => r.id === id)
     Store.updateReservation(id, { trashed: true })
     reload()
-    if (res) syncDelete(res)
+    if (res) syncDelete(res).then(refreshIframe)
   }
 
   const handleUpdate = (id, patch) => {
     Store.updateReservation(id, { ...patch, modified_by: user?.email || 'admin' })
     reload()
     const res = Store.getAllReservations().find(r => r.id === id)
-    if (res) syncUpdate({ ...res, ...patch })
+    if (res) syncUpdate({ ...res, ...patch }).then(refreshIframe)
   }
 
   return (
@@ -137,7 +149,7 @@ export default function AdminCalendar() {
             <Calendar size={14} /> Calendrier interne
           </button>
           <button
-            onClick={() => setView('google')}
+            onClick={() => { setView('google'); refreshIframe() }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               view === 'google' ? 'bg-blue-600 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
             }`}
@@ -165,7 +177,7 @@ export default function AdminCalendar() {
           onDayDoubleClick={(date) => navigate('/admin/reservations', { state: { openCreate: true, date } })}
         />
       ) : (
-        <GoogleAgendaView />
+        <GoogleAgendaView refreshKey={iframeKey} onRefresh={refreshIframe} />
       )}
     </Layout>
   )

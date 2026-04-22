@@ -29,7 +29,7 @@ const SLIDES = [
 
 function buildArgentPacks() {
   const p = Store.getPrices()
-  const a = p.services.find(s => s.id === 'ARGENT')?.price ?? 221
+  const a = p.services.find(s => s.id === 'ARGENT')?.price ?? 199
   const round = v => Math.round(v)
   return [
     { hours: 1,  pricePerHour: a,              total: a * 1,               discount: null },

@@ -139,9 +139,10 @@ export default function AdminReservations() {
   const activeReservations  = reservations.filter(r => !r.trashed)
 
   const filtered = (view === 'corbeille' ? trashedReservations : activeReservations).filter(r => {
-    const matchSearch = r.client_name.toLowerCase().includes(search.toLowerCase()) ||
-      r.studio.toLowerCase().includes(search.toLowerCase()) ||
-      r.id.toLowerCase().includes(search.toLowerCase())
+    const q = search.toLowerCase()
+    const matchSearch = (r.client_name || '').toLowerCase().includes(q) ||
+      (r.studio || '').toLowerCase().includes(q) ||
+      (r.id || '').toLowerCase().includes(q)
     const matchStatus = view === 'corbeille' || statusFilter === 'Tous' || r.status === statusFilter
     return matchSearch && matchStatus
   })

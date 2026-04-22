@@ -39,13 +39,21 @@ export function useReservations({ clientEmail, includeTrash = false, interval = 
         // For a per-client fetch: replace all LS entries for this client with fresh PHP data
         const others = cached.filter(r => r.client_email !== clientEmail)
         localStorage.setItem('ls_reservations', JSON.stringify([...others, ...data]))
+        setReservations(data)
       } else {
-        // Global fetch: keep only file-backed entries + soft-deleted (trashed) LS entries
-        const trashedOnly = cached.filter(r => r.trashed && !fileIds.has(String(r.id)))
-        localStorage.setItem('ls_reservations', JSON.stringify([...data, ...trashedOnly]))
+        // Global fetch: keep file-backed entries + trashed LS entries + Google-imported
+        // (RM) reservations that have no client_email yet and are therefore not on disk
+        const keepFromCache = cached.filter(r =>
+          !fileIds.has(String(r.id)) && (
+            r.trashed ||
+            String(r.id).startsWith('RM') ||
+            r.source === 'google_calendar'
+          )
+        )
+        const merged = [...data, ...keepFromCache]
+        localStorage.setItem('ls_reservations', JSON.stringify(merged))
+        setReservations(includeTrash ? merged : merged.filter(r => !r.trashed))
       }
-
-      setReservations(data)
     } catch {
       // Network down → fall back to localStorage cache
       const base = includeTrash ? Store.getAllReservations() : Store.getReservations()

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Plus, X, ArrowRightLeft } from 'lucide-react'
+import { Plus, X, ArrowRightLeft, UserCheck } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { CHEF_NAV } from './ChefDashboard'
 import { Store } from '../../data/store'
@@ -41,15 +41,22 @@ export default function ChefProjects() {
     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
 
   useEffect(() => {
-    // Auto-promote Booking → Todo for today's reservations
     const today = new Date().toISOString().split('T')[0]
     Store.getProjects().forEach(p => {
-      if (p.status === 'Booking' && p.date === today) {
-        Store.updateProject(p.id, { status: 'Todo' })
-      }
+      if (p.status === 'Booking' && p.date === today) Store.updateProject(p.id, { status: 'Todo' })
     })
     setProjects(Store.getProjects())
-    setEmployees(Store.getEmployees())
+    // Merge ls_employees + ls_accounts (employee type) to survive any sync gap
+    const fromEmp = Store.getEmployees()
+    const fromAcc = Store.getAccounts().filter(a =>
+      a.type === 'employee' || ['worker', 'chef_projet', 'admin'].includes(a.roleKey)
+    )
+    const merged = [...fromEmp]
+    for (const a of fromAcc) {
+      if (!merged.find(e => e.email === a.email))
+        merged.push({ id: a.id, email: a.email, name: a.name, role: a.role, roleKey: a.roleKey })
+    }
+    setEmployees(merged)
   }, [])
 
   const columns = mode === 'PROD' ? PROD_COLUMNS : POST_COLUMNS
@@ -155,12 +162,6 @@ export default function ChefProjects() {
                             {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
                           </div>
                         )}
-                        {p.assigned_to && (
-                          <div className={cn('text-[10px]', textSecondary)}>
-                            {employees.find(e => e.email === p.assigned_to)?.name || p.assigned_to}
-                          </div>
-                        )}
-                        {/* Move to any column */}
                         <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
                           <select
                             value={p.status}
@@ -170,17 +171,20 @@ export default function ChefProjects() {
                             {columns.map(c => <option key={c} value={c}>{c}</option>)}
                             {mode === 'PROD' && <option value="Retour">↳ Retour (POST)</option>}
                           </select>
-                          <select
-                            value={p.assigned_to || ''}
-                            onChange={e => {
-                              Store.updateProject(p.id, { assigned_to: e.target.value })
-                              setProjects(Store.getProjects())
-                            }}
-                            className={cn('w-full text-[10px] px-1.5 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-1 focus:ring-violet-500', isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-gray-50 border-gray-200 text-gray-600')}
-                          >
-                            <option value="">— Assigner</option>
-                            {employees.map(emp => <option key={emp.id} value={emp.email}>{emp.name}</option>)}
-                          </select>
+                          <div className={cn('flex items-center gap-1 rounded-lg border overflow-hidden', isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200')}>
+                            <UserCheck size={10} className={p.assigned_to ? 'text-violet-400 ml-1.5 flex-shrink-0' : (isDark ? 'text-zinc-600 ml-1.5 flex-shrink-0' : 'text-gray-400 ml-1.5 flex-shrink-0')} />
+                            <select
+                              value={p.assigned_to || ''}
+                              onChange={e => {
+                                Store.updateProject(p.id, { assigned_to: e.target.value })
+                                setProjects(Store.getProjects())
+                              }}
+                              className={cn('w-full text-[10px] px-1 py-1 bg-transparent cursor-pointer focus:outline-none', p.assigned_to ? (isDark ? 'text-violet-300 font-semibold' : 'text-violet-600 font-semibold') : (isDark ? 'text-zinc-400' : 'text-gray-500'))}
+                            >
+                              <option value="">— Assigner</option>
+                              {employees.map(emp => <option key={emp.id} value={emp.email}>{emp.name}</option>)}
+                            </select>
+                          </div>
                         </div>
                       </div>
                     ))}

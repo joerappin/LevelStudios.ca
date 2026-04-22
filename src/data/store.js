@@ -50,8 +50,9 @@ const PRICE_KEY = 'ls_custom_prices'
 
 const DEFAULT_PRICES = {
   services: [
-    { id: 'ARGENT', label: 'Offre Argent (/ heure)', price: 221 },
-    { id: 'GOLD',   label: 'Offre Gold (/ heure)',   price: 587 },
+    { id: 'BRONZE', label: 'Offre Bronze (/ heure)', price: 149 },
+    { id: 'ARGENT', label: 'Offre Argent (/ heure)', price: 199 },
+    { id: 'GOLD',   label: 'Offre Or (/ heure)',     price: 499 },
   ],
   options: [
     { id: 'Photo',            label: 'Photo',                        group: 'Base',           price: 44  },
@@ -416,10 +417,15 @@ export const Store = {
   },
 
   // Pricing — persists independently of seed version
+  // Merges stored prices with DEFAULT_PRICES so new services/options appear automatically
   getPrices: () => {
     try {
       const s = localStorage.getItem(PRICE_KEY)
-      return s ? JSON.parse(s) : DEFAULT_PRICES
+      if (!s) return DEFAULT_PRICES
+      const stored = JSON.parse(s)
+      const services = DEFAULT_PRICES.services.map(def => stored.services?.find(sv => sv.id === def.id) || def)
+      const options  = DEFAULT_PRICES.options.map(def => stored.options?.find(o => o.id === def.id) || def)
+      return { services, options }
     } catch { return DEFAULT_PRICES }
   },
   setPrices: (data) => localStorage.setItem(PRICE_KEY, JSON.stringify(data)),

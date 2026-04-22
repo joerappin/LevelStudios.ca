@@ -31,7 +31,7 @@ export function isConnected() { return !!getToken() }
 
 export function init({ onSuccess, onError, onStateChange }) {
   _onStateChange = onStateChange
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '562981400783-gviei84p2ajqvl9m453uba2qm3efnplt.apps.googleusercontent.com'
   if (!clientId) { onError?.('Client ID Google non configuré dans .env'); return }
   if (!window.google?.accounts?.oauth2) { onError?.('Google Identity Services non chargé'); return }
   _tokenClient = window.google.accounts.oauth2.initTokenClient({

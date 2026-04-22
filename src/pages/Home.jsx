@@ -702,11 +702,15 @@ export default function Home() {
           {/* 3-column pricing cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px', alignItems: 'stretch' }}>
 
-            {/* ── ARGENT ── */}
+            {/* ── BRONZE ── */}
             <div className="reveal reveal-d1" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: '24px' }}>
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Argent</span>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>La référence pour vos productions.</p>
+                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Bronze</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>149 $</span>
+                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>HT / h</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>L'essentiel pour vos productions.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
@@ -728,14 +732,14 @@ export default function Home() {
                     { text: '3 caméras Sony FX30 4K multi-angles', ok: true },
                     { text: "Jusqu'à 4 micros Shure SM7B", ok: true },
                     { text: 'Éclairage Godox SL300III-K2', ok: true },
-                    { text: 'Introduction dynamique', ok: false },
-                    { text: 'Motion design', ok: false },
+                    { text: 'Pré-montage', ok: false },
+                    { text: 'Montage multicaméra', ok: false },
                   ]},
                   { label: 'Livraison', items: [
                     { text: 'Fichiers bruts livrés sous 24h', ok: true },
                     { text: 'Export WAV qualité studio', ok: true },
-                    { text: 'Sauvegarde 14 jours', ok: true },
-                    { text: 'Montage finalisé', ok: false },
+                    { text: 'Sauvegarde 7 jours', ok: true },
+                    { text: 'Suppression des silences', ok: false },
                   ]},
                 ].map(group => (
                   <div key={group.label}>
@@ -758,7 +762,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ── GOLD (featured) ── */}
+            {/* ── ARGENT (featured) ── */}
             <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)' }}>
               {/* Rainbow badge */}
               <div style={{ position: 'absolute', top: '-1px', left: '50%', transform: 'translateX(-50%)', borderRadius: '0 0 14px 14px', padding: '7px 22px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
@@ -768,14 +772,73 @@ export default function Home() {
               </div>
 
               <div style={{ marginBottom: '24px', marginTop: '20px' }}>
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#e8175d', background: 'rgba(232,23,93,0.08)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(232,23,93,0.2)' }}>Gold</span>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Entrez dans un <span style={{ color: '#e8175d', fontWeight: 800 }}>studio</span> équipé.</p>
+                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#e8175d', background: 'rgba(232,23,93,0.08)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(232,23,93,0.2)' }}>Argent</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>199 $</span>
+                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>HT / h</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>La référence pour vos productions.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
                 style={{ width: '100%', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', border: 'none', cursor: 'pointer', marginBottom: '28px', transition: 'opacity 0.2s', textAlign: 'left', boxShadow: '0 4px 20px rgba(232,23,93,0.3)' }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                Réserver mon studio →
+              </button>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                {[
+                  { label: 'Le Studio', items: [
+                    { text: 'Studio podcast entièrement équipé' },
+                    { text: 'Opérateur dédié pendant la session' },
+                    { text: 'Choix du décor et ambiance' },
+                  ]},
+                  { label: 'Équipement', items: [
+                    { text: '3 caméras Sony FX30 4K multi-angles' },
+                    { text: "Jusqu'à 4 micros Shure SM7B" },
+                    { text: 'Éclairage Godox SL300III-K2' },
+                    { text: 'Pré-montage' },
+                    { text: 'Montage multicaméra & synchro audio/vidéo' },
+                  ]},
+                  { label: 'Livraison', items: [
+                    { text: 'Fichiers bruts livrés sous 24h' },
+                    { text: 'Export WAV qualité studio' },
+                    { text: 'Suppression des silences et parties indésirables' },
+                    { text: 'Sauvegarde 14 jours' },
+                  ]},
+                ].map(group => (
+                  <div key={group.label}>
+                    <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(232,23,93,0.4)', marginBottom: '10px' }}>{group.label}</p>
+                    {group.items.map(item => (
+                      <div key={item.text} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', marginBottom: '8px' }}>
+                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                          <Check size={9} style={{ color: '#e8175d' }} />
+                        </span>
+                        <span style={{ fontSize: '12.5px', color: '#222', lineHeight: 1.5 }}>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── OR ── */}
+            <div className="reveal reveal-d3" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#b8860b', background: 'rgba(255,193,7,0.1)', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px', border: '1px solid rgba(255,193,7,0.3)' }}>Or</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>499 $</span>
+                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 600 }}>HT / h</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Votre épisode prêt à publier.</p>
+              </div>
+
+              <button onClick={() => navigate(createPageUrl('Reservation'))}
+                style={{ width: '100%', border: '1.5px solid rgba(232,23,93,0.35)', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#e8175d', background: 'rgba(232,23,93,0.04)', cursor: 'pointer', marginBottom: '28px', transition: 'all 0.2s', textAlign: 'left' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.09)'; e.currentTarget.style.borderColor = '#e8175d' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.04)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.35)' }}
               >
                 Je veux mon épisode prêt à publier →
               </button>
@@ -799,58 +862,6 @@ export default function Home() {
                     { text: 'Export WAV qualité studio' },
                     { text: 'Sauvegarde 14 jours' },
                     { text: 'Montage finalisé + 1 révision' },
-                  ]},
-                ].map(group => (
-                  <div key={group.label}>
-                    <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(232,23,93,0.4)', marginBottom: '10px' }}>{group.label}</p>
-                    {group.items.map(item => (
-                      <div key={item.text} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', marginBottom: '8px' }}>
-                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                          <Check size={9} style={{ color: '#e8175d' }} />
-                        </span>
-                        <span style={{ fontSize: '12.5px', color: '#222', lineHeight: 1.5 }}>{item.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── SUR-MESURE ── */}
-            <div className="reveal reveal-d3" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ marginBottom: '24px' }}>
-                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', background: '#f0f0f0', borderRadius: '999px', padding: '4px 14px', marginBottom: '16px' }}>Sur-Mesure</span>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 900, color: '#0a0a0a', letterSpacing: '-0.03em', lineHeight: 1 }}>Sur devis</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#aaa', marginTop: '6px' }}>Un projet unique, une production unique.</p>
-              </div>
-
-              <button onClick={() => navigate(createPageUrl('Reservation'))}
-                style={{ width: '100%', border: '1.5px solid rgba(232,23,93,0.35)', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#e8175d', background: 'rgba(232,23,93,0.04)', cursor: 'pointer', marginBottom: '28px', transition: 'all 0.2s', textAlign: 'left' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.09)'; e.currentTarget.style.borderColor = '#e8175d' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.04)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.35)' }}
-              >
-                Construire mon projet sur-mesure →
-              </button>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '22px' }}>
-                {[
-                  { label: 'Création et univers visuel', items: [
-                    { text: 'Direction artistique personnalisée' },
-                    { text: 'Scénographie et décor sur mesure' },
-                    { text: 'Identité visuelle et branding' },
-                  ]},
-                  { label: 'Tournage et réalisation', items: [
-                    { text: 'Équipe de tournage dédiée' },
-                    { text: 'Réalisation multi-caméras 4K' },
-                    { text: 'Son et lumière professionnels' },
-                    { text: 'Drone et prises de vues créatives' },
-                  ]},
-                  { label: 'Accompagnement', items: [
-                    { text: 'Community manager inclus' },
-                    { text: 'Coaching prise de parole' },
-                    { text: 'Suivi post-production complet' },
                   ]},
                 ].map(group => (
                   <div key={group.label}>

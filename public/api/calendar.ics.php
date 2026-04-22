@@ -3,7 +3,11 @@ header('Content-Type: text/calendar; charset=utf-8');
 header('Content-Disposition: inline; filename="level-studios.ics"');
 header('Access-Control-Allow-Origin: *');
 
+// Try web root (one level up from /api/), then document root
 $root = dirname(__DIR__);
+if (!is_dir($root . '/customers') && !empty($_SERVER['DOCUMENT_ROOT'])) {
+  $root = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
+}
 
 function readActiveReservations($root) {
   $customersDir = $root . '/customers';

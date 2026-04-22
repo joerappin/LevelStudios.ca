@@ -31,8 +31,9 @@ function buildServices() {
   const p = Store.getPrices()
   const priceOf = (id, fb) => p.services.find(s => s.id === id)?.price ?? fb
   return [
-    { key: 'ARGENT', label: `ARGENT — ${priceOf('ARGENT', 221)} CAD/h`, rate: priceOf('ARGENT', 221) },
-    { key: 'GOLD',   label: `GOLD — ${priceOf('GOLD', 587)} CAD/h`,     rate: priceOf('GOLD', 587) },
+    { key: 'BRONZE', label: `BRONZE — ${priceOf('BRONZE', 149)} CAD/h`, rate: priceOf('BRONZE', 149) },
+    { key: 'ARGENT', label: `ARGENT — ${priceOf('ARGENT', 199)} CAD/h`, rate: priceOf('ARGENT', 199) },
+    { key: 'GOLD',   label: `OR — ${priceOf('GOLD', 499)} CAD/h`,       rate: priceOf('GOLD', 499) },
   ]
 }
 

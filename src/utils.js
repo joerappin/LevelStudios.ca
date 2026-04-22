@@ -66,12 +66,15 @@ export function generateId(prefix) {
 
 // ── Offres — code couleur unifié ─────────────────────────────────────────
 export const TIER_CONFIG = {
-  ARGENT: { cls: 'bg-zinc-400/20 text-zinc-300 border border-zinc-500/30',  label: 'ARGENT' },
-  GOLD:   { cls: 'bg-amber-500/20 text-amber-400 border border-amber-500/30', label: 'GOLD' },
+  BRONZE: { cls: 'bg-orange-500/20 text-orange-400 border border-orange-500/30', label: 'BRONZE' },
+  ARGENT: { cls: 'bg-zinc-400/20 text-zinc-300 border border-zinc-500/30',        label: 'ARGENT' },
+  GOLD:   { cls: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',     label: 'OR' },
 }
 export function getTierConfig(service) {
   const s = (service || '').toUpperCase()
-  return s.includes('GOLD') ? TIER_CONFIG.GOLD : TIER_CONFIG.ARGENT
+  if (s.includes('BRONZE')) return TIER_CONFIG.BRONZE
+  if (s.includes('GOLD'))   return TIER_CONFIG.GOLD
+  return TIER_CONFIG.ARGENT
 }
 
 // ── Statuts réservation — code couleur unifié ─────────────────────────────

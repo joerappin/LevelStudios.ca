@@ -30,9 +30,11 @@
 
 ## Offres & Tarifs
 
-### 🎙️ Offre ARGENT — Enregistrement clé en main
+> **3 formules** : BRONZE · ARGENT · OR (id interne GOLD)
 
-**Tarif : 221 CAD / heure**
+### 🥉 Offre BRONZE — Enregistrement clé en main
+
+**Tarif : 149 CAD HT / heure**
 
 #### Studio & encadrement
 - Accès à un studio podcast entièrement équipé (décor au choix)
@@ -45,15 +47,35 @@
 - Éclairage Godox SL300III-K2
 - Studio acoustiquement traité
 
-#### Post-production
-- Pré-montage (cut + synchro audio/vidéo)
+#### Livraison
+- Envoi des fichiers bruts audio et vidéo sous 24h
 - Export WAV (qualité studio)
-- Envoi des fichiers sous 24h
+- Sauvegarde 7 jours
 
-#### Sauvegarde & suivi
-- Sauvegarde 14 jours
-- Lien de téléchargement
-- Assistance technique
+---
+
+### 💳 Packs d'heures — Offre BRONZE
+
+| Formule | Prix CAD/h | Total CAD |
+|---------|-----------|-----------|
+| 1h | 149 CAD | 149 CAD |
+| 4h (-10%) | 134 CAD | 536 CAD |
+| 10h (-15%) | 127 CAD | 1 270 CAD |
+| 20h (-20%) | 119 CAD | 2 380 CAD |
+
+---
+
+### 🎙️ Offre ARGENT — Bronze + post-production
+
+**Tarif : 199 CAD HT / heure**
+
+Tout ce qui est inclus dans la formule Bronze, plus :
+
+#### Post-production incluse
+- Pré-montage
+- Montage multicaméra & synchronisation audio/vidéo
+- Suppression des silences et des parties indésirables
+- Sauvegarde 14 jours (au lieu de 7)
 
 ---
 
@@ -61,27 +83,35 @@
 
 | Formule | Prix CAD/h | Total CAD |
 |---------|-----------|-----------|
-| 1h | 221 CAD | 221 CAD |
-| 4h (-10%) | 198 CAD | 794 CAD |
-| 10h (-15%) | 187 CAD | 1 874 CAD |
-| 20h (-20%) | 176 CAD | 3 528 CAD |
+| 1h | 199 CAD | 199 CAD |
+| 4h (-10%) | 179 CAD | 716 CAD |
+| 10h (-15%) | 169 CAD | 1 690 CAD |
+| 20h (-20%) | 159 CAD | 3 180 CAD |
 
 ---
 
-### 🥇 Offre GOLD
+### 🥇 Offre OR (id interne : GOLD)
 
-**Tarif : 587 CAD / heure**
+**Tarif : 499 CAD HT / heure**
 
 Prestation premium avec accompagnement renforcé et personnalisation avancée.
 
-#### Packs GOLD
+#### Contenu OR
+- Formule Argent complète
+- Introduction dynamique
+- Motion design
+- Sound design & sound effects
+- 1 révision incluse
+- Sauvegarde des fichiers pendant 2 mois
+
+#### Packs OR
 
 | Formule | Prix CAD/h | Total CAD |
 |---------|-----------|-----------|
-| 1h | 587 CAD | 587 CAD |
-| 4h (-10%) | 462 CAD | 1 847 CAD |
-| 10h (-15%) | 436 CAD | 4 361 CAD |
-| 20h (-20%) | 410 CAD | 8 210 CAD |
+| 1h | 499 CAD | 499 CAD |
+| 4h (-10%) | 449 CAD | 1 796 CAD |
+| 10h (-15%) | 424 CAD | 4 240 CAD |
+| 20h (-20%) | 399 CAD | 7 980 CAD |
 
 ---
 

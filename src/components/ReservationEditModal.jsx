@@ -18,8 +18,9 @@ function buildServices() {
   const p = Store.getPrices()
   const pOf = (id, fb) => p.services.find(s => s.id === id)?.price ?? fb
   return [
-    { key: 'ARGENT', label: `ARGENT — ${pOf('ARGENT', 221)} CAD/h`, rate: pOf('ARGENT', 221) },
-    { key: 'GOLD',   label: `GOLD — ${pOf('GOLD', 587)} CAD/h`,     rate: pOf('GOLD', 587) },
+    { key: 'BRONZE', label: `BRONZE — ${pOf('BRONZE', 149)} CAD/h`, rate: pOf('BRONZE', 149) },
+    { key: 'ARGENT', label: `ARGENT — ${pOf('ARGENT', 199)} CAD/h`, rate: pOf('ARGENT', 199) },
+    { key: 'GOLD',   label: `OR — ${pOf('GOLD', 499)} CAD/h`,       rate: pOf('GOLD', 499) },
   ]
 }
 

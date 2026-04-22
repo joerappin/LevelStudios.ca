@@ -1,8 +1,9 @@
 {
   "_note": "Ce fichier est la référence des tarifs par défaut. Mettez-le à jour manuellement après avoir modifié les prix via l'interface admin pour les ancrer définitivement.",
   "services": [
-    { "id": "ARGENT", "label": "Offre Argent (/ heure)", "price": 221 },
-    { "id": "GOLD",   "label": "Offre Gold (/ heure)",   "price": 587 }
+    { "id": "BRONZE", "label": "Offre Bronze (/ heure)", "price": 149 },
+    { "id": "ARGENT", "label": "Offre Argent (/ heure)", "price": 199 },
+    { "id": "GOLD",   "label": "Offre Or (/ heure)",     "price": 499 }
   ],
   "options": [
     { "id": "Photo",            "label": "Photo",                       "group": "Base",           "price": 44  },

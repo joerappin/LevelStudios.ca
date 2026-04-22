@@ -9,22 +9,30 @@ import { translations } from '../../i18n/translations'
 
 function buildPacks() {
   const p = Store.getPrices()
-  const a = p.services.find(s => s.id === 'ARGENT')?.price ?? 221
-  const g = p.services.find(s => s.id === 'GOLD')?.price ?? 587
+  const b = p.services.find(s => s.id === 'BRONZE')?.price ?? 149
+  const a = p.services.find(s => s.id === 'ARGENT')?.price ?? 199
+  const g = p.services.find(s => s.id === 'GOLD')?.price ?? 499
   const round = v => Math.round(v)
   return {
+    BRONZE_PACKS: [
+      { hours: 1,  pricePerHour: b,              total: b * 1,               discount: null },
+      { hours: 4,  pricePerHour: round(b * 0.9),  total: round(b * 0.9) * 4,  discount: 10 },
+      { hours: 10, pricePerHour: round(b * 0.85), total: round(b * 0.85) * 10, discount: 15, popular: true },
+      { hours: 20, pricePerHour: round(b * 0.8),  total: round(b * 0.8) * 20,  discount: 20 },
+    ],
     ARGENT_PACKS: [
-      { hours: 1,  pricePerHour: a,             total: a * 1,              discount: null },
-      { hours: 4,  pricePerHour: round(a * 0.9), total: round(a * 0.9) * 4,  discount: 10 },
-      { hours: 10, pricePerHour: round(a * 0.85),total: round(a * 0.85) * 10, discount: 15, popular: true },
-      { hours: 20, pricePerHour: round(a * 0.8), total: round(a * 0.8) * 20,  discount: 20 },
+      { hours: 1,  pricePerHour: a,              total: a * 1,               discount: null },
+      { hours: 4,  pricePerHour: round(a * 0.9),  total: round(a * 0.9) * 4,  discount: 10 },
+      { hours: 10, pricePerHour: round(a * 0.85), total: round(a * 0.85) * 10, discount: 15, popular: true },
+      { hours: 20, pricePerHour: round(a * 0.8),  total: round(a * 0.8) * 20,  discount: 20 },
     ],
     GOLD_PACKS: [
-      { hours: 1,  pricePerHour: g,             total: g * 1,              discount: null },
-      { hours: 4,  pricePerHour: round(g * 0.9), total: round(g * 0.9) * 4,  discount: 10 },
-      { hours: 10, pricePerHour: round(g * 0.85),total: round(g * 0.85) * 10, discount: 15, popular: true },
-      { hours: 20, pricePerHour: round(g * 0.8), total: round(g * 0.8) * 20,  discount: 20 },
+      { hours: 1,  pricePerHour: g,              total: g * 1,               discount: null },
+      { hours: 4,  pricePerHour: round(g * 0.9),  total: round(g * 0.9) * 4,  discount: 10 },
+      { hours: 10, pricePerHour: round(g * 0.85), total: round(g * 0.85) * 10, discount: 15, popular: true },
+      { hours: 20, pricePerHour: round(g * 0.8),  total: round(g * 0.8) * 20,  discount: 20 },
     ],
+    bronzeBase: b,
     argentBase: a,
     goldBase: g,
   }
@@ -57,7 +65,7 @@ export default function ClientSubscription() {
   const t = (k) => translations[lang]?.[k] || k
   const isDark = theme === 'dark'
 
-  const { ARGENT_PACKS, GOLD_PACKS, argentBase, goldBase } = buildPacks()
+  const { BRONZE_PACKS, ARGENT_PACKS, GOLD_PACKS, bronzeBase, argentBase, goldBase } = buildPacks()
   const { OPTIONS_BASE, OPTIONS_LIVE, OPTIONS_ACCOM } = buildOptions()
 
   const [packs, setPacks] = useState([])
@@ -239,7 +247,23 @@ export default function ClientSubscription() {
           )}
         </div>
 
-        {/* Section 2 — Offres ARGENT */}
+        {/* Section 2 — Offres BRONZE */}
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+              <Star size={14} className="text-white" />
+            </div>
+            <h3 className={`text-base font-bold ${textPrimary}`}>{t('bronze_offer')}</h3>
+            <span className={`text-xs ${textSecondary}`}>À partir de {bronzeBase} CAD/h</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {BRONZE_PACKS.map((pack, i) => (
+              <PackCard key={i} tier="BRONZE" pack={pack} />
+            ))}
+          </div>
+        </div>
+
+        {/* Section 3 — Offres ARGENT */}
         <div>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-zinc-300 to-zinc-500 flex items-center justify-center">
@@ -255,7 +279,7 @@ export default function ClientSubscription() {
           </div>
         </div>
 
-        {/* Section 2 — Offres GOLD */}
+        {/* Section 4 — Offres OR */}
         <div>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center">

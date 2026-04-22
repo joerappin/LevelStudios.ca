@@ -30,23 +30,31 @@ function buildServices() {
   const priceOf = (id, fallback) => p.services.find(s => s.id === id)?.price ?? fallback
   return [
   {
-    id: 'ARGENT', name: 'ARGENT', price: priceOf('ARGENT', 221), badge: 'ARGENT',
+    id: 'BRONZE', name: 'BRONZE', price: priceOf('BRONZE', 149), badge: 'BRONZE',
     features: [
       'Opérateur sur place',
       "Jusqu'à 4 caméras 4K",
       "Jusqu'à 4 microphones",
-      'Pré-montage',
-      'Synchronisation audio vidéo',
-      'Choix du décor et de l\'ambiance',
+      "Choix du décor et de l'ambiance",
       'Envoi fichiers bruts audio et vidéo instantané après la fin du tournage',
       'Envoi fichier mix audio instantané après la fin du tournage',
       'Sauvegarde des fichiers pendant 7 jours',
     ],
   },
   {
-    id: 'GOLD', name: 'GOLD', price: priceOf('GOLD', 587), badge: 'GOLD',
+    id: 'ARGENT', name: 'ARGENT', price: priceOf('ARGENT', 199), badge: 'ARGENT',
     features: [
-      'Formule Argent (tournage, livraison rushes instantanées, synchro audio)',
+      'Formule Bronze complète',
+      'Pré-montage',
+      'Montage multicaméra & synchronisation audio/vidéo',
+      'Suppression des silences et des parties indésirables',
+      'Sauvegarde des fichiers pendant 14 jours',
+    ],
+  },
+  {
+    id: 'GOLD', name: 'OR', price: priceOf('GOLD', 499), badge: 'OR',
+    features: [
+      'Formule Argent complète',
       'Introduction dynamique',
       'Motion design',
       'Sound design',
