@@ -732,10 +732,10 @@ export default function Home() {
                     { text: '3 caméras Sony FX30 4K multi-angles', ok: true },
                     { text: "Jusqu'à 4 micros Shure SM7B", ok: true },
                     { text: 'Éclairage Godox SL300III-K2', ok: true },
+                  ]},
+                  { label: 'Services', items: [
                     { text: 'Pré-montage', ok: false },
                     { text: 'Montage multicaméra', ok: false },
-                  ]},
-                  { label: 'Livraison', items: [
                     { text: 'Fichiers bruts livrés sous 24h', ok: true },
                     { text: 'Export WAV qualité studio', ok: true },
                     { text: 'Sauvegarde 7 jours', ok: true },
