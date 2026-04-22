@@ -740,9 +740,13 @@ export default function Home() {
                   ]},
                   { label: 'Services', items: [
                     { text: 'Fichiers bruts livrés sur votre espace instantanément après le tournage', ok: true },
-                    { text: 'Pré-montage multicaméra', ok: false },
+                    { text: 'Pré-montage multicaméra & synchro audio/vidéo livrés sous 48h', ok: false },
                     { text: 'Suppression des silences', ok: false },
                     { text: 'Export WAV mixé qualité studio', ok: false },
+                    { text: 'Introduction dynamique', ok: false },
+                    { text: 'Motion design, animation logo', ok: false },
+                    { text: 'Montage finalisé livré sous 5 jours', ok: false },
+                    { text: "Jusqu'à 2 révisions possible", ok: false },
                     { text: 'Sauvegarde 7 jours', ok: true },
                   ]},
                 ].map(group => (
@@ -810,6 +814,8 @@ export default function Home() {
                     { text: 'Export WAV mixé qualité studio' },
                     { text: 'Introduction dynamique', ok: false },
                     { text: 'Motion design, animation logo', ok: false },
+                    { text: 'Montage finalisé livré sous 5 jours', ok: false },
+                    { text: "Jusqu'à 2 révisions possible", ok: false },
                     { text: 'Sauvegarde 14 jours' },
                   ]},
                 ].map(group => (
