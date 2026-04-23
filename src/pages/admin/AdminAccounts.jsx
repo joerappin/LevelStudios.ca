@@ -85,7 +85,7 @@ export default function AdminAccounts() {
   const [modal, setModal] = useState(null) // null | 'choice' | 'client' | 'employee' | 'success'
   const [clientForm, setClientForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', company: '', tps: '', tvq: '', cgu: false })
   const [clientError, setClientError] = useState('')
-  const [empForm, setEmpForm] = useState({ name: '', email: '', role: '', phone: '' })
+  const [empForm, setEmpForm] = useState({ name: '', role: '' })
   const [empError, setEmpError] = useState('')
   const [successInfo, setSuccessInfo] = useState(null) // { name, email, setUrl }
   const [copied, setCopied] = useState(false)
@@ -224,12 +224,10 @@ export default function AdminAccounts() {
     const DEFAULT_PASSWORD = 'Levelstudios123!'
     const account = {
       id,
-      email: empForm.email,
       name: empForm.name,
       type: empForm.role === 'admin' ? 'admin' : 'employee',
       role: roleName,
       roleKey: empForm.role,
-      phone: empForm.phone,
       password: DEFAULT_PASSWORD,
       active: true,
       pending: false,
@@ -244,7 +242,7 @@ export default function AdminAccounts() {
     Store.addEmployee({ ...account })
     Store.addAccount(account)
     loadAccounts()
-    setSuccessInfo({ name: empForm.name, email: empForm.email, isEmployee: true })
+    setSuccessInfo({ name: empForm.name, id, isEmployee: true })
     setModal('success')
     setTab('employees')
   }
@@ -743,8 +741,8 @@ export default function AdminAccounts() {
                     <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${textSecondary}`}>Identifiants de connexion</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`text-xs ${textSecondary}`}>Email</span>
-                        <span className={`text-xs font-mono font-medium ${isDark ? 'text-zinc-200' : 'text-gray-700'}`}>{successInfo.email}</span>
+                        <span className={`text-xs ${textSecondary}`}>Identifiant</span>
+                        <span className={`text-xs font-mono font-medium ${isDark ? 'text-zinc-200' : 'text-gray-700'}`}>{successInfo.id}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className={`text-xs ${textSecondary}`}>Mot de passe par défaut</span>
@@ -790,10 +788,6 @@ export default function AdminAccounts() {
                     <input value={empForm.name} onChange={e => setEmpForm(f => ({ ...f, name: e.target.value }))} className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 ${inputCls}`} required />
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>Email <span className="text-red-400">*</span></label>
-                    <input type="email" value={empForm.email} onChange={e => setEmpForm(f => ({ ...f, email: e.target.value }))} className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 ${inputCls}`} required />
-                  </div>
-                  <div>
                     <label className={`block text-sm font-medium mb-2 ${labelCls}`}>Rôle <span className="text-red-400">*</span></label>
                     <div className="space-y-2">
                       {EMPLOYEE_ROLES.map(r => (
@@ -808,10 +802,6 @@ export default function AdminAccounts() {
                         </label>
                       ))}
                     </div>
-                  </div>
-                  <div>
-                    <label className={`block text-sm font-medium mb-1.5 ${labelCls}`}>Téléphone <span className={`text-xs font-normal ${textSecondary}`}>(optionnel)</span></label>
-                    <input value={empForm.phone} onChange={e => setEmpForm(f => ({ ...f, phone: e.target.value }))} className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 ${inputCls}`} />
                   </div>
                   {empError && <p className="text-xs text-red-400 font-medium">{empError}</p>}
                   <div className="flex gap-3 pt-1">
