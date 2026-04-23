@@ -104,13 +104,11 @@ function SortableKpiCard({ kpi, cardHover, textSecondary, textPrimary, onNavigat
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}
       onClick={onNavigate}
-      className={`border rounded-xl px-4 py-3 transition-all flex items-center justify-between ${cardHover}`}
+      className={`border rounded-2xl p-4 transition-all flex flex-col items-center justify-center gap-1.5 text-center ${cardHover}`}
     >
-      <div className={`flex items-center gap-2 ${kpi.color}`}>
-        {kpi.icon}
-        <span className={`text-xs font-medium ${textSecondary}`}>{kpi.label}</span>
-      </div>
-      <div className={`text-base font-black ${textPrimary}`}>{kpi.value}</div>
+      <div className={`${kpi.color}`}>{kpi.icon}</div>
+      <div className={`text-xl font-black ${textPrimary}`}>{kpi.value}</div>
+      <div className={`text-[10px] font-medium leading-tight ${textSecondary}`}>{kpi.label}</div>
     </div>
   )
 }
@@ -393,7 +391,7 @@ export default function AdminDashboard() {
           {/* Left — compact KPI list */}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedKpis.map(k => k.label)} strategy={rectSortingStrategy}>
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {orderedKpis.map((k) => (
                   <SortableKpiCard key={k.label} kpi={k} cardHover={cardHover} textSecondary={textSecondary} textPrimary={textPrimary} onNavigate={() => navigate(k.path)} />
                 ))}
