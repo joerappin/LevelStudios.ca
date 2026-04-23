@@ -353,6 +353,38 @@ export default function AdminPageEditor() {
     doSave(pending)
   }
 
+  // ── Visibility toggle ───────────────────────────────────────────────────
+  const clearOverrideProperty = (property) => {
+    if (!selected) return
+    // Remove from pending
+    setPending(prev => {
+      const idx = prev.findIndex(r => r.selector === selected.selector)
+      if (idx < 0) return prev
+      const styles = { ...prev[idx].styles }
+      delete styles[property]
+      const u = [...prev]
+      if (Object.keys(styles).length === 0) u.splice(idx, 1)
+      else u[idx] = { ...u[idx], styles }
+      return u
+    })
+    // Remove from saved overrides immediately
+    const current = getOverrides()
+    const rules = (current.rules || []).map(r => {
+      if (r.selector !== selected.selector) return r
+      const styles = { ...r.styles }; delete styles[property]
+      return { ...r, styles }
+    }).filter(r => Object.keys(r.styles || {}).length > 0)
+    const updated = { ...current, rules }
+    saveOverrides(updated); setOverrides(updated)
+    window.dispatchEvent(new Event('site-overrides-changed'))
+  }
+
+  const isHidden =
+    pendingForSel['display'] === 'none' ||
+    (overrides.rules?.find(r => r.selector === selected?.selector)?.styles?.display === 'none')
+
+  const isAdminPage = pagePath.startsWith('/admin')
+
   const handleUndo = () => {
     const h = getHistory(); if (!h.length) return
     restoreSnapshot(h[0].snapshot)
@@ -525,6 +557,32 @@ export default function AdminPageEditor() {
               )
             })}
           </div>
+
+          {/* Visibility toggle bar — non-admin pages only */}
+          {selected && !isAdminPage && (
+            <div style={{ padding: '8px 12px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: isHidden ? 'rgba(232,23,93,0.05)' : 'rgba(76,175,80,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: isHidden ? '#e8175d' : '#4caf50', flexShrink: 0 }} />
+                <span style={{ fontSize: '11px', color: isHidden ? '#e8175d' : '#4caf50', fontWeight: 600 }}>
+                  {isHidden ? 'Élément masqué' : 'Élément visible'}
+                </span>
+              </div>
+              <button
+                onClick={() => isHidden ? clearOverrideProperty('display') : applyPending('display', 'none')}
+                style={{
+                  background: isHidden ? 'rgba(76,175,80,0.12)' : 'rgba(232,23,93,0.12)',
+                  border: `1px solid ${isHidden ? 'rgba(76,175,80,0.35)' : 'rgba(232,23,93,0.35)'}`,
+                  borderRadius: '6px', padding: '4px 10px', cursor: 'pointer',
+                  color: isHidden ? '#4caf50' : '#e8175d',
+                  fontSize: '11px', fontWeight: 700,
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                {isHidden ? '▶ Activer' : '⏸ Désactiver'}
+              </button>
+            </div>
+          )}
 
           {/* Tab content */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '14px' }}>
