@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Trash2, X, ToggleLeft, ToggleRight, Pencil, User } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -28,6 +29,7 @@ const EMPTY_FORM = { code: '', type: 'percentage', value: '', max_uses: '', expi
 
 export default function AdminPromo() {
   const { theme } = useApp()
+  const location = useLocation()
   const isDark = theme === 'dark'
   const [codes, setCodes] = useState(Store.getPromoCodes())
   const [showAdd, setShowAdd] = useState(false)
@@ -35,6 +37,8 @@ export default function AdminPromo() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [clients, setClients] = useState([])
   const [employees, setEmployees] = useState([])
+
+  useEffect(() => { if (location.state?.openAdd) setShowAdd(true) }, [])
 
   useEffect(() => {
     const storeAccounts = Store.getAccounts().filter(a => a.type === 'client')

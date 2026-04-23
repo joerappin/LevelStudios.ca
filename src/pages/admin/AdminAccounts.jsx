@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, LayoutDashboard, Film, Star } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -44,6 +44,7 @@ export default function AdminAccounts() {
   const { theme } = useApp()
   const { impersonate } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const isDark = theme === 'dark'
   const { reservations: allRes } = useReservations({ interval: 60000 })
   const [rateModal, setRateModal] = useState(null) // null | client object
@@ -78,6 +79,7 @@ export default function AdminAccounts() {
   }
 
   useEffect(() => { loadAccounts(); loadTrash() }, [])
+  useEffect(() => { if (location.state?.openModal) setModal(location.state.openModal) }, [])
 
   // Modal state
   const [modal, setModal] = useState(null) // null | 'choice' | 'client' | 'employee' | 'success'

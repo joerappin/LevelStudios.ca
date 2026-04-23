@@ -102,10 +102,17 @@ export default function ChefReservations() {
     ...f, options: f.options.includes(key) ? f.options.filter(o => o !== key) : [...f.options, key]
   }))
 
+  const TPS_RATE = 0.05
+  const TVQ_RATE = 0.09975
+  const round2 = v => Math.round(v * 100) / 100
+
   const serviceRate = SERVICES.find(s => s.key === form.service)?.rate || SERVICES[0]?.rate || 221
   const basePrice = serviceRate * Number(form.duration)
   const optionsPrice = form.options.reduce((sum, key) => sum + (OPTIONS_LIST.find(o => o.key === key)?.price || 0), 0)
   const total = basePrice + optionsPrice
+  const formTPS = round2(total * TPS_RATE)
+  const formTVQ = round2(total * TVQ_RATE)
+  const totalTTC = round2(total + formTPS + formTVQ)
 
   const filteredClients = clientSearch.trim()
     ? clients.filter(c =>
@@ -180,7 +187,8 @@ export default function ChefReservations() {
       start_time: form.startTime,
       end_time: calcEndTime(form.startTime, form.duration),
       duration: Number(form.duration),
-      price: total,
+      price: totalTTC,
+      price_ht: total,
       status: 'validee',
       additional_services: form.options,
       promo_code: null,
@@ -328,7 +336,12 @@ export default function ChefReservations() {
                 ['Horaire', `${selected.start_time} – ${selected.end_time}`],
                 ['Durée', `${selected.duration}h`],
                 ['Personnes', selected.persons],
-                ['Prix', formatPrice(selected.price)],
+                ['Prix TTC', formatPrice(selected.price)],
+                ...(selected.price_ht ? [
+                  ['  ↳ HT', formatPrice(selected.price_ht)],
+                  ['  ↳ TPS 5%', formatPrice(Math.round(selected.price_ht * 0.05 * 100) / 100)],
+                  ['  ↳ TVQ 9.975%', formatPrice(Math.round(selected.price_ht * 0.09975 * 100) / 100)],
+                ] : []),
                 ['Statut', STATUS_MAP[selected.status]?.label_fr || selected.status],
               ].map(([k, v]) => v != null && (
                 <div key={k} className={`flex justify-between border-b pb-2 ${divider}`}>
@@ -548,9 +561,23 @@ export default function ChefReservations() {
                             </div>
                           ) : null
                         })}
-                        <div className={cn('border-t pt-2 mt-2 flex justify-between font-bold', isDark ? 'border-zinc-700' : 'border-gray-200')}>
-                          <span className={textPrimary}>Total</span>
-                          <span className="text-violet-400 text-lg">{total} CAD</span>
+                        <div className={cn('border-t pt-2 mt-2 space-y-1', isDark ? 'border-zinc-700' : 'border-gray-200')}>
+                          <div className="flex justify-between text-xs">
+                            <span className={textSecondary}>Sous-total HT</span>
+                            <span className={textPrimary}>{total} CAD</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className={textSecondary}>TPS (5%)</span>
+                            <span className={textPrimary}>{formTPS} CAD</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className={textSecondary}>TVQ (9.975%)</span>
+                            <span className={textPrimary}>{formTVQ} CAD</span>
+                          </div>
+                          <div className={cn('border-t pt-1 flex justify-between font-bold', isDark ? 'border-zinc-700' : 'border-gray-200')}>
+                            <span className={textPrimary}>Total TTC</span>
+                            <span className="text-violet-400 text-lg">{totalTTC} CAD</span>
+                          </div>
                         </div>
                       </div>
                       {form.date && (

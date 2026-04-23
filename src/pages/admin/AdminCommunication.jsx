@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Trash2, X, Bell, Clock, User, Users } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -37,12 +38,15 @@ function targetLabel(target, clients, employees) {
 
 export default function AdminCommunication() {
   const { theme } = useApp()
+  const location = useLocation()
   const isDark = theme === 'dark'
   const [popups, setPopups] = useState(Store.getPopupMessages())
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ title: '', message: '', type: 'info', target: 'all', duration_days: 7 })
   const [clients, setClients] = useState([])
   const [employees, setEmployees] = useState([])
+
+  useEffect(() => { if (location.state?.openAdd) setShowAdd(true) }, [])
 
   useEffect(() => {
     const storeAccounts = Store.getAccounts().filter(a => a.type === 'client')
