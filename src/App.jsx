@@ -85,8 +85,9 @@ function ProtectedRoute({ children, requiredType }) {
       <div className="w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
-  if (!user) return <Navigate to="/" replace />
-  if (requiredType && user.type !== requiredType) return <Navigate to="/" replace />
+  const isStaffRoute = requiredType === 'admin' || requiredType === 'employee'
+  if (!user) return <Navigate to={isStaffRoute ? '/loginteamlevelprivate' : '/'} replace />
+  if (requiredType && user.type !== requiredType) return <Navigate to={isStaffRoute ? '/loginteamlevelprivate' : '/'} replace />
   return children
 }
 
