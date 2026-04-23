@@ -4,7 +4,7 @@ import {
   Home, Mail, CalendarDays, User, Users, BarChart2,
   Layers, MessageSquare, Megaphone, Package, ShoppingBag,
   ClipboardList, BookOpen, Wrench, Tag, Clock,
-  Plane, DollarSign, Edit3, Crown, UserCheck, LogIn
+  Plane, DollarSign, Edit3, LogIn
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -43,7 +43,6 @@ const PAGE_GROUPS = [
   {
     group: 'Chef de Projets',
     color: '#9c27b0',
-    badge: 'Chef',
     pages: [
       { key: 'chef-dashboard',     label: 'Dashboard',    path: '/chef/dashboard',     icon: BarChart2 },
       { key: 'chef-calendar',      label: 'Calendrier',   path: '/chef/calendar',      icon: CalendarDays },
@@ -54,9 +53,8 @@ const PAGE_GROUPS = [
     ]
   },
   {
-    group: 'Employé simple',
+    group: 'Employé',
     color: '#607d8b',
-    badge: 'Employé',
     pages: [
       { key: 'emp-dashboard',  label: 'Dashboard',  path: '/employee/dashboard',  icon: BarChart2 },
       { key: 'emp-projects',   label: 'Projets',    path: '/employee/projects',   icon: Layers },
@@ -114,13 +112,6 @@ export default function AdminIndex() {
               <h2 style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#888' }}>
                 {group.group}
               </h2>
-              {group.badge && (
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: `${group.color}18`, border: `1px solid ${group.color}40`, color: group.color, letterSpacing: '0.05em' }}>
-                  {group.badge === 'Chef'
-                    ? <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Crown size={9} /> Chef de projets</span>
-                    : <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><UserCheck size={9} /> Employé</span>}
-                </span>
-              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
