@@ -111,14 +111,22 @@ export default function Layout({ children, navItems, title }) {
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               color: textPrimary, fontFamily: 'Montserrat, sans-serif',
             }}>Level Studios</span>
-            {/* Badge rôle — tertiary */}
-            <span style={{
-              fontSize: '9px', fontWeight: 700, padding: '1px 7px', borderRadius: '4px',
-              textTransform: 'uppercase', letterSpacing: '0.08em', display: 'inline-block',
-              background: `${D.tertiary}14`, color: D.tertiary, border: `1px solid ${D.tertiary}28`,
-            }}>
-              {user?.type === 'admin' ? 'Admin' : user?.type === 'employee' ? 'Employé' : 'Studio'}
-            </span>
+            {/* Badge rôle + ID employé */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{
+                fontSize: '9px', fontWeight: 700, padding: '1px 7px', borderRadius: '4px',
+                textTransform: 'uppercase', letterSpacing: '0.08em', display: 'inline-block',
+                background: `${D.tertiary}14`, color: D.tertiary, border: `1px solid ${D.tertiary}28`,
+              }}>
+                {user?.type === 'admin' ? 'Admin' : user?.type === 'employee' ? 'Employé' : 'Studio'}
+              </span>
+              {(user?.type === 'employee' || user?.type === 'admin') && user?.id && (
+                <span style={{
+                  fontSize: '9px', fontWeight: 600, fontFamily: 'monospace',
+                  color: navInactive, letterSpacing: '0.02em',
+                }}>{user.id}</span>
+              )}
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
