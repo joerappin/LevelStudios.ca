@@ -105,11 +105,11 @@ function SortableKpiCard({ kpi, cardHover, textSecondary, textPrimary, onNavigat
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}
       onClick={onNavigate}
-      className={`border rounded-xl p-2.5 transition-all flex flex-col items-center justify-center gap-1 text-center ${cardHover}`}
+      className={`border rounded-2xl p-4 transition-all flex flex-col items-center justify-center gap-1.5 text-center ${cardHover}`}
     >
-      <div className={`[&>svg]:w-4 [&>svg]:h-4 ${kpi.color}`}>{kpi.icon}</div>
-      <div className={`text-base font-black ${textPrimary}`}>{kpi.value}</div>
-      <div className={`text-[9px] font-medium leading-tight ${textSecondary}`}>{kpi.label}</div>
+      <div className={`${kpi.color}`}>{kpi.icon}</div>
+      <div className={`text-xl font-black ${textPrimary}`}>{kpi.value}</div>
+      <div className={`text-[10px] font-medium leading-tight ${textSecondary}`}>{kpi.label}</div>
     </div>
   )
 }
@@ -253,26 +253,29 @@ export default function AdminDashboard() {
 
   return (
     <Layout navItems={NAV} title="Dashboard">
-      <div className="flex flex-col gap-3">
+      <div className="space-y-6">
 
-        {/* Compact header — single row */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h2 className={`text-lg font-bold ${textPrimary}`}>Bonjour, Joe 👋</h2>
-            {avgRating > 0 && (
-              <button onClick={() => navigate('/admin/satisfaction')}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 transition-all"
-              >
-                <Star size={10} className="fill-amber-400 text-amber-400" />
-                {avgRating.toFixed(1)}
-                <span className="text-[10px] font-normal opacity-70">/ 5 · {ratedRes.length} avis</span>
-              </button>
-            )}
-            <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Header + period toggle */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className={`text-2xl font-bold ${textPrimary}`}>Bonjour, Joe 👋</h2>
+              {avgRating > 0 && (
+                <button onClick={() => navigate('/admin/satisfaction')}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 transition-all"
+                >
+                  <Star size={11} className="fill-amber-400 text-amber-400" />
+                  {avgRating.toFixed(1)}
+                  <span className="text-[10px] font-normal opacity-70">/ 5 · {ratedRes.length} avis</span>
+                </button>
+              )}
+            </div>
+            <p className={`text-sm ${textSecondary}`}>Vue d'ensemble de Level Studios</p>
+            <div className="flex items-center gap-2 flex-wrap mt-0.5">
               {QUICK.map((a, i) => (
                 <button key={i}
                   onClick={() => a.action ? a.action() : navigate(a.path)}
-                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all border ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border ${
                     isDark ? 'border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60' : 'border-gray-200 bg-gray-50 hover:bg-white'
                   } ${a.color}`}
                 >
@@ -282,98 +285,54 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-          <div className={`flex items-center rounded-lg border overflow-hidden text-xs font-semibold ${isDark ? 'border-zinc-700' : 'border-gray-200'}`}>
+          <div className={`flex items-center rounded-xl border overflow-hidden text-sm font-semibold ${isDark ? 'border-zinc-700' : 'border-gray-200'}`}>
             {[['day','Jour'],['month','Mois'],['year','Année']].map(([p, label]) => (
-              <button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 transition-colors ${periodBtn(p)}`}>{label}</button>
+              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 transition-colors ${periodBtn(p)}`}>{label}</button>
             ))}
           </div>
         </div>
 
-        {/* Main 3-column grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr_1.15fr] gap-3">
-
-          {/* Col 1 — Semaine + Pointage */}
-          <div className="flex flex-col gap-3">
-            <div className={`border rounded-xl p-3 ${card}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-violet-400" />
-                  <h3 className={`font-bold text-sm ${textPrimary}`}>Semaine en cours</h3>
-                </div>
-                <button onClick={() => navigate(createPageUrl('AdminCalendar'))} className={`text-[11px] transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-                  Calendrier →
-                </button>
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {DAYS_FR.map((d, i) => {
-                  const date = weekDates[i]
-                  const ymd = toYMD(date)
-                  const dayRes = weekMap[ymd] || []
-                  const isToday = ymd === today
-                  return (
-                    <div key={i} onClick={() => navigate(createPageUrl('AdminCalendar'))}
-                      className={`rounded-lg p-1.5 text-center cursor-pointer transition-all ${isToday ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'}`}
-                    >
-                      <div className={`text-[9px] font-medium mb-0.5 ${isToday ? 'text-violet-200' : textSecondary}`}>{d}</div>
-                      <div className={`text-xs font-bold ${isToday ? 'text-white' : textPrimary}`}>{date.getDate()}</div>
-                      <div className={`mt-0.5 text-[9px] font-bold ${isToday ? 'text-white/80' : dayRes.length > 0 ? 'text-violet-400' : isDark ? 'text-zinc-600' : 'text-gray-300'}`}>
-                        {dayRes.length > 0 ? dayRes.length : '·'}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+        {/* Semaine en cours — pleine largeur */}
+        <div className={`border rounded-2xl p-6 ${card}`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-violet-400" />
+              <h3 className={`font-bold ${textPrimary}`}>Semaine en cours</h3>
             </div>
-
-            <div className={`border rounded-xl p-3 flex-1 ${card}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-violet-400" />
-                  <h3 className={`font-bold text-sm ${textPrimary}`}>Pointage du jour</h3>
-                </div>
-                <button onClick={() => navigate(createPageUrl('AdminCheck'))} className={`text-[11px] transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-                  Voir tout →
-                </button>
-              </div>
-              {todayCheckins.length === 0 ? (
-                <div className={`flex flex-col items-center justify-center py-4 gap-1 ${textSecondary}`}>
-                  <Clock className="w-6 h-6 opacity-20" />
-                  <p className="text-xs">Aucun pointage aujourd'hui</p>
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                  {todayCheckins.map(c => {
-                    const emp = employees.find(e => e.email === c.employee_email)
-                    return (
-                      <div key={c.id} onClick={() => navigate(createPageUrl('AdminCheck'))}
-                        className={`flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-colors ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
-                            <span className="text-white text-[10px] font-bold">{(c.employee_name || emp?.name || '?').charAt(0)}</span>
-                          </div>
-                          <div>
-                            <div className={`text-xs font-medium ${textPrimary}`}>{c.employee_name || emp?.name}</div>
-                            <div className={`text-[10px] ${textSecondary}`}>Entrée {c.check_in}</div>
-                          </div>
-                        </div>
-                        {c.check_out ? (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-green-500/10 text-green-400">Sorti {c.check_out}</span>
-                        ) : (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400">En poste</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+            <button onClick={() => navigate(createPageUrl('AdminCalendar'))} className={`text-xs transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+              Voir calendrier →
+            </button>
           </div>
+          <div className="grid grid-cols-7 gap-2">
+            {DAYS_FR.map((d, i) => {
+              const date = weekDates[i]
+              const ymd = toYMD(date)
+              const dayRes = weekMap[ymd] || []
+              const isToday = ymd === today
+              return (
+                <div key={i} onClick={() => navigate(createPageUrl('AdminCalendar'))}
+                  className={`rounded-xl p-2 text-center cursor-pointer transition-all ${
+                    isToday ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className={`text-[10px] font-medium mb-1 ${isToday ? 'text-violet-200' : textSecondary}`}>{d}</div>
+                  <div className={`text-sm font-bold ${isToday ? 'text-white' : textPrimary}`}>{date.getDate()}</div>
+                  <div className={`mt-1 text-[10px] font-bold px-1 rounded-full ${isToday ? 'bg-white/20 text-white' : dayRes.length > 0 ? 'bg-violet-500/20 text-violet-400' : isDark ? 'text-zinc-600' : 'text-gray-300'}`}>
+                    {dayRes.length}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
-          {/* Col 2 — KPI cards */}
+        {/* KPIs (left) + Studio breakdown (right) */}
+        <div className="grid lg:grid-cols-2 gap-6 items-start">
+
+          {/* Left — KPI cards */}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={orderedKpis.map(k => k.label)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-2 gap-2 content-start">
+              <div className="grid grid-cols-2 gap-2">
                 {orderedKpis.map((k) => (
                   <SortableKpiCard key={k.label} kpi={k} cardHover={cardHover} textSecondary={textSecondary} textPrimary={textPrimary} onNavigate={() => navigate(k.path)} />
                 ))}
@@ -381,44 +340,90 @@ export default function AdminDashboard() {
             </SortableContext>
           </DndContext>
 
-          {/* Col 3 — Studio performance */}
-          <div className={`border rounded-xl p-3 ${card}`}>
-            <div className="flex items-center gap-1.5 mb-2.5">
-              <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
-              <h3 className={`font-bold text-sm ${textPrimary}`}>Performance studios</h3>
-              <span className={`text-[10px] ${textSecondary}`}>— seuil {BREAKEVEN_PCT}%</span>
+          {/* Right — studio performance */}
+          <div className={`border rounded-2xl p-6 ${card}`}>
+            <div className="flex items-center gap-2 mb-5">
+              <BarChart3 className="w-4 h-4 text-violet-400" />
+              <h3 className={`font-bold ${textPrimary}`}>Performance par studio</h3>
+              <span className={`text-xs ${textSecondary}`}>— seuil {BREAKEVEN_PCT}%</span>
             </div>
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-4">
               {studioStats.map(s => (
                 <div key={s.studio} onClick={() => navigate(createPageUrl('AdminReservations'))}
-                  className={`rounded-lg p-2.5 border cursor-pointer transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500' : 'bg-gray-50 border-gray-200 hover:border-violet-300'}`}
+                  className={`rounded-xl p-4 border cursor-pointer transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500' : 'bg-gray-50 border-gray-200 hover:border-violet-300'}`}
                 >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={`font-semibold text-xs ${textPrimary}`}>{s.studio}</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`font-semibold text-sm ${textPrimary}`}>{s.studio}</span>
                     <span className={`text-xs font-bold ${occupancyTextColor(s.occ)}`}>{s.occ}%</span>
                   </div>
-                  <div className="relative mb-1.5">
-                    <div className={`h-1.5 rounded-full ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
-                      <div className={`h-1.5 rounded-full transition-all ${occupancyColor(s.occ)}`} style={{ width: `${s.occ}%` }} />
-                    </div>
-                    <div className="absolute -top-0.5 w-0.5 h-2.5 bg-zinc-500/60" style={{ left: `${BREAKEVEN_PCT}%` }} title={`Seuil ${BREAKEVEN_PCT}%`} />
+                  <div className={`h-2 rounded-full mb-1 ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
+                    <div className={`h-2 rounded-full transition-all ${occupancyColor(s.occ)}`} style={{ width: `${s.occ}%` }} />
                   </div>
-                  <div className={`flex justify-between text-[10px] ${textSecondary}`}>
-                    <span>{s.hours}h · {s.sessions} sess.</span>
+                  <div className="relative h-0 mb-3">
+                    <div className="absolute -top-2 w-0.5 h-3 bg-zinc-500/60" style={{ left: `${BREAKEVEN_PCT}%` }} title={`Seuil ${BREAKEVEN_PCT}%`} />
+                  </div>
+                  <div className={`flex justify-between text-xs mt-2 ${textSecondary}`}>
+                    <span>{s.hours}h réservées</span>
                     <span className={`font-semibold ${textPrimary}`}>{formatPrice(s.revenue)}</span>
                   </div>
+                  <div className={`text-xs mt-1 ${textSecondary}`}>{s.sessions} session{s.sessions !== 1 ? 's' : ''}</div>
                   {s.occ < BREAKEVEN_PCT && s.occ > 0 && (
-                    <div className="text-[9px] font-semibold text-red-400 mt-1.5">⚠ Sous le seuil de rentabilité</div>
+                    <div className="mt-2 text-[10px] font-semibold text-red-400 bg-red-500/10 rounded-lg px-2 py-1 text-center">Sous le seuil de rentabilité</div>
                   )}
                   {s.occ === 0 && (
-                    <div className={`text-[9px] mt-1.5 ${textSecondary}`}>Aucune session</div>
+                    <div className={`mt-2 text-[10px] rounded-lg px-2 py-1 text-center ${isDark ? 'text-zinc-600 bg-zinc-800' : 'text-gray-400 bg-gray-100'}`}>Aucune session</div>
                   )}
                 </div>
               ))}
             </div>
           </div>
-
         </div>
+
+        {/* Pointage du jour — en bas */}
+        <div className={`border rounded-2xl p-6 ${card}`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-violet-400" />
+              <h3 className={`font-bold ${textPrimary}`}>Pointage du jour</h3>
+            </div>
+            <button onClick={() => navigate(createPageUrl('AdminCheck'))} className={`text-xs transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+              Voir tout →
+            </button>
+          </div>
+          {todayCheckins.length === 0 ? (
+            <div className={`flex flex-col items-center justify-center py-8 gap-2 ${textSecondary}`}>
+              <Clock className="w-8 h-8 opacity-20" />
+              <p className="text-sm">Aucun pointage aujourd'hui</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {todayCheckins.map(c => {
+                const emp = employees.find(e => e.email === c.employee_email)
+                return (
+                  <div key={c.id} onClick={() => navigate(createPageUrl('AdminCheck'))}
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 cursor-pointer transition-colors ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{(c.employee_name || emp?.name || '?').charAt(0)}</span>
+                      </div>
+                      <div>
+                        <div className={`text-sm font-medium ${textPrimary}`}>{c.employee_name || emp?.name}</div>
+                        <div className={`text-xs ${textSecondary}`}>Entrée {c.check_in}</div>
+                      </div>
+                    </div>
+                    {c.check_out ? (
+                      <span className="text-xs font-medium px-2 py-1 rounded-lg bg-green-500/10 text-green-400">Sorti {c.check_out}</span>
+                    ) : (
+                      <span className="text-xs font-medium px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400">En poste</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </Layout>
   )
