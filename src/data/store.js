@@ -15,6 +15,8 @@ const KEYS = {
   accounts: 'ls_accounts',
   pwdTokens: 'ls_pwd_tokens',
   alerts: 'ls_alerts',
+  mails: 'ls_mails',
+  mailLabels: 'ls_mail_labels',
 }
 
 function getAll(key) {
@@ -230,6 +232,42 @@ export const Store = {
     const items = getAll(KEYS.internalMessages)
     const idx = items.findIndex(i => i.id === id)
     if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.internalMessages, items) }
+  },
+
+  // Mails (boîte mail interne)
+  getMails: () => getAll(KEYS.mails),
+  addMail: (data) => {
+    const items = getAll(KEYS.mails)
+    const item = { id: generateId('MAIL'), created_at: new Date().toISOString(), read: false, trashed_by: [], labels: [], to: [], cc: [], attachments: [], ...data }
+    items.unshift(item)
+    saveAll(KEYS.mails, items)
+    return item
+  },
+  updateMail: (id, data) => {
+    const items = getAll(KEYS.mails)
+    const idx = items.findIndex(i => i.id === id)
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.mails, items) }
+  },
+  deleteMail: (id) => {
+    saveAll(KEYS.mails, getAll(KEYS.mails).filter(i => i.id !== id))
+  },
+
+  // Mail labels
+  getMailLabels: () => getAll(KEYS.mailLabels),
+  addMailLabel: (data) => {
+    const items = getAll(KEYS.mailLabels)
+    const item = { id: generateId('LBL'), ...data }
+    items.push(item)
+    saveAll(KEYS.mailLabels, items)
+    return item
+  },
+  updateMailLabel: (id, data) => {
+    const items = getAll(KEYS.mailLabels)
+    const idx = items.findIndex(i => i.id === id)
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.mailLabels, items) }
+  },
+  deleteMailLabel: (id) => {
+    saveAll(KEYS.mailLabels, getAll(KEYS.mailLabels).filter(i => i.id !== id))
   },
 
   // Employees
