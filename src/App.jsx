@@ -105,7 +105,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/loginteamlevelprivate" element={<Login />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/reservation" element={<NewReservation />} />
       <Route path="/set-password" element={<SetPassword />} />

@@ -1065,7 +1065,7 @@ export default function Home() {
       <footer style={{ padding: '40px 24px', background: '#080808', borderTop: '1px solid #111' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/loginteamlevelprivate')}
             title="Accès équipe"
             style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, opacity: 1, transition: 'opacity 0.2s' }}
             onMouseEnter={e => e.currentTarget.style.opacity = '0.65'}
