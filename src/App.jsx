@@ -33,6 +33,7 @@ import AdminVersions from './pages/admin/AdminVersions'
 import AdminPricing from './pages/admin/AdminPricing'
 import AdminRecette from './pages/admin/AdminRecette'
 import AdminIndex from './pages/admin/AdminIndex'
+import AdminSatisfaction from './pages/admin/AdminSatisfaction'
 import AdminPageEditor from './pages/admin/AdminPageEditor'
 import SiteOverrideInjector from './components/SiteOverrideInjector'
 
@@ -134,6 +135,7 @@ function AppRoutes() {
       <Route path="/admin/versions" element={<ProtectedRoute requiredType="admin"><AdminVersions /></ProtectedRoute>} />
       <Route path="/admin/pricing" element={<ProtectedRoute requiredType="admin"><AdminPricing /></ProtectedRoute>} />
       <Route path="/admin/recette" element={<ProtectedRoute requiredType="admin"><AdminRecette /></ProtectedRoute>} />
+      <Route path="/admin/satisfaction" element={<ProtectedRoute requiredType="admin"><AdminSatisfaction /></ProtectedRoute>} />
       <Route path="/admin/index" element={<ProtectedRoute requiredType="admin"><AdminIndex /></ProtectedRoute>} />
       <Route path="/admin/editor" element={<ProtectedRoute requiredType="admin"><AdminPageEditor /></ProtectedRoute>} />
 

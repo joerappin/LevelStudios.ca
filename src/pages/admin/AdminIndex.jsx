@@ -4,7 +4,7 @@ import {
   Home, Mail, CalendarDays, User, Users, BarChart2,
   Layers, MessageSquare, Megaphone, Package, ShoppingBag,
   ClipboardList, BookOpen, Wrench, Tag, Clock,
-  Plane, DollarSign, Edit3, LogIn
+  Plane, DollarSign, Edit3, LogIn, Star
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -74,6 +74,7 @@ const PAGE_GROUPS = [
       { key: 'admin-projects',      label: 'Projets',       path: '/admin/projects',      icon: Layers },
       { key: 'admin-messaging',     label: 'Messagerie',    path: '/admin/messaging',     icon: MessageSquare },
       { key: 'admin-sav',           label: 'SAV',           path: '/admin/sav',           icon: Users },
+      { key: 'admin-satisfaction',  label: 'Satisfaction',  path: '/admin/satisfaction',  icon: Star },
       { key: 'admin-communication', label: 'Communication', path: '/admin/communication', icon: Megaphone },
       { key: 'admin-promo',         label: 'Promos',        path: '/admin/promo',         icon: Tag },
       { key: 'admin-check',         label: 'Pointages',     path: '/admin/check',         icon: Clock },

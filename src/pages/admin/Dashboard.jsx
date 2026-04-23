@@ -28,6 +28,7 @@ const NAV = [
   { separator: true },
   { labelKey: 'nav_messaging',     path: createPageUrl('AdminMessaging'),     icon: <MessageSquare className="w-4 h-4" /> },
   { labelKey: 'nav_sav',           path: createPageUrl('AdminSAV'),           icon: <HeadphonesIcon className="w-4 h-4" /> },
+  { labelKey: 'nav_satisfaction',  path: '/admin/satisfaction',               icon: <Star className="w-4 h-4" /> },
   { labelKey: 'nav_communication', path: createPageUrl('AdminCommunication'), icon: <Megaphone className="w-4 h-4" /> },
   { labelKey: 'nav_promo',         path: createPageUrl('AdminPromo'),         icon: <Tag className="w-4 h-4" /> },
   { labelKey: 'nav_pricing',       path: createPageUrl('AdminPricing'),       icon: <DollarSign className="w-4 h-4" /> },
@@ -172,14 +173,6 @@ export default function AdminDashboard() {
   const avgRating = ratedRes.length > 0
     ? (ratedRes.reduce((s, r) => s + r.rating, 0) / ratedRes.length)
     : 0
-  const rateDist = [5,4,3,2,1].map(n => ({
-    star: n,
-    count: ratedRes.filter(r => r.rating === n).length,
-  }))
-  const recentReviews = [...ratedRes]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 4)
-  const ratingPct = activeRes.length > 0 ? Math.round((ratedRes.length / activeRes.length) * 100) : 0
 
   // ─── week calendar ──────────────────────────────────────────────────────────
   const weekDates = getWeekDates()
@@ -265,7 +258,18 @@ export default function AdminDashboard() {
         {/* Header + period toggle */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <h2 className={`text-2xl font-bold ${textPrimary}`}>Bonjour, Joe 👋</h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className={`text-2xl font-bold ${textPrimary}`}>Bonjour, Joe 👋</h2>
+              {avgRating > 0 && (
+                <button onClick={() => navigate('/admin/satisfaction')}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 transition-all"
+                >
+                  <Star size={11} className="fill-amber-400 text-amber-400" />
+                  {avgRating.toFixed(1)}
+                  <span className="text-[10px] font-normal opacity-70">/ 5 · {ratedRes.length} avis</span>
+                </button>
+              )}
+            </div>
             <p className={`text-sm ${textSecondary}`}>Vue d'ensemble de Level Studios</p>
             {/* Quick access — compact inline */}
             <div className="flex items-center gap-2 flex-wrap mt-0.5">
@@ -440,62 +444,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Satisfaction client */}
-            <div className={`border rounded-2xl p-6 ${card}`}>
-              <div className="flex items-center gap-2 mb-5">
-                <Star className="w-4 h-4 text-amber-400" />
-                <h3 className={`font-bold ${textPrimary}`}>Satisfaction client</h3>
-                <span className={`text-xs ${textSecondary}`}>— {ratedRes.length} avis · {ratingPct}%</span>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-6">
-                <div className="flex flex-col items-center justify-center gap-2 py-2">
-                  <p className={`text-6xl font-black ${textPrimary}`}>{avgRating > 0 ? avgRating.toFixed(1) : '—'}</p>
-                  <div className="flex gap-0.5">
-                    {[1,2,3,4,5].map(n => (
-                      <Star key={n} size={18} className={n <= Math.round(avgRating) ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
-                    ))}
-                  </div>
-                  <p className={`text-xs ${textSecondary}`}>Note moyenne / 5</p>
-                </div>
-                <div className="space-y-1.5 py-1">
-                  {rateDist.map(({ star, count }) => {
-                    const pct = ratedRes.length > 0 ? Math.round((count / ratedRes.length) * 100) : 0
-                    return (
-                      <div key={star} className="flex items-center gap-2">
-                        <div className="flex items-center gap-0.5 w-16 flex-shrink-0">
-                          {[1,2,3,4,5].map(n => (
-                            <Star key={n} size={9} className={n <= star ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
-                          ))}
-                        </div>
-                        <div className={`flex-1 h-2 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
-                          <div className="h-2 rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className={`text-xs w-6 text-right flex-shrink-0 ${textSecondary}`}>{count}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="space-y-2">
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${textSecondary}`}>Derniers avis</p>
-                  {recentReviews.length === 0 ? (
-                    <p className={`text-xs ${textSecondary}`}>Aucun avis pour le moment</p>
-                  ) : recentReviews.map(r => (
-                    <div key={r.id} className={`rounded-xl px-3 py-2 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className={`text-xs font-semibold truncate ${textPrimary}`}>{r.client_name}</span>
-                        <div className="flex gap-0.5 flex-shrink-0">
-                          {[1,2,3,4,5].map(n => (
-                            <Star key={n} size={9} className={n <= r.rating ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
-                          ))}
-                        </div>
-                      </div>
-                      {r.rating_comment && <p className={`text-[10px] truncate ${textSecondary}`}>"{r.rating_comment}"</p>}
-                      <p className={`text-[10px] mt-0.5 ${textSecondary} opacity-60`}>{r.studio} · {r.date}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
