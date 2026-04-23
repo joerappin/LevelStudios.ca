@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList, FolderOpen, Zap,
   MessageSquare, HeadphonesIcon, Megaphone, Tag, Clock, BookOpen,
   Wrench, UserCheck, TrendingUp, AlertCircle, Bell, Plus, CreditCard,
-  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt, Grid,
+  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt, Grid, Camera,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -156,6 +156,7 @@ export default function AdminDashboard() {
   const pending    = countable.filter(r => r.status === 'a_payer')
   const ca         = paid.reduce((s, r) => s + (r.price || 0), 0)
   const totalHours = countable.reduce((s, r) => s + (r.duration || 0), 0)
+  const totalPersons = countable.reduce((s, r) => s + (r.persons || 0), 0)
   const activeClients = accounts.filter(a => a.type === 'client' && !a.suspended && !trashedEmails.has(a.email)).length
 
   // ─── studio breakdown ───────────────────────────────────────────────────────
@@ -225,6 +226,13 @@ export default function AdminDashboard() {
       value: countable.length,
       icon: <ClipboardList className="w-5 h-5" />,
       color: 'text-cyan-400',
+      path: createPageUrl('AdminReservations'),
+    },
+    {
+      label: 'Personnes passées au studio',
+      value: totalPersons,
+      icon: <Camera className="w-5 h-5" />,
+      color: 'text-pink-400',
       path: createPageUrl('AdminReservations'),
     },
   ]
