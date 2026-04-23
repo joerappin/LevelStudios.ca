@@ -293,6 +293,100 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* Semaine en cours + Pointage du jour */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Mini week calendar */}
+          <div className={`border rounded-2xl p-6 ${card}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-violet-400" />
+                <h3 className={`font-bold ${textPrimary}`}>Semaine en cours</h3>
+              </div>
+              <button onClick={() => navigate(createPageUrl('AdminCalendar'))} className={`text-xs transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+                Voir calendrier →
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {DAYS_FR.map((d, i) => {
+                const date = weekDates[i]
+                const ymd = toYMD(date)
+                const dayRes = weekMap[ymd] || []
+                const isToday = ymd === today
+                return (
+                  <div
+                    key={i}
+                    onClick={() => navigate(createPageUrl('AdminCalendar'))}
+                    className={`rounded-xl p-2 text-center cursor-pointer transition-all ${
+                      isToday
+                        ? 'bg-violet-600 text-white'
+                        : isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className={`text-[10px] font-medium mb-1 ${isToday ? 'text-violet-200' : textSecondary}`}>{d}</div>
+                    <div className={`text-sm font-bold ${isToday ? 'text-white' : textPrimary}`}>{date.getDate()}</div>
+                    <div className={`mt-1 text-[10px] font-bold px-1 rounded-full ${isToday ? 'bg-white/20 text-white' : dayRes.length > 0 ? 'bg-violet-500/20 text-violet-400' : isDark ? 'text-zinc-600' : 'text-gray-300'}`}>
+                      {dayRes.length}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Today's check-ins */}
+          <div className={`border rounded-2xl p-6 ${card}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-violet-400" />
+                <h3 className={`font-bold ${textPrimary}`}>Pointage du jour</h3>
+              </div>
+              <button onClick={() => navigate(createPageUrl('AdminCheck'))} className={`text-xs transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
+                Voir tout →
+              </button>
+            </div>
+            {todayCheckins.length === 0 ? (
+              <div className={`flex flex-col items-center justify-center py-8 gap-2 ${textSecondary}`}>
+                <Clock className="w-8 h-8 opacity-20" />
+                <p className="text-sm">Aucun pointage aujourd'hui</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {todayCheckins.map(c => {
+                  const emp = employees.find(e => e.email === c.employee_email)
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => navigate(createPageUrl('AdminCheck'))}
+                      className={`flex items-center justify-between rounded-xl px-4 py-3 cursor-pointer transition-colors ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-xs font-bold">{(c.employee_name || emp?.name || '?').charAt(0)}</span>
+                        </div>
+                        <div>
+                          <div className={`text-sm font-medium ${textPrimary}`}>{c.employee_name || emp?.name}</div>
+                          <div className={`text-xs ${textSecondary}`}>Entrée {c.check_in}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {c.check_out ? (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-lg bg-green-500/10 text-green-400`}>
+                            Sorti {c.check_out}
+                          </span>
+                        ) : (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400`}>
+                            En poste
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* KPI grid — draggable */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={orderedKpis.map(k => k.label)} strategy={rectSortingStrategy}>
@@ -425,98 +519,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Mini week calendar */}
-          <div className={`border rounded-2xl p-6 ${card}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-violet-400" />
-                <h3 className={`font-bold ${textPrimary}`}>Semaine en cours</h3>
-              </div>
-              <button onClick={() => navigate(createPageUrl('AdminCalendar'))} className={`text-xs transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-                Voir calendrier →
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {DAYS_FR.map((d, i) => {
-                const date = weekDates[i]
-                const ymd = toYMD(date)
-                const dayRes = weekMap[ymd] || []
-                const isToday = ymd === today
-                return (
-                  <div
-                    key={i}
-                    onClick={() => navigate(createPageUrl('AdminCalendar'))}
-                    className={`rounded-xl p-2 text-center cursor-pointer transition-all ${
-                      isToday
-                        ? 'bg-violet-600 text-white'
-                        : isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className={`text-[10px] font-medium mb-1 ${isToday ? 'text-violet-200' : textSecondary}`}>{d}</div>
-                    <div className={`text-sm font-bold ${isToday ? 'text-white' : textPrimary}`}>{date.getDate()}</div>
-                    <div className={`mt-1 text-[10px] font-bold px-1 rounded-full ${isToday ? 'bg-white/20 text-white' : dayRes.length > 0 ? 'bg-violet-500/20 text-violet-400' : isDark ? 'text-zinc-600' : 'text-gray-300'}`}>
-                      {dayRes.length}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
 
-          {/* Today's check-ins */}
-          <div className={`border rounded-2xl p-6 ${card}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-violet-400" />
-                <h3 className={`font-bold ${textPrimary}`}>Pointage du jour</h3>
-              </div>
-              <button onClick={() => navigate(createPageUrl('AdminCheck'))} className={`text-xs transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`}>
-                Voir tout →
-              </button>
-            </div>
-            {todayCheckins.length === 0 ? (
-              <div className={`flex flex-col items-center justify-center py-8 gap-2 ${textSecondary}`}>
-                <Clock className="w-8 h-8 opacity-20" />
-                <p className="text-sm">Aucun pointage aujourd'hui</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {todayCheckins.map(c => {
-                  const emp = employees.find(e => e.email === c.employee_email)
-                  return (
-                    <div
-                      key={c.id}
-                      onClick={() => navigate(createPageUrl('AdminCheck'))}
-                      className={`flex items-center justify-between rounded-xl px-4 py-3 cursor-pointer transition-colors ${isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-50 hover:bg-gray-100'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-xs font-bold">{(c.employee_name || emp?.name || '?').charAt(0)}</span>
-                        </div>
-                        <div>
-                          <div className={`text-sm font-medium ${textPrimary}`}>{c.employee_name || emp?.name}</div>
-                          <div className={`text-xs ${textSecondary}`}>Entrée {c.check_in}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {c.check_out ? (
-                          <span className={`text-xs font-medium px-2 py-1 rounded-lg bg-green-500/10 text-green-400`}>
-                            Sorti {c.check_out}
-                          </span>
-                        ) : (
-                          <span className={`text-xs font-medium px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400`}>
-                            En poste
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
 
 
       </div>
