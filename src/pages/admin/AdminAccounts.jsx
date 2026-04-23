@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, LayoutDashboard, Film } from 'lucide-react'
+import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, LayoutDashboard, Film, Star } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -7,6 +7,7 @@ import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { sendAccountCreatedEmail } from '../../utils/emailService'
+import { useReservations } from '../../hooks/useReservations'
 
 
 const EMPLOYEE_ROLES = [
@@ -44,6 +45,10 @@ export default function AdminAccounts() {
   const { impersonate } = useAuth()
   const navigate = useNavigate()
   const isDark = theme === 'dark'
+  const { reservations: allRes } = useReservations({ interval: 60000 })
+  const [rateModal, setRateModal] = useState(null) // null | client object
+  const [localRatings, setLocalRatings] = useState({}) // { resId: star }
+  const [rateComments, setRateComments] = useState({}) // { resId: comment }
   const [tab, setTab] = useState('clients')
   const [search, setSearch] = useState('')
   const [clients, setClients] = useState([])
@@ -242,6 +247,27 @@ export default function AdminAccounts() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleForceRating = (resId, star) => {
+    setLocalRatings(p => ({ ...p, [resId]: star }))
+    const comment = rateComments[resId] ?? (allRes.find(r => r.id === resId)?.rating_comment ?? '')
+    Store.updateReservation(resId, { rating: star, rating_comment: comment })
+  }
+
+  const handleClearRating = (resId) => {
+    setLocalRatings(p => ({ ...p, [resId]: 0 }))
+    Store.updateReservation(resId, { rating: null, rating_comment: '' })
+  }
+
+  const handleRateComment = (resId, val) => {
+    setRateComments(p => ({ ...p, [resId]: val }))
+  }
+
+  const saveComment = (resId) => {
+    const star = localRatings[resId] ?? (allRes.find(r => r.id === resId)?.rating ?? 0)
+    if (!star) return
+    Store.updateReservation(resId, { rating: star, rating_comment: rateComments[resId] ?? '' })
+  }
+
   // Styles
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const inputCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -332,6 +358,7 @@ export default function AdminAccounts() {
                     <td className={`px-5 py-3.5 hidden lg:table-cell text-xs font-mono ${textSecondary}`}>{c.id}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => { setRateModal(c); setLocalRatings({}); setRateComments({}) }} title="Forcer la notation" className="p-1.5 rounded-lg transition-colors text-amber-400 hover:bg-amber-500/10"><Star size={15} /></button>
                         <button onClick={() => handleImpersonate(c, '/client/dashboard')} title="Vue standard (sidebar)" className="p-1.5 rounded-lg transition-colors text-violet-400 hover:bg-violet-500/10"><LayoutDashboard size={15} /></button>
                         <button onClick={() => handleImpersonate(c, '/client/dashboard?netflix=1')} title="Vue Netflix" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Film size={15} /></button>
                         <button onClick={() => toggleSuspend(c.id, false)} title={c.suspended ? 'Réactiver' : 'Suspendre'} className={`p-1.5 rounded-lg transition-colors ${c.suspended ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
@@ -462,6 +489,102 @@ export default function AdminAccounts() {
           </div>
         )}
       </div>
+
+      {/* ── Rating modal ── */}
+      {rateModal && (() => {
+        const clientRes = [...allRes.filter(r => r.client_email === rateModal.email)]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+        return (
+          <div className="fixed inset-0 overflow-y-auto z-50" style={{ background: 'rgba(0,0,0,0.75)' }}>
+            <div className="flex items-center justify-center min-h-full p-4">
+              <div className={`border rounded-2xl w-full max-w-lg my-4 ${modalBg}`}>
+                <div className="flex items-center justify-between px-6 pt-6 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Star size={16} className="text-amber-400" />
+                      <h3 className={`text-lg font-bold ${textPrimary}`}>Notation — {rateModal.name}</h3>
+                    </div>
+                    <p className={`text-xs mt-0.5 ${textSecondary}`}>
+                      {clientRes.length} réservation{clientRes.length !== 1 ? 's' : ''} · cliquez sur une étoile pour forcer la note
+                    </p>
+                  </div>
+                  <button onClick={() => setRateModal(null)} className={`${textSecondary} hover:text-white transition-colors`}><X className="w-5 h-5" /></button>
+                </div>
+
+                <div className="px-6 pb-6 space-y-3 max-h-[70vh] overflow-y-auto">
+                  {clientRes.length === 0 ? (
+                    <div className={`flex flex-col items-center justify-center py-10 gap-2 ${textSecondary}`}>
+                      <Star className="w-8 h-8 opacity-20" />
+                      <p className="text-sm">Aucune réservation pour ce client</p>
+                    </div>
+                  ) : clientRes.map(r => {
+                    const currentRating = localRatings[r.id] !== undefined ? localRatings[r.id] : (r.rating ?? 0)
+                    const currentComment = rateComments[r.id] !== undefined ? rateComments[r.id] : (r.rating_comment ?? '')
+                    const isRated = currentRating > 0
+                    return (
+                      <div key={r.id} className={`rounded-xl p-4 border transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700' : 'bg-gray-50 border-gray-200'} ${isRated ? isDark ? 'border-amber-500/30' : 'border-amber-200' : ''}`}>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="min-w-0">
+                            <p className={`text-sm font-semibold ${textPrimary}`}>{r.studio} · {r.date}</p>
+                            <p className={`text-xs mt-0.5 ${textSecondary}`}>
+                              {r.package || r.offer || 'Session'}{r.duration ? ` · ${r.duration}h` : ''}
+                            </p>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${
+                            r.status === 'validee' || r.status === 'livree' ? 'bg-green-500/10 text-green-400'
+                            : r.status === 'a_payer' ? 'bg-yellow-500/10 text-yellow-400'
+                            : isDark ? 'bg-zinc-700 text-zinc-400' : 'bg-gray-100 text-gray-500'
+                          }`}>{r.status}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <button key={n}
+                              onClick={() => handleForceRating(r.id, n)}
+                              className="transition-transform hover:scale-110 focus:outline-none"
+                            >
+                              <Star size={24} className={
+                                n <= currentRating
+                                  ? 'text-amber-400 fill-amber-400'
+                                  : isDark ? 'text-zinc-700 fill-zinc-700 hover:text-amber-300 hover:fill-amber-300' : 'text-gray-200 fill-gray-200 hover:text-amber-300 hover:fill-amber-300'
+                              } />
+                            </button>
+                          ))}
+                          {isRated && (
+                            <button onClick={() => handleClearRating(r.id)}
+                              className={`ml-2 text-[11px] font-semibold transition-colors ${textSecondary} hover:text-red-400`}
+                              title="Effacer la note"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                        {isRated && (
+                          <input
+                            type="text"
+                            placeholder="Commentaire (optionnel)"
+                            value={currentComment}
+                            onChange={e => handleRateComment(r.id, e.target.value)}
+                            onBlur={() => saveComment(r.id)}
+                            className={`w-full text-xs border rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-500/50 ${inputCls}`}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="px-6 pb-6">
+                  <button onClick={() => setRateModal(null)}
+                    className={`w-full border rounded-xl py-2.5 text-sm font-semibold transition-colors ${btnSecondary}`}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Modal overlay ── */}
       {modal && (

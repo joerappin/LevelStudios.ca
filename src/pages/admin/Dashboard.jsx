@@ -28,7 +28,7 @@ const NAV = [
   { separator: true },
   { labelKey: 'nav_messaging',     path: createPageUrl('AdminMessaging'),     icon: <MessageSquare className="w-4 h-4" /> },
   { labelKey: 'nav_sav',           path: createPageUrl('AdminSAV'),           icon: <HeadphonesIcon className="w-4 h-4" /> },
-  { labelKey: 'nav_satisfaction',  path: '/admin/satisfaction',               icon: <Star className="w-4 h-4" /> },
+  { label: 'Feedback',             path: '/admin/satisfaction',               icon: <Star className="w-4 h-4" /> },
   { labelKey: 'nav_communication', path: createPageUrl('AdminCommunication'), icon: <Megaphone className="w-4 h-4" /> },
   { labelKey: 'nav_promo',         path: createPageUrl('AdminPromo'),         icon: <Tag className="w-4 h-4" /> },
   { labelKey: 'nav_pricing',       path: createPageUrl('AdminPricing'),       icon: <DollarSign className="w-4 h-4" /> },
