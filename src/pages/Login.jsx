@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, ArrowLeft, ChevronDown, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Eye, EyeOff, ChevronDown, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const SAVED_EMAILS_KEY = 'ls_electron_saved_emails'
@@ -116,18 +116,6 @@ export default function Login() {
       className="min-h-screen flex flex-col items-center justify-center px-4"
       style={{ background: '#060606' }}
     >
-      {!electron && (
-        <Link
-          to="/"
-          className="absolute top-6 left-6 flex items-center gap-2 text-sm"
-          style={{ color: 'rgba(255,255,255,0.35)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
-        >
-          <ArrowLeft size={15} />
-          Retour
-        </Link>
-      )}
 
       <div
         className="w-full max-w-sm rounded-2xl p-8"
