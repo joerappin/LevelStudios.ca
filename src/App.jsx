@@ -32,6 +32,9 @@ import AdminPerf from './pages/admin/AdminPerf'
 import AdminVersions from './pages/admin/AdminVersions'
 import AdminPricing from './pages/admin/AdminPricing'
 import AdminRecette from './pages/admin/AdminRecette'
+import AdminIndex from './pages/admin/AdminIndex'
+import AdminPageEditor from './pages/admin/AdminPageEditor'
+import SiteOverrideInjector from './components/SiteOverrideInjector'
 
 // Employee pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard'
@@ -131,6 +134,8 @@ function AppRoutes() {
       <Route path="/admin/versions" element={<ProtectedRoute requiredType="admin"><AdminVersions /></ProtectedRoute>} />
       <Route path="/admin/pricing" element={<ProtectedRoute requiredType="admin"><AdminPricing /></ProtectedRoute>} />
       <Route path="/admin/recette" element={<ProtectedRoute requiredType="admin"><AdminRecette /></ProtectedRoute>} />
+      <Route path="/admin/index" element={<ProtectedRoute requiredType="admin"><AdminIndex /></ProtectedRoute>} />
+      <Route path="/admin/editor" element={<ProtectedRoute requiredType="admin"><AdminPageEditor /></ProtectedRoute>} />
 
       <Route path="/employee/dashboard" element={<ProtectedRoute requiredType="employee"><EmployeeDashboard /></ProtectedRoute>} />
       <Route path="/employee/projects" element={<ProtectedRoute requiredType="employee"><EmployeeProjects /></ProtectedRoute>} />
@@ -185,6 +190,7 @@ function AppWithMaintenance() {
     <AppProvider>
       <AuthProvider>
         <BrowserRouter>
+          <SiteOverrideInjector />
           <AppRoutes />
         </BrowserRouter>
       </AuthProvider>

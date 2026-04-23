@@ -26,6 +26,7 @@ export const translations = {
     nav_tool: 'Outils',
     nav_beta: 'Beta',
     nav_versions: 'Versions',
+    nav_index: 'Index pages',
     nav_pricing: 'Tarifs',
     nav_recette: 'Recette',
     // Employee nav
@@ -151,6 +152,7 @@ export const translations = {
     nav_tool: 'Tools',
     nav_beta: 'Beta',
     nav_versions: 'Versions',
+    nav_index: 'Index pages',
     nav_pricing: 'Pricing',
     nav_recette: 'Revenue',
     // Employee nav

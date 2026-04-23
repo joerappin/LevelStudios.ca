@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList, FolderOpen, Zap,
   MessageSquare, HeadphonesIcon, Megaphone, Tag, Clock, BookOpen,
   Wrench, UserCheck, TrendingUp, AlertCircle, Bell, Plus, CreditCard,
-  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt,
+  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt, Grid,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -39,6 +39,8 @@ const NAV = [
   { labelKey: 'nav_tool',          path: createPageUrl('AdminTool'),          icon: <Wrench className="w-4 h-4" /> },
   { labelKey: 'nav_beta',          path: '/admin/beta',                       icon: <FlaskConical className="w-4 h-4" /> },
   { labelKey: 'nav_versions',      path: '/admin/versions',                   icon: <GitBranch className="w-4 h-4" /> },
+  { separator: true },
+  { labelKey: 'nav_index',         path: '/admin/index',                      icon: <Grid className="w-4 h-4" /> },
 ]
 export { NAV as ADMIN_NAV }
 
