@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LogOut, Menu, X, Sun, Moon, ChevronDown, ArrowLeftCircle } from 'lucide-react'
+import { LogOut, Menu, X, Sun, Moon, ChevronDown } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
 import { translations } from '../i18n/translations'
@@ -255,7 +255,7 @@ export default function Layout({ children, navItems, title }) {
         {/* Glassmorphism header */}
         <header style={{
           height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 24px', position: 'sticky', top: 0, zIndex: 30,
+          padding: '0 24px', position: 'sticky', top: impersonatedBy ? '36px' : '0', zIndex: 30,
           background: S.header,
           backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
           borderBottom: `1px solid ${S.divider}`,
@@ -301,25 +301,6 @@ export default function Layout({ children, navItems, title }) {
           )}
         </header>
 
-        {impersonatedBy && (
-          <div style={{
-            position: 'sticky', top: '64px', zIndex: 20,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 24px',
-            background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)',
-          }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#fbbf24' }}>
-              👁 Vue en tant que <strong>{user?.name}</strong> — connecté en tant que {impersonatedBy.name}
-            </span>
-            <button onClick={handleStopImpersonating} style={{
-              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700,
-              padding: '6px 14px', borderRadius: '8px', background: 'rgba(234,179,8,0.15)',
-              color: '#fbbf24', border: '1px solid rgba(234,179,8,0.3)', cursor: 'pointer',
-            }}>
-              <ArrowLeftCircle size={13} /> Retour Admin
-            </button>
-          </div>
-        )}
 
         <main style={{ flex: 1, padding: '24px', overflowX: 'hidden', color: textPrimary }}>
           {children}

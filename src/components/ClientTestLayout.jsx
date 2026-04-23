@@ -19,7 +19,7 @@ const NAV = [
 ]
 
 export default function ClientTestLayout({ children, transparent = false }) {
-  const { user, logout } = useAuth()
+  const { user, logout, impersonatedBy } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
   const [scrolled, setScrolled]   = useState(false)
@@ -57,7 +57,7 @@ export default function ClientTestLayout({ children, transparent = false }) {
 
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        position: 'fixed', top: impersonatedBy ? '36px' : '0', left: 0, right: 0, zIndex: 99,
         height: 68,
         background: navBg,
         transition: 'background 0.4s',

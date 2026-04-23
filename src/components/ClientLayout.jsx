@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Bell, ChevronDown, ChevronUp, LogOut, User,
-  Sun, Moon, Headphones, ArrowLeftCircle,
+  Sun, Moon, Headphones,
   Home, CalendarDays, FolderOpen, CreditCard,
   KeyRound, Menu, Film, LayoutDashboard,
 } from 'lucide-react'
@@ -47,7 +47,9 @@ export default function ClientLayout({ children, transparent = false, title }) {
 
   // viewMode: 'netflix' for real clients, 'classic' when impersonating (unless ?netflix=1)
   const startNetflix = new URLSearchParams(location.search).get('netflix') === '1'
-  const [viewMode, setViewMode] = useState('netflix')
+  const [viewMode, setViewMode] = useState(() =>
+    impersonatedBy && !startNetflix ? 'classic' : 'netflix'
+  )
   useEffect(() => {
     if (impersonatedBy) setViewMode(startNetflix ? 'netflix' : 'classic')
   }, [!!impersonatedBy])  // eslint-disable-line react-hooks/exhaustive-deps
@@ -259,30 +261,15 @@ export default function ClientLayout({ children, transparent = false, title }) {
         </aside>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }} className="lg:ml-64">
-          <header style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 30, background: S.header, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: `1px solid ${S.divider}` }}>
+          <header style={{ height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: impersonatedBy ? '36px' : '0', zIndex: 30, background: S.header, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: `1px solid ${S.divider}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button className="lg:hidden" onClick={() => setSidebarOpen(true)} style={{ padding: '8px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'transparent', color: navInactive }}>
                 <Menu size={20} />
               </button>
               <h1 style={{ fontWeight: 800, fontSize: '17px', margin: 0, color: textPrimary, fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.01em' }}>{title}</h1>
             </div>
-            <div />
+            {impersonatedBy && <ModeToggle />}
           </header>
-
-          {/* Impersonation banner — classic mode */}
-          {impersonatedBy && (
-            <div style={{ position: 'sticky', top: '64px', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 24px', background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#fbbf24' }}>
-                👁 Vue en tant que <strong>{user?.name}</strong> — {impersonatedBy.name}
-              </span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <ModeToggle />
-                <button onClick={handleStopImpersonating} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, padding: '6px 14px', borderRadius: '8px', background: 'rgba(234,179,8,0.15)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.3)', cursor: 'pointer' }}>
-                  <ArrowLeftCircle size={13} /> Retour Admin
-                </button>
-              </div>
-            </div>
-          )}
 
           <main style={{ flex: 1, padding: '24px', overflowX: 'hidden', color: textPrimary }}>
             {children}
@@ -304,8 +291,8 @@ export default function ClientLayout({ children, transparent = false, title }) {
 
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        height: 68, background: navBg, transition: 'background 0.4s',
+        position: 'fixed', top: impersonatedBy ? '36px' : '0', left: 0, right: 0, zIndex: 99,
+        height: 68, background: navBg, transition: 'background 0.4s, top 0.2s',
         display: 'flex', alignItems: 'center', padding: '0 4%', gap: 28,
       }}>
         <div onClick={() => navigate(createPageUrl('ClientDashboard'))}
@@ -340,6 +327,8 @@ export default function ClientLayout({ children, transparent = false, title }) {
         <div style={{ flex: 1 }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {impersonatedBy && <ModeToggle />}
+
           <button onClick={() => navigate('/clienttest/invoices')} style={{
             position: 'relative', width: 36, height: 36, borderRadius: 6,
             border: 'none', cursor: 'pointer', background: 'transparent',
@@ -423,28 +412,9 @@ export default function ClientLayout({ children, transparent = false, title }) {
         </div>
       </nav>
 
-      {/* ── IMPERSONATION BANNER — Netflix mode ──────────────────────────── */}
-      {impersonatedBy && (
-        <div style={{
-          position: 'fixed', top: 68, left: 0, right: 0, zIndex: 99,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 4%',
-          background: 'rgba(234,179,8,0.08)', borderBottom: '1px solid rgba(234,179,8,0.2)',
-        }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#fbbf24' }}>
-            👁 Vue en tant que <strong>{user?.name}</strong> — {impersonatedBy.name}
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <ModeToggle />
-            <button onClick={handleStopImpersonating} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, background: 'rgba(234,179,8,0.15)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.3)', cursor: 'pointer' }}>
-              <ArrowLeftCircle size={13} /> Retour Admin
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── CONTENT ──────────────────────────────────────────────────────── */}
-      <main style={{ padding: transparent ? 0 : '92px 24px 32px' }}>
+      <main style={{ padding: transparent ? 0 : `${impersonatedBy ? 128 : 92}px 24px 32px` }}>
         {children}
       </main>
     </div>

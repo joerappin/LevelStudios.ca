@@ -1,8 +1,9 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
 import MaintenancePage, { useMaintenanceBypass } from './pages/MaintenancePage'
+import { ArrowLeftCircle, LayoutDashboard } from 'lucide-react'
 
 // Public pages
 import Home from './pages/Home'
@@ -82,6 +83,49 @@ import ClientSubscription from './pages/client/ClientSubscription'
 import ClientInvoices from './pages/client/ClientInvoices'
 import ClientContact from './pages/client/ClientContact'
 
+// ── Global impersonation banner — appears on every page ──────────────────────
+function ImpersonationBanner() {
+  const { user, impersonatedBy, stopImpersonating } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  if (!impersonatedBy) return null
+  const isClientTest = location.pathname.startsWith('/clienttest')
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, height: '36px',
+      zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 20px',
+      background: 'rgba(12,9,0,0.96)',
+      borderBottom: '1px solid rgba(234,179,8,0.35)',
+      backdropFilter: 'blur(8px)',
+    }}>
+      <span style={{ fontSize: '11px', fontWeight: 600, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ opacity: 0.8 }}>👁</span>
+        Vue en tant que <strong style={{ color: '#fff' }}>{user?.name}</strong>
+        <span style={{ opacity: 0.5 }}>— {impersonatedBy.name}</span>
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {isClientTest && (
+          <button onClick={() => navigate('/client/dashboard')} style={{
+            display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600,
+            padding: '3px 10px', borderRadius: '6px', cursor: 'pointer', border: '1px solid rgba(139,92,246,0.35)',
+            background: 'rgba(139,92,246,0.15)', color: '#a78bfa', transition: 'all 0.15s',
+          }}>
+            <LayoutDashboard size={11} /> Vue classique
+          </button>
+        )}
+        <button onClick={() => { stopImpersonating(); navigate('/admin/accounts') }} style={{
+          display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700,
+          padding: '3px 10px', borderRadius: '6px', cursor: 'pointer', border: '1px solid rgba(234,179,8,0.35)',
+          background: 'rgba(234,179,8,0.15)', color: '#fbbf24', transition: 'all 0.15s',
+        }}>
+          <ArrowLeftCircle size={11} /> Retour Admin
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ProtectedRoute({ children, requiredType }) {
   const { user, loading } = useAuth()
   if (loading) return (
@@ -108,7 +152,9 @@ function ClientTestRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
+    <>
+      <ImpersonationBanner />
+      <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/loginteamlevelprivate" element={<Login />} />
       <Route path="/contact" element={<Contact />} />
@@ -182,6 +228,7 @@ function AppRoutes() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
 

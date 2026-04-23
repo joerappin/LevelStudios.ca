@@ -360,7 +360,7 @@ export default function AdminAccounts() {
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setRateModal(c); setLocalRatings({}); setRateComments({}) }} title="Forcer la notation" className="p-1.5 rounded-lg transition-colors text-amber-400 hover:bg-amber-500/10"><Star size={15} /></button>
                         <button onClick={() => handleImpersonate(c, '/client/dashboard')} title="Vue standard (sidebar)" className="p-1.5 rounded-lg transition-colors text-violet-400 hover:bg-violet-500/10"><LayoutDashboard size={15} /></button>
-                        <button onClick={() => handleImpersonate(c, '/client/dashboard?netflix=1')} title="Vue Netflix" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Film size={15} /></button>
+                        <button onClick={() => handleImpersonate(c, '/clienttest/dashboard')} title="Vue Netflix" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Film size={15} /></button>
                         <button onClick={() => toggleSuspend(c.id, false)} title={c.suspended ? 'Réactiver' : 'Suspendre'} className={`p-1.5 rounded-lg transition-colors ${c.suspended ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
                         <button onClick={() => handleTrash(c.id, false)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>
