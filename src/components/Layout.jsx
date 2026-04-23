@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LogOut, Menu, X, Sun, Moon, ChevronDown, ArrowLeftCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -45,8 +45,10 @@ export default function Layout({ children, navItems, title }) {
   const { theme, lang, toggleTheme, toggleLang } = useApp()
   const navigate  = useNavigate()
   const location  = useLocation()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [alertCounts, setAlertCounts] = useState({ Retard: 0, Retour: 0, Urgent: 0 })
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [alertCounts, setAlertCounts]   = useState({ Retard: 0, Retour: 0, Urgent: 0 })
+  const [adminChatOpen, setAdminChatOpen] = useState(false)
+  const [adminChatUnread, setAdminChatUnread] = useState(0)
 
   useEffect(() => {
     if (user?.type !== 'admin' && user?.roleKey !== 'chef_projet') return
@@ -190,14 +192,31 @@ export default function Layout({ children, navItems, title }) {
           background: isDark ? '#050505' : `${D.tertiary}0a`,
           border: `1px solid ${D.tertiary}1e`,
         }}>
-          {/* Avatar — dégradé tertiary → secondary */}
-          <div style={{
-            width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
-            background: D.gradActive,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 2px 12px rgba(136,235,255,0.28)`,
-          }}>
+          {/* Avatar — dégradé tertiary → secondary — chat trigger for admin */}
+          <div
+            onClick={user?.type === 'admin' ? () => setAdminChatOpen(v => !v) : undefined}
+            style={{
+              width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
+              background: D.gradActive,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 2px 12px rgba(136,235,255,0.28)`,
+              position: 'relative',
+              cursor: user?.type === 'admin' ? 'pointer' : 'default',
+            }}>
             <span style={{ color: '#060606', fontSize: '12px', fontWeight: 900 }}>{user?.name?.charAt(0) || '?'}</span>
+            {user?.type === 'admin' && adminChatUnread > 0 && (
+              <span style={{
+                position: 'absolute', top: '-5px', right: '-5px',
+                width: '15px', height: '15px', borderRadius: '50%',
+                background: '#e8175d', color: '#fff',
+                fontSize: '9px', fontWeight: 900,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                pointerEvents: 'none',
+              }}>
+                {adminChatUnread > 9 ? '9+' : adminChatUnread}
+              </span>
+            )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: '12px', fontWeight: 700, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: textPrimary }}>{user?.name}</p>
@@ -307,7 +326,7 @@ export default function Layout({ children, navItems, title }) {
         </main>
       </div>
 
-      {user?.type === 'admin' && <AdminChatBot />}
+      {user?.type === 'admin' && <AdminChatBot open={adminChatOpen} onClose={() => setAdminChatOpen(false)} onUnreadChange={setAdminChatUnread} />}
       {user?.type === 'client' && <ClientChatBot />}
     </div>
   )

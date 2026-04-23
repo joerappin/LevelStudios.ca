@@ -27,9 +27,12 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
 }
 
-export default function AdminChatBot() {
+export default function AdminChatBot({ open: openProp, onClose, onUnreadChange }) {
+  const controlled = openProp !== undefined
   const { user } = useAuth()
-  const [open,        setOpen]        = useState(false)
+  const [openInternal, setOpenInternal] = useState(false)
+  const open    = controlled ? openProp    : openInternal
+  const setOpen = controlled ? (v) => { if (!v) onClose?.() } : setOpenInternal
   const [selected,    setSelected]    = useState(null) // conversation active
   const [input,       setInput]       = useState('')
   const [convs,       setConvs]       = useState([])
@@ -44,7 +47,9 @@ export default function AdminChatBot() {
       .filter(m => m.status !== 'closed')
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     setConvs(all)
-    setUnreadCount(all.filter(m => !m.read).length)
+    const unread = all.filter(m => !m.read).length
+    setUnreadCount(unread)
+    onUnreadChange?.(unread)
     // Refresh conversation sélectionnée
     if (selected) {
       const updated = all.find(c => c.id === selected.id)
@@ -267,7 +272,10 @@ export default function AdminChatBot() {
 
   // ── Render principal ───────────────────────────────────────────────────────
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
+    <div className={controlled
+      ? 'fixed z-[9999]'
+      : 'fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3'}
+      style={controlled ? { left: '266px', bottom: '16px' } : {}}>
 
       {/* Panel chat */}
       {open && (
@@ -299,20 +307,22 @@ export default function AdminChatBot() {
         </div>
       )}
 
-      {/* FAB */}
-      <div className="relative">
-        {!open && <span className="absolute inset-0 rounded-full bg-violet-500 opacity-25 animate-ping" />}
-        <button onClick={() => setOpen(v => !v)}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-violet-500/40"
-          style={{ background: open ? '#3f3f46' : 'linear-gradient(135deg, #4c1d95 0%, #2563eb 100%)' }}
-          title="Chat admin">
-          {open
-            ? <X className="w-5 h-5 text-white" />
-            : <MessageSquare className="w-6 h-6 text-white" />
-          }
-        </button>
-        <Badge />
-      </div>
+      {/* FAB — only in standalone (uncontrolled) mode */}
+      {!controlled && (
+        <div className="relative">
+          {!open && <span className="absolute inset-0 rounded-full bg-violet-500 opacity-25 animate-ping" />}
+          <button onClick={() => setOpen(v => !v)}
+            className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-violet-500/40"
+            style={{ background: open ? '#3f3f46' : 'linear-gradient(135deg, #4c1d95 0%, #2563eb 100%)' }}
+            title="Chat admin">
+            {open
+              ? <X className="w-5 h-5 text-white" />
+              : <MessageSquare className="w-6 h-6 text-white" />
+            }
+          </button>
+          <Badge />
+        </div>
+      )}
     </div>
   )
 }

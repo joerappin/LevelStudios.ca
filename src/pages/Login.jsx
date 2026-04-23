@@ -57,6 +57,7 @@ export default function Login() {
   useEffect(() => {
     if (authLoading) return
     if (!user) return
+    if (window.parent !== window) return // loaded in editor iframe — don't redirect
     const dest = dashboardFor(user)
     if (dest) navigate(dest, { replace: true })
   }, [authLoading, user]) // eslint-disable-line
