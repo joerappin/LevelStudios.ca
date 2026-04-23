@@ -399,111 +399,102 @@ export default function AdminDashboard() {
             </SortableContext>
           </DndContext>
 
-          {/* Right — studio performance */}
-          <div className={`border rounded-2xl p-6 ${card}`}>
-            <div className="flex items-center gap-2 mb-5">
-              <BarChart3 className="w-4 h-4 text-violet-400" />
-              <h3 className={`font-bold ${textPrimary}`}>Performance par studio</h3>
-              <span className={`text-xs ${textSecondary}`}>— seuil {BREAKEVEN_PCT}%</span>
-            </div>
-            <div className="flex flex-col gap-4">
-              {studioStats.map(s => (
-                <div
-                  key={s.studio}
-                  onClick={() => navigate(createPageUrl('AdminReservations'))}
-                  className={`rounded-xl p-4 border cursor-pointer transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500' : 'bg-gray-50 border-gray-200 hover:border-violet-300'}`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`font-semibold text-sm ${textPrimary}`}>{s.studio}</span>
-                    <span className={`text-xs font-bold ${occupancyTextColor(s.occ)}`}>{s.occ}%</span>
+          {/* Right — studio performance + satisfaction client */}
+          <div className="flex flex-col gap-6">
+            <div className={`border rounded-2xl p-6 ${card}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <BarChart3 className="w-4 h-4 text-violet-400" />
+                <h3 className={`font-bold ${textPrimary}`}>Performance par studio</h3>
+                <span className={`text-xs ${textSecondary}`}>— seuil {BREAKEVEN_PCT}%</span>
+              </div>
+              <div className="flex flex-col gap-4">
+                {studioStats.map(s => (
+                  <div
+                    key={s.studio}
+                    onClick={() => navigate(createPageUrl('AdminReservations'))}
+                    className={`rounded-xl p-4 border cursor-pointer transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500' : 'bg-gray-50 border-gray-200 hover:border-violet-300'}`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`font-semibold text-sm ${textPrimary}`}>{s.studio}</span>
+                      <span className={`text-xs font-bold ${occupancyTextColor(s.occ)}`}>{s.occ}%</span>
+                    </div>
+                    <div className={`h-2 rounded-full mb-1 ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
+                      <div className={`h-2 rounded-full transition-all ${occupancyColor(s.occ)}`} style={{ width: `${s.occ}%` }} />
+                    </div>
+                    <div className="relative h-0 mb-3">
+                      <div className="absolute -top-2 w-0.5 h-3 bg-zinc-500/60" style={{ left: `${BREAKEVEN_PCT}%` }} title={`Seuil ${BREAKEVEN_PCT}%`} />
+                    </div>
+                    <div className={`flex justify-between text-xs mt-2 ${textSecondary}`}>
+                      <span>{s.hours}h réservées</span>
+                      <span className={`font-semibold ${textPrimary}`}>{formatPrice(s.revenue)}</span>
+                    </div>
+                    <div className={`text-xs mt-1 ${textSecondary}`}>{s.sessions} session{s.sessions !== 1 ? 's' : ''}</div>
+                    {s.occ < BREAKEVEN_PCT && s.occ > 0 && (
+                      <div className="mt-2 text-[10px] font-semibold text-red-400 bg-red-500/10 rounded-lg px-2 py-1 text-center">Sous le seuil de rentabilité</div>
+                    )}
+                    {s.occ === 0 && (
+                      <div className={`mt-2 text-[10px] rounded-lg px-2 py-1 text-center ${isDark ? 'text-zinc-600 bg-zinc-800' : 'text-gray-400 bg-gray-100'}`}>Aucune session</div>
+                    )}
                   </div>
-                  <div className={`h-2 rounded-full mb-1 ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
-                    <div className={`h-2 rounded-full transition-all ${occupancyColor(s.occ)}`} style={{ width: `${s.occ}%` }} />
-                  </div>
-                  <div className="relative h-0 mb-3">
-                    <div className="absolute -top-2 w-0.5 h-3 bg-zinc-500/60" style={{ left: `${BREAKEVEN_PCT}%` }} title={`Seuil ${BREAKEVEN_PCT}%`} />
-                  </div>
-                  <div className={`flex justify-between text-xs mt-2 ${textSecondary}`}>
-                    <span>{s.hours}h réservées</span>
-                    <span className={`font-semibold ${textPrimary}`}>{formatPrice(s.revenue)}</span>
-                  </div>
-                  <div className={`text-xs mt-1 ${textSecondary}`}>{s.sessions} session{s.sessions !== 1 ? 's' : ''}</div>
-                  {s.occ < BREAKEVEN_PCT && s.occ > 0 && (
-                    <div className="mt-2 text-[10px] font-semibold text-red-400 bg-red-500/10 rounded-lg px-2 py-1 text-center">Sous le seuil de rentabilité</div>
-                  )}
-                  {s.occ === 0 && (
-                    <div className={`mt-2 text-[10px] rounded-lg px-2 py-1 text-center ${isDark ? 'text-zinc-600 bg-zinc-800' : 'text-gray-400 bg-gray-100'}`}>Aucune session</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Satisfaction client ─────────────────────────────────────────── */}
-        <div className={`border rounded-2xl p-6 ${card}`}>
-          <div className="flex items-center gap-2 mb-5">
-            <Star className="w-4 h-4 text-amber-400" />
-            <h3 className={`font-bold ${textPrimary}`}>Satisfaction client</h3>
-            <span className={`text-xs ${textSecondary}`}>— {ratedRes.length} avis · {ratingPct}% des sessions évaluées</span>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-6">
-            {/* Score global */}
-            <div className="flex flex-col items-center justify-center gap-2 py-2">
-              <p className={`text-6xl font-black ${textPrimary}`}>{avgRating > 0 ? avgRating.toFixed(1) : '—'}</p>
-              <div className="flex gap-0.5">
-                {[1,2,3,4,5].map(n => (
-                  <Star key={n} size={18} className={n <= Math.round(avgRating) ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
                 ))}
               </div>
-              <p className={`text-xs ${textSecondary}`}>Note moyenne / 5</p>
             </div>
 
-            {/* Distribution */}
-            <div className="space-y-1.5 py-1">
-              {rateDist.map(({ star, count }) => {
-                const pct = ratedRes.length > 0 ? Math.round((count / ratedRes.length) * 100) : 0
-                return (
-                  <div key={star} className="flex items-center gap-2">
-                    <div className="flex items-center gap-0.5 w-16 flex-shrink-0">
-                      {[1,2,3,4,5].map(n => (
-                        <Star key={n} size={9} className={n <= star ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
-                      ))}
-                    </div>
-                    <div className={`flex-1 h-2 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
-                      <div
-                        className="h-2 rounded-full bg-amber-400 transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs w-6 text-right flex-shrink-0 ${textSecondary}`}>{count}</span>
+            {/* Satisfaction client */}
+            <div className={`border rounded-2xl p-6 ${card}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <Star className="w-4 h-4 text-amber-400" />
+                <h3 className={`font-bold ${textPrimary}`}>Satisfaction client</h3>
+                <span className={`text-xs ${textSecondary}`}>— {ratedRes.length} avis · {ratingPct}%</span>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-6">
+                <div className="flex flex-col items-center justify-center gap-2 py-2">
+                  <p className={`text-6xl font-black ${textPrimary}`}>{avgRating > 0 ? avgRating.toFixed(1) : '—'}</p>
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map(n => (
+                      <Star key={n} size={18} className={n <= Math.round(avgRating) ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
+                    ))}
                   </div>
-                )
-              })}
-            </div>
-
-            {/* Derniers avis */}
-            <div className="space-y-2">
-              <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${textSecondary}`}>Derniers avis</p>
-              {recentReviews.length === 0 ? (
-                <p className={`text-xs ${textSecondary}`}>Aucun avis pour le moment</p>
-              ) : recentReviews.map(r => (
-                <div key={r.id} className={`rounded-xl px-3 py-2 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className={`text-xs font-semibold truncate ${textPrimary}`}>{r.client_name}</span>
-                    <div className="flex gap-0.5 flex-shrink-0">
-                      {[1,2,3,4,5].map(n => (
-                        <Star key={n} size={9} className={n <= r.rating ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
-                      ))}
-                    </div>
-                  </div>
-                  {r.rating_comment && (
-                    <p className={`text-[10px] truncate ${textSecondary}`}>"{r.rating_comment}"</p>
-                  )}
-                  <p className={`text-[10px] mt-0.5 ${textSecondary} opacity-60`}>{r.studio} · {r.date}</p>
+                  <p className={`text-xs ${textSecondary}`}>Note moyenne / 5</p>
                 </div>
-              ))}
+                <div className="space-y-1.5 py-1">
+                  {rateDist.map(({ star, count }) => {
+                    const pct = ratedRes.length > 0 ? Math.round((count / ratedRes.length) * 100) : 0
+                    return (
+                      <div key={star} className="flex items-center gap-2">
+                        <div className="flex items-center gap-0.5 w-16 flex-shrink-0">
+                          {[1,2,3,4,5].map(n => (
+                            <Star key={n} size={9} className={n <= star ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
+                          ))}
+                        </div>
+                        <div className={`flex-1 h-2 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}>
+                          <div className="h-2 rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`text-xs w-6 text-right flex-shrink-0 ${textSecondary}`}>{count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="space-y-2">
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${textSecondary}`}>Derniers avis</p>
+                  {recentReviews.length === 0 ? (
+                    <p className={`text-xs ${textSecondary}`}>Aucun avis pour le moment</p>
+                  ) : recentReviews.map(r => (
+                    <div key={r.id} className={`rounded-xl px-3 py-2 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className={`text-xs font-semibold truncate ${textPrimary}`}>{r.client_name}</span>
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          {[1,2,3,4,5].map(n => (
+                            <Star key={n} size={9} className={n <= r.rating ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
+                          ))}
+                        </div>
+                      </div>
+                      {r.rating_comment && <p className={`text-[10px] truncate ${textSecondary}`}>"{r.rating_comment}"</p>}
+                      <p className={`text-[10px] mt-0.5 ${textSecondary} opacity-60`}>{r.studio} · {r.date}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
