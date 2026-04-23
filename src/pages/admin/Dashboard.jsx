@@ -104,13 +104,13 @@ function SortableKpiCard({ kpi, cardHover, textSecondary, textPrimary, onNavigat
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}
       onClick={onNavigate}
-      className={`border rounded-2xl p-5 transition-all ${cardHover}`}
+      className={`border rounded-xl px-4 py-3 transition-all flex items-center justify-between ${cardHover}`}
     >
-      <div className={`flex items-center gap-2 mb-3 ${kpi.color}`}>
+      <div className={`flex items-center gap-2 ${kpi.color}`}>
         {kpi.icon}
         <span className={`text-xs font-medium ${textSecondary}`}>{kpi.label}</span>
       </div>
-      <div className={`text-2xl font-black ${textPrimary}`}>{kpi.value}</div>
+      <div className={`text-base font-black ${textPrimary}`}>{kpi.value}</div>
     </div>
   )
 }
@@ -387,67 +387,58 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* KPI grid — draggable */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={orderedKpis.map(k => k.label)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {orderedKpis.map((k) => (
-                <SortableKpiCard key={k.label} kpi={k} cardHover={cardHover} textSecondary={textSecondary} textPrimary={textPrimary} onNavigate={() => navigate(k.path)} />
+        {/* KPIs (left) + Studio breakdown (right) */}
+        <div className="grid lg:grid-cols-2 gap-6 items-start">
+
+          {/* Left — compact KPI list */}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={orderedKpis.map(k => k.label)} strategy={rectSortingStrategy}>
+              <div className="flex flex-col gap-2">
+                {orderedKpis.map((k) => (
+                  <SortableKpiCard key={k.label} kpi={k} cardHover={cardHover} textSecondary={textSecondary} textPrimary={textPrimary} onNavigate={() => navigate(k.path)} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+
+          {/* Right — studio performance */}
+          <div className={`border rounded-2xl p-6 ${card}`}>
+            <div className="flex items-center gap-2 mb-5">
+              <BarChart3 className="w-4 h-4 text-violet-400" />
+              <h3 className={`font-bold ${textPrimary}`}>Performance par studio</h3>
+              <span className={`text-xs ${textSecondary}`}>— seuil {BREAKEVEN_PCT}%</span>
+            </div>
+            <div className="flex flex-col gap-4">
+              {studioStats.map(s => (
+                <div
+                  key={s.studio}
+                  onClick={() => navigate(createPageUrl('AdminReservations'))}
+                  className={`rounded-xl p-4 border cursor-pointer transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500' : 'bg-gray-50 border-gray-200 hover:border-violet-300'}`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`font-semibold text-sm ${textPrimary}`}>{s.studio}</span>
+                    <span className={`text-xs font-bold ${occupancyTextColor(s.occ)}`}>{s.occ}%</span>
+                  </div>
+                  <div className={`h-2 rounded-full mb-1 ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
+                    <div className={`h-2 rounded-full transition-all ${occupancyColor(s.occ)}`} style={{ width: `${s.occ}%` }} />
+                  </div>
+                  <div className="relative h-0 mb-3">
+                    <div className="absolute -top-2 w-0.5 h-3 bg-zinc-500/60" style={{ left: `${BREAKEVEN_PCT}%` }} title={`Seuil ${BREAKEVEN_PCT}%`} />
+                  </div>
+                  <div className={`flex justify-between text-xs mt-2 ${textSecondary}`}>
+                    <span>{s.hours}h réservées</span>
+                    <span className={`font-semibold ${textPrimary}`}>{formatPrice(s.revenue)}</span>
+                  </div>
+                  <div className={`text-xs mt-1 ${textSecondary}`}>{s.sessions} session{s.sessions !== 1 ? 's' : ''}</div>
+                  {s.occ < BREAKEVEN_PCT && s.occ > 0 && (
+                    <div className="mt-2 text-[10px] font-semibold text-red-400 bg-red-500/10 rounded-lg px-2 py-1 text-center">Sous le seuil de rentabilité</div>
+                  )}
+                  {s.occ === 0 && (
+                    <div className={`mt-2 text-[10px] rounded-lg px-2 py-1 text-center ${isDark ? 'text-zinc-600 bg-zinc-800' : 'text-gray-400 bg-gray-100'}`}>Aucune session</div>
+                  )}
+                </div>
               ))}
             </div>
-          </SortableContext>
-        </DndContext>
-
-        {/* Studio breakdown */}
-        <div className={`border rounded-2xl p-6 ${card}`}>
-          <div className="flex items-center gap-2 mb-5">
-            <BarChart3 className="w-4 h-4 text-violet-400" />
-            <h3 className={`font-bold ${textPrimary}`}>Performance par studio</h3>
-            <span className={`text-xs ${textSecondary}`}>— seuil de rentabilité à {BREAKEVEN_PCT}%</span>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {studioStats.map(s => (
-              <div
-                key={s.studio}
-                onClick={() => navigate(createPageUrl('AdminReservations'))}
-                className={`rounded-xl p-4 border cursor-pointer transition-all ${isDark ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500' : 'bg-gray-50 border-gray-200 hover:border-violet-300'}`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`font-semibold text-sm ${textPrimary}`}>{s.studio}</span>
-                  <span className={`text-xs font-bold ${occupancyTextColor(s.occ)}`}>{s.occ}%</span>
-                </div>
-                {/* Occupancy bar */}
-                <div className={`h-2 rounded-full mb-1 ${isDark ? 'bg-zinc-700' : 'bg-gray-200'}`}>
-                  <div
-                    className={`h-2 rounded-full transition-all ${occupancyColor(s.occ)}`}
-                    style={{ width: `${s.occ}%` }}
-                  />
-                </div>
-                {/* Break-even marker */}
-                <div className="relative h-0 mb-3">
-                  <div
-                    className="absolute -top-2 w-0.5 h-3 bg-zinc-500/60"
-                    style={{ left: `${BREAKEVEN_PCT}%` }}
-                    title={`Seuil de rentabilité ${BREAKEVEN_PCT}%`}
-                  />
-                </div>
-                <div className={`flex justify-between text-xs mt-2 ${textSecondary}`}>
-                  <span>{s.hours}h réservées</span>
-                  <span className={`font-semibold ${textPrimary}`}>{formatPrice(s.revenue)}</span>
-                </div>
-                <div className={`text-xs mt-1 ${textSecondary}`}>{s.sessions} session{s.sessions !== 1 ? 's' : ''}</div>
-                {s.occ < BREAKEVEN_PCT && s.occ > 0 && (
-                  <div className="mt-2 text-[10px] font-semibold text-red-400 bg-red-500/10 rounded-lg px-2 py-1 text-center">
-                    Sous le seuil de rentabilité
-                  </div>
-                )}
-                {s.occ === 0 && (
-                  <div className={`mt-2 text-[10px] rounded-lg px-2 py-1 text-center ${isDark ? 'text-zinc-600 bg-zinc-800' : 'text-gray-400 bg-gray-100'}`}>
-                    Aucune session
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
 
