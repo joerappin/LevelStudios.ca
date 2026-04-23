@@ -65,6 +65,23 @@ export default function Layout({ children, navItems, title }) {
     return () => clearInterval(id)
   }, [user])
 
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handler = (e) => {
+      // Cmd+Left (Mac) or Alt+Left (Win/Linux) → go back
+      if ((e.metaKey || e.altKey) && e.key === 'ArrowLeft') {
+        e.preventDefault()
+        navigate(-1)
+      }
+      // Escape → notify pages to close their active modal/panel
+      if (e.key === 'Escape') {
+        window.dispatchEvent(new CustomEvent('app:escape'))
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [navigate])
+
   const isDark   = theme === 'dark'
   const S        = isDark ? DARK : LIGHT
   const t        = (k) => translations[lang]?.[k] || k

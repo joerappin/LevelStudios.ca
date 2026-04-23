@@ -41,6 +41,12 @@ export default function AdminPromo() {
   useEffect(() => { if (location.state?.openAdd) setShowAdd(true) }, [])
 
   useEffect(() => {
+    const handler = () => { if (showAdd) closeModal() }
+    window.addEventListener('app:escape', handler)
+    return () => window.removeEventListener('app:escape', handler)
+  }, [showAdd])
+
+  useEffect(() => {
     const storeAccounts = Store.getAccounts().filter(a => a.type === 'client')
     const allClients = [...INITIAL_CLIENTS]
     storeAccounts.forEach(a => {

@@ -90,6 +90,15 @@ export default function AdminAccounts() {
   const [successInfo, setSuccessInfo] = useState(null) // { name, email, setUrl }
   const [copied, setCopied] = useState(false)
 
+  useEffect(() => {
+    const handler = () => {
+      if (rateModal) setRateModal(null)
+      else if (modal) setModal(null)
+    }
+    window.addEventListener('app:escape', handler)
+    return () => window.removeEventListener('app:escape', handler)
+  }, [rateModal, modal])
+
   const openModal = () => {
     setClientForm({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', company: '', tps: '', tvq: '', cgu: false })
     setClientError('')

@@ -84,6 +84,15 @@ export default function ChefReservations() {
     }
   }, [location.state])
 
+  useEffect(() => {
+    const handler = () => {
+      if (selected) setSelected(null)
+      else if (showCreate) setShowCreate(false)
+    }
+    window.addEventListener('app:escape', handler)
+    return () => window.removeEventListener('app:escape', handler)
+  }, [selected, showCreate])
+
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
   const inputCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 focus:ring-violet-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-violet-500'
   const textPrimary = isDark ? 'text-white' : 'text-gray-900'
