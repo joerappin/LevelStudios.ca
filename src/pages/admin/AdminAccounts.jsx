@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, LayoutDashboard, Film, Star } from 'lucide-react'
+import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, LayoutDashboard, Film, Star, KeyRound } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -221,6 +221,7 @@ export default function AdminAccounts() {
     const roleName = ROLE_DISPLAY[empForm.role] || empForm.role
     const lvl = empForm.role === 'admin' ? 1 : empForm.role === 'chef_projet' ? 2 : 3
     const id = `LVL${lvl}${Math.floor(10000 + Math.random() * 90000)}`
+    const DEFAULT_PASSWORD = 'Levelstudios123!'
     const account = {
       id,
       email: empForm.email,
@@ -229,26 +230,34 @@ export default function AdminAccounts() {
       role: roleName,
       roleKey: empForm.role,
       phone: empForm.phone,
+      password: DEFAULT_PASSWORD,
       active: true,
+      pending: false,
       joined_at: new Date().toISOString().split('T')[0],
       created_at: new Date().toISOString(),
-      pending: true,
     }
-    // Save to JSON file (Mac → git → Hostinger)
     await fetch('/api/accounts.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(account),
     }).catch(() => {})
-    // localStorage cache + pwd token
     Store.addEmployee({ ...account })
     Store.addAccount(account)
-    const token = Store.createPwdToken(id, empForm.email, empForm.name, 'employee')
-    const result = await sendAccountCreatedEmail({ name: empForm.name, email: empForm.email, token, accountType: 'employee' })
     loadAccounts()
-    setSuccessInfo({ name: empForm.name, email: empForm.email, setUrl: result.setUrl, emailSent: result.success })
+    setSuccessInfo({ name: empForm.name, email: empForm.email, isEmployee: true })
     setModal('success')
     setTab('employees')
+  }
+
+  const resetEmployeePassword = async (id) => {
+    const DEFAULT_PASSWORD = 'Levelstudios123!'
+    Store.updateAccount(id, { password: DEFAULT_PASSWORD, pending: false })
+    Store.updateEmployee(id, { password: DEFAULT_PASSWORD, pending: false })
+    await fetch('/api/accounts.php', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, password: DEFAULT_PASSWORD, pending: false }),
+    }).catch(() => {})
   }
 
   const copyLink = () => {
@@ -488,6 +497,7 @@ export default function AdminAccounts() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => handleImpersonate(e)} title="Voir en tant que" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Eye size={15} /></button>
+                        <button onClick={() => resetEmployeePassword(e.id)} title="Réinitialiser le mot de passe (Levelstudios123!)" className="p-1.5 rounded-lg transition-colors text-yellow-400 hover:bg-yellow-500/10"><KeyRound size={15} /></button>
                         <button onClick={() => toggleSuspend(e.id, true)} title={e.active ? 'Suspendre' : 'Réactiver'} className={`p-1.5 rounded-lg transition-colors ${!e.active ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
                         <button onClick={() => handleTrash(e.id, true)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>
@@ -721,12 +731,30 @@ export default function AdminAccounts() {
                     <Check className="w-7 h-7 text-green-400" />
                   </div>
                   <h3 className={`text-lg font-bold mb-1 ${textPrimary}`}>Compte créé</h3>
-                  {successInfo.emailSent
-                    ? <p className={`text-sm ${textSecondary}`}>Un email a été envoyé à <strong className={textPrimary}>{successInfo.email}</strong> avec un lien pour créer son mot de passe.</p>
-                    : <p className="text-sm text-orange-400">Email non envoyé — partagez le lien ci-dessous manuellement.</p>
+                  {successInfo.isEmployee
+                    ? <p className={`text-sm ${textSecondary}`}>Le compte de <strong className={textPrimary}>{successInfo.name}</strong> a été créé. Communiquez-lui les identifiants ci-dessous.</p>
+                    : successInfo.emailSent
+                      ? <p className={`text-sm ${textSecondary}`}>Un email a été envoyé à <strong className={textPrimary}>{successInfo.email}</strong> avec un lien pour créer son mot de passe.</p>
+                      : <p className="text-sm text-orange-400">Email non envoyé — partagez le lien ci-dessous manuellement.</p>
                   }
                 </div>
-                {successInfo.setUrl && (
+                {successInfo.isEmployee && (
+                  <div className={`rounded-xl border p-4 mb-4 ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
+                    <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${textSecondary}`}>Identifiants de connexion</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-xs ${textSecondary}`}>Email</span>
+                        <span className={`text-xs font-mono font-medium ${isDark ? 'text-zinc-200' : 'text-gray-700'}`}>{successInfo.email}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-xs ${textSecondary}`}>Mot de passe par défaut</span>
+                        <span className="text-xs font-mono font-bold text-violet-400">Levelstudios123!</span>
+                      </div>
+                    </div>
+                    <p className={`text-[11px] mt-3 ${textSecondary}`}>L'employé pourra modifier son mot de passe depuis son profil.</p>
+                  </div>
+                )}
+                {!successInfo.isEmployee && successInfo.setUrl && (
                   <div className={`rounded-xl border p-4 mb-4 ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
                     <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${textSecondary}`}>Lien de création de mot de passe</p>
                     <p className={`text-xs break-all mb-3 ${isDark ? 'text-zinc-300' : 'text-gray-600'}`}>{successInfo.setUrl}</p>
