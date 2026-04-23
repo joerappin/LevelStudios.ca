@@ -141,8 +141,8 @@ export default function AdminIndex() {
                     <div style={{ width: '100%' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
                         <p style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>{page.label}</p>
-                        {/* Toggle switch */}
-                        <div
+                        {/* Toggle switch — not on admin pages */}
+                        {!page.path.startsWith('/admin') && <div
                           onClick={e => toggle(e, page.path)}
                           style={{
                             width: '28px', height: '16px', borderRadius: '999px', flexShrink: 0,
@@ -160,7 +160,7 @@ export default function AdminIndex() {
                             transition: 'left 0.2s',
                             boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
                           }} />
-                        </div>
+                        </div>}
                       </div>
                       <p style={{ fontSize: '10px', color: '#444', fontFamily: 'monospace' }}>{page.path}</p>
                     </div>
