@@ -640,58 +640,50 @@ export default function AdminPageEditor() {
                   </p>
 
                   {/* X axis */}
-                  <Row label="Axe X (horizontal)" right={(pendingForSel['--tx'] || '0') + 'px'}>
-                    <input type="range" min="-400" max="400" step="1"
-                      value={parseInt(pendingForSel['--tx']) || 0}
-                      onChange={e => {
-                        const tx = parseInt(e.target.value)
-                        const ty = parseInt(pendingForSel['--ty']) || 0
-                        applyPending('--tx', tx)
-                        applyPending('transform', `translate(${tx}px, ${ty}px)`)
-                        sendToIframe({ type: 'refresh-selbox' })
-                      }}
-                      style={{ width: '100%', accentColor: '#e8175d' }}
-                    />
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                      <input type="number" value={parseInt(pendingForSel['--tx']) || 0}
-                        onChange={e => {
-                          const tx = parseInt(e.target.value) || 0
-                          const ty = parseInt(pendingForSel['--ty']) || 0
-                          applyPending('--tx', tx)
-                          applyPending('transform', `translate(${tx}px, ${ty}px)`)
-                        }}
-                        style={{ ...inp, width: '80px' }} {...focusBorder}
-                      />
-                      <span style={{ color: '#555', fontSize: '12px', alignSelf: 'center' }}>px</span>
-                    </div>
-                  </Row>
+                  {(() => {
+                    const nudgeBtnStyle = { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#888', cursor: 'pointer', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', lineHeight: 1, flexShrink: 0, userSelect: 'none' }
+                    const nudgeBtnHover = e => { e.currentTarget.style.background = '#2a2a2a'; e.currentTarget.style.color = '#fff' }
+                    const nudgeBtnLeave = e => { e.currentTarget.style.background = '#1a1a1a'; e.currentTarget.style.color = '#888' }
+                    const txVal = parseInt(pendingForSel['--tx']) || 0
+                    const tyVal = parseInt(pendingForSel['--ty']) || 0
+                    const setTX = (tx) => { applyPending('--tx', tx); applyPending('transform', `translate(${tx}px, ${tyVal}px)`); sendToIframe({ type: 'refresh-selbox' }) }
+                    const setTY = (ty) => { applyPending('--ty', ty); applyPending('transform', `translate(${txVal}px, ${ty}px)`); sendToIframe({ type: 'refresh-selbox' }) }
+                    return <>
+                      <Row label="Axe X (horizontal)" right={txVal + 'px'}>
+                        <input type="range" min="-400" max="400" step="1"
+                          value={txVal}
+                          onChange={e => setTX(parseInt(e.target.value))}
+                          style={{ width: '100%', accentColor: '#e8175d' }}
+                        />
+                        <div style={{ display: 'flex', gap: '5px', marginTop: '6px', alignItems: 'center' }}>
+                          <button style={nudgeBtnStyle} onMouseEnter={nudgeBtnHover} onMouseLeave={nudgeBtnLeave} onClick={() => setTX(txVal - 1)}>−</button>
+                          <input type="number" value={txVal}
+                            onChange={e => setTX(parseInt(e.target.value) || 0)}
+                            style={{ ...inp, flex: 1, textAlign: 'center' }} {...focusBorder}
+                          />
+                          <button style={nudgeBtnStyle} onMouseEnter={nudgeBtnHover} onMouseLeave={nudgeBtnLeave} onClick={() => setTX(txVal + 1)}>+</button>
+                          <span style={{ color: '#555', fontSize: '12px' }}>px</span>
+                        </div>
+                      </Row>
 
-                  {/* Y axis */}
-                  <Row label="Axe Y (vertical)" right={(pendingForSel['--ty'] || '0') + 'px'}>
-                    <input type="range" min="-400" max="400" step="1"
-                      value={parseInt(pendingForSel['--ty']) || 0}
-                      onChange={e => {
-                        const ty = parseInt(e.target.value)
-                        const tx = parseInt(pendingForSel['--tx']) || 0
-                        applyPending('--ty', ty)
-                        applyPending('transform', `translate(${tx}px, ${ty}px)`)
-                        sendToIframe({ type: 'refresh-selbox' })
-                      }}
-                      style={{ width: '100%', accentColor: '#e8175d' }}
-                    />
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                      <input type="number" value={parseInt(pendingForSel['--ty']) || 0}
-                        onChange={e => {
-                          const ty = parseInt(e.target.value) || 0
-                          const tx = parseInt(pendingForSel['--tx']) || 0
-                          applyPending('--ty', ty)
-                          applyPending('transform', `translate(${tx}px, ${ty}px)`)
-                        }}
-                        style={{ ...inp, width: '80px' }} {...focusBorder}
-                      />
-                      <span style={{ color: '#555', fontSize: '12px', alignSelf: 'center' }}>px</span>
-                    </div>
-                  </Row>
+                      <Row label="Axe Y (vertical)" right={tyVal + 'px'}>
+                        <input type="range" min="-400" max="400" step="1"
+                          value={tyVal}
+                          onChange={e => setTY(parseInt(e.target.value))}
+                          style={{ width: '100%', accentColor: '#e8175d' }}
+                        />
+                        <div style={{ display: 'flex', gap: '5px', marginTop: '6px', alignItems: 'center' }}>
+                          <button style={nudgeBtnStyle} onMouseEnter={nudgeBtnHover} onMouseLeave={nudgeBtnLeave} onClick={() => setTY(tyVal - 1)}>−</button>
+                          <input type="number" value={tyVal}
+                            onChange={e => setTY(parseInt(e.target.value) || 0)}
+                            style={{ ...inp, flex: 1, textAlign: 'center' }} {...focusBorder}
+                          />
+                          <button style={nudgeBtnStyle} onMouseEnter={nudgeBtnHover} onMouseLeave={nudgeBtnLeave} onClick={() => setTY(tyVal + 1)}>+</button>
+                          <span style={{ color: '#555', fontSize: '12px' }}>px</span>
+                        </div>
+                      </Row>
+                    </>
+                  })()}
 
                   {/* Reset position */}
                   <button onClick={() => {
