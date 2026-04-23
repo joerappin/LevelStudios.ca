@@ -91,7 +91,7 @@ export default function Login() {
     const result = await login(email, password)
 
     if (!result.success) {
-      setError('Email ou mot de passe incorrect.')
+      setError('Identifiant ou mot de passe incorrect.')
       return
     }
 
@@ -135,10 +135,10 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* ── Email field ── */}
+          {/* ── Identifier field ── */}
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Email
+              Identifiant
             </label>
 
             {showDropdown ? (
@@ -193,16 +193,16 @@ export default function Login() {
                 )}
               </div>
             ) : (
-              /* Plain email input (first use or "Autre compte") */
+              /* Plain identifier input (first use or "Autre compte") */
               <div style={{ position: 'relative' }}>
                 <input
                   ref={emailRef}
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  autoComplete="email"
-                  placeholder="votre@email.com"
+                  autoComplete="username"
+                  placeholder="Email ou identifiant"
                   className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none"
                   style={{ background: '#171717', border: '1px solid #252525', transition: 'border-color 0.15s' }}
                   onFocus={e => (e.target.style.borderColor = '#00BCD4')}

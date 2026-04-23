@@ -46,9 +46,9 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = async (email, password) => {
+  const login = async (identifier, password) => {
     // 1 — hardcoded accounts
-    const hardcoded = TEST_ACCOUNTS.find(a => a.email === email && a.password === password)
+    const hardcoded = TEST_ACCOUNTS.find(a => (a.email === identifier || a.id === identifier) && a.password === password)
     if (hardcoded) {
       const userData = { ...hardcoded }; delete userData.password
       setUser(userData)
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
     // 2 — JSON files (via Vite plugin locally / PHP on Hostinger)
     try {
       const accounts = await apiGetAccounts()
-      const match = accounts.find(a => a.email === email && a.password === password && !a.pending)
+      const match = accounts.find(a => (a.email === identifier || a.id === identifier) && a.password === password && !a.pending)
       if (match) {
         const userData = { ...match }; delete userData.password
         setUser(userData)
@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
     } catch {}
 
     // 3 — localStorage fallback (legacy data)
-    const stored = Store.findAccountByEmailAndPassword(email, password)
+    const stored = Store.findAccountByEmailAndPassword(identifier, password)
     if (stored) {
       const userData = { ...stored }; delete userData.password
       setUser(userData)
@@ -77,7 +77,7 @@ export function AuthProvider({ children }) {
       return { success: true, user: userData }
     }
 
-    return { success: false, error: 'Email ou mot de passe incorrect' }
+    return { success: false, error: 'Identifiant ou mot de passe incorrect' }
   }
 
   // ─── register — creates a client account, logs in immediately ────────────

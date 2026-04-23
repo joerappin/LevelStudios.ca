@@ -390,8 +390,8 @@ export const Store = {
   findAccountByEmail: (email) => {
     return getAll(KEYS.accounts).find(a => a.email === email) || null
   },
-  findAccountByEmailAndPassword: (email, password) => {
-    return getAll(KEYS.accounts).find(a => a.email === email && a.password === password && !a.pending) || null
+  findAccountByEmailAndPassword: (identifier, password) => {
+    return getAll(KEYS.accounts).find(a => (a.email === identifier || a.id === identifier) && a.password === password && !a.pending) || null
   },
   deleteAccount: (id) => {
     saveAll(KEYS.accounts, getAll(KEYS.accounts).filter(a => a.id !== id))
