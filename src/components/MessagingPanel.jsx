@@ -48,48 +48,58 @@ function stripHtml(html = '') {
 }
 
 // ─── RecipientRow ─────────────────────────────────────────────────────────────
-function RecipientRow({ label, recipients, query, setQuery, onAdd, onRemove, allContacts, isDark, textPrimary, textSecondary }) {
-  const existing = new Set(recipients.map(r => r.email))
-  const suggestions = query.trim()
-    ? allContacts.filter(c => !existing.has(c.email) && (
-        c.name?.toLowerCase().includes(query.toLowerCase()) ||
-        c.email?.toLowerCase().includes(query.toLowerCase())
-      ))
-    : []
-  const dropBg = isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200 shadow-xl'
+function RecipientRow({ label, recipients, onAdd, onRemove, allContacts, isDark, textPrimary, textSecondary }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef()
+
+  useEffect(() => {
+    const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const existing  = new Set(recipients.map(r => r.email))
+  const available = allContacts.filter(c => !existing.has(c.email))
+  const dropBg    = isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200 shadow-xl'
+
   return (
     <div className={`flex items-start gap-2 px-4 py-2 border-b ${isDark ? 'border-zinc-700' : 'border-gray-100'}`}>
-      <span className={`text-xs font-semibold pt-1.5 w-7 flex-shrink-0 ${textSecondary}`}>{label}</span>
-      <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0 relative">
+      <span className={`text-xs font-semibold pt-2 w-7 flex-shrink-0 ${textSecondary}`}>{label}</span>
+      <div ref={wrapRef} className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0 relative py-0.5">
         {recipients.map(r => (
           <span key={r.email} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full text-white font-medium ${getBubbleColor(r.email)}`}>
             {r.name || r.email}
             <button type="button" onClick={() => onRemove(r.email)} className="hover:opacity-75"><X size={9} /></button>
           </span>
         ))}
-        <input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => {
-            if ((e.key === 'Enter' || e.key === ',') && suggestions[0]) {
-              e.preventDefault(); onAdd(suggestions[0]); setQuery('')
-            }
-          }}
-          placeholder={recipients.length === 0 ? 'Ajouter...' : ''}
-          className={`flex-1 min-w-28 outline-none py-0.5 text-sm ${isDark ? 'bg-transparent text-white placeholder-zinc-500' : 'bg-transparent text-gray-900 placeholder-gray-400'}`}
-        />
-        {suggestions.length > 0 && (
-          <div className={`absolute top-full left-6 mt-1 w-72 border rounded-xl z-30 overflow-hidden ${dropBg}`}>
-            {suggestions.slice(0, 6).map(s => (
-              <button key={s.email} type="button" onMouseDown={e => { e.preventDefault(); onAdd(s); setQuery('') }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isDark ? 'hover:bg-zinc-700' : 'hover:bg-violet-50'}`}
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border transition-colors ${
+            open
+              ? isDark ? 'border-violet-500 text-violet-400 bg-violet-500/10' : 'border-violet-400 text-violet-600 bg-violet-50'
+              : isDark ? 'border-zinc-600 text-zinc-400 hover:border-violet-500 hover:text-violet-400' : 'border-gray-300 text-gray-400 hover:border-violet-400 hover:text-violet-500'
+          }`}
+        >
+          <Plus size={10} />
+          {recipients.length === 0 ? 'Ajouter' : ''}
+        </button>
+
+        {open && (
+          <div className={`absolute top-full left-0 mt-1 w-72 border rounded-xl z-30 overflow-y-auto ${dropBg}`} style={{ maxHeight: 220 }}>
+            {available.length === 0 ? (
+              <p className={`px-4 py-3 text-xs text-center ${textSecondary}`}>Tous les contacts sont ajoutés</p>
+            ) : available.map(s => (
+              <button key={s.email} type="button"
+                onMouseDown={e => { e.preventDefault(); onAdd(s) }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${isDark ? 'hover:bg-zinc-700' : 'hover:bg-violet-50'}`}
               >
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 ${getBubbleColor(s.email)}`}>
                   {initials(s.name)}
                 </span>
                 <div>
                   <div className={`text-sm font-medium ${textPrimary}`}>{s.name}</div>
-                  <div className={`text-[10px] ${textSecondary}`}>{s.email}{s.role ? ` · ${s.role}` : ''}</div>
+                  <div className={`text-[10px] ${textSecondary}`}>{s.role || s.email}</div>
                 </div>
               </button>
             ))}
@@ -174,8 +184,6 @@ function ComposeModal({ onClose, onSend, onDraft, allContacts, labels, isDark, d
   const [urgent,    setUrgent]    = useState(draft?.urgent  || false)
   const [attachments, setAttachments] = useState(draft?.attachments || [])
   const [mailLabels,  setMailLabels]  = useState(draft?.labels || [])
-  const [toQuery,   setToQuery]   = useState('')
-  const [ccQuery,   setCcQuery]   = useState('')
   const [hasBody,   setHasBody]   = useState(!!(draft?.body))
   const editorRef  = useRef()
   const fileRef    = useRef()
@@ -249,7 +257,7 @@ function ComposeModal({ onClose, onSend, onDraft, allContacts, labels, isDark, d
         </div>
 
         {/* To */}
-        <RecipientRow label="À" recipients={to} query={toQuery} setQuery={setToQuery}
+        <RecipientRow label="À" recipients={to}
           onAdd={c => { if (!to.find(r => r.email === c.email)) setTo(p => [...p, c]) }}
           onRemove={email => setTo(p => p.filter(r => r.email !== email))}
           allContacts={allContacts} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary}
@@ -264,7 +272,7 @@ function ComposeModal({ onClose, onSend, onDraft, allContacts, labels, isDark, d
           </div>
         )}
         {showCc && (
-          <RecipientRow label="Cc" recipients={cc} query={ccQuery} setQuery={setCcQuery}
+          <RecipientRow label="Cc" recipients={cc}
             onAdd={c => { if (!cc.find(r => r.email === c.email)) setCc(p => [...p, c]) }}
             onRemove={email => setCc(p => p.filter(r => r.email !== email))}
             allContacts={allContacts} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary}
@@ -328,19 +336,19 @@ function ComposeModal({ onClose, onSend, onDraft, allContacts, labels, isDark, d
         {/* Footer */}
         <div className={`flex items-center justify-between px-5 py-3.5 border-t ${borderDiv}`}>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => onSend(buildData(false))} disabled={!canSend}
-              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors"
-            >
-              <Send size={14} /> Envoyer
-            </button>
             <button type="button" onClick={() => fileRef.current?.click()}
               className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors ${isDark ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
             >
               <Paperclip size={12} /> Joindre
             </button>
             <input ref={fileRef} type="file" multiple onChange={handleFile} className="hidden" />
+            <button type="button" onClick={onClose} className={`text-xs ${textSecondary} hover:text-red-400 transition-colors`}>Annuler</button>
           </div>
-          <button type="button" onClick={onClose} className={`text-xs ${textSecondary} hover:text-red-400 transition-colors`}>Annuler</button>
+          <button type="button" onClick={() => onSend(buildData(false))} disabled={!canSend}
+            className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-colors"
+          >
+            <Send size={14} /> Envoyer
+          </button>
         </div>
       </div>
     </div>
