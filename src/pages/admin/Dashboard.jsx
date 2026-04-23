@@ -266,9 +266,25 @@ export default function AdminDashboard() {
 
         {/* Header + period toggle */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
+          <div className="flex flex-col gap-2">
             <h2 className={`text-2xl font-bold ${textPrimary}`}>Bonjour, Joe 👋</h2>
             <p className={`text-sm ${textSecondary}`}>Vue d'ensemble de Level Studios</p>
+            {/* Quick access — compact inline */}
+            <div className="flex items-center gap-2 flex-wrap mt-0.5">
+              {QUICK.map((a, i) => (
+                <button key={i}
+                  onClick={() => a.action ? a.action() : navigate(a.path)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border ${
+                    isDark
+                      ? 'border-zinc-700/60 bg-zinc-800/60 hover:bg-zinc-700/60'
+                      : 'border-gray-200 bg-gray-50 hover:bg-white'
+                  } ${a.color}`}
+                >
+                  <span className={`flex items-center [&>svg]:w-3 [&>svg]:h-3`}>{a.icon}</span>
+                  {a.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className={`flex items-center rounded-xl border overflow-hidden text-sm font-semibold ${isDark ? 'border-zinc-700' : 'border-gray-200'}`}>
             {[['day','Jour'],['month','Mois'],['year','Année']].map(([p, label]) => (
@@ -502,28 +518,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className={`border rounded-2xl p-6 ${card}`}>
-          <h3 className={`font-bold mb-4 ${textPrimary}`}>Accès rapide</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {QUICK.map((a, i) => (
-              <button
-                key={i}
-                onClick={() => a.action ? a.action() : navigate(a.path)}
-                className={`rounded-xl p-4 flex flex-col items-center gap-2.5 text-xs font-semibold transition-all border ${
-                  isDark
-                    ? 'border-zinc-700 hover:border-zinc-500 bg-zinc-800/50 hover:bg-zinc-800'
-                    : 'border-gray-200 hover:border-violet-300 bg-gray-50 hover:bg-white'
-                } ${textPrimary}`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${a.bg} ${a.color}`}>
-                  {a.icon}
-                </div>
-                <span className="text-center leading-tight">{a.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
 
       </div>
     </Layout>
