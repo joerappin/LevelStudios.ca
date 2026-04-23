@@ -1,0 +1,53 @@
+{
+  "name": "level-studios",
+  "version": "1.0.0",
+  "description": "Level Studios — Espace équipe",
+  "author": "Level Studios Inc.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac --win",
+    "release": "electron-builder --mac --win --publish always"
+  },
+  "build": {
+    "appId": "ca.levelstudios.team",
+    "productName": "Level Studios",
+    "copyright": "© 2026 Level Studios Inc.",
+    "icon": "build/icon",
+    "publish": {
+      "provider": "github",
+      "owner": "joerappin",
+      "repo": "LevelStudios.ca",
+      "releaseType": "release"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "category": "public.app-category.business",
+      "darkModeSupport": true
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico"
+    },
+    "dmg": {
+      "title": "Level Studios",
+      "window": { "width": 540, "height": 380 }
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": ["main.js", "preload.js", "build/**"]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.13.0"
+  }
+}
