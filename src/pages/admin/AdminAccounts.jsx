@@ -467,7 +467,7 @@ export default function AdminAccounts() {
                   <th className="text-left text-xs font-semibold px-5 py-3">Nom</th>
                   <th className="text-left text-xs font-semibold px-5 py-3 hidden sm:table-cell">Email</th>
                   <th className="text-left text-xs font-semibold px-5 py-3 hidden md:table-cell">Rôle</th>
-                  <th className="text-left text-xs font-semibold px-5 py-3 hidden lg:table-cell">Téléphone</th>
+                  <th className="text-left text-xs font-semibold px-5 py-3 hidden lg:table-cell">ID</th>
                   <th className="text-right text-xs font-semibold px-5 py-3">Actions</th>
                 </tr>
               </thead>
@@ -491,7 +491,7 @@ export default function AdminAccounts() {
                     <td className="px-5 py-3.5 hidden md:table-cell">
                       <span className={`text-xs px-2 py-1 rounded-md font-medium ${rc.badge}`}>{e.role}</span>
                     </td>
-                    <td className={`px-5 py-3.5 hidden lg:table-cell text-sm ${textSecondary}`}>{e.phone}</td>
+                    <td className={`px-5 py-3.5 hidden lg:table-cell text-xs font-mono ${textSecondary}`}>{e.id}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => handleImpersonate(e)} title="Voir en tant que" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Eye size={15} /></button>
