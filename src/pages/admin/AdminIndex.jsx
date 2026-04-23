@@ -4,7 +4,7 @@ import {
   Home, Mail, CalendarDays, User, Users, BarChart2,
   Layers, MessageSquare, Megaphone, Package, ShoppingBag,
   ClipboardList, BookOpen, Wrench, Tag, Clock,
-  Plane, DollarSign, Edit3, Crown, UserCheck, LogIn, EyeOff, Eye
+  Plane, DollarSign, Edit3, Crown, UserCheck, LogIn
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -128,81 +128,46 @@ export default function AdminIndex() {
                 const Icon = page.icon
                 const isOff = !!disabled[page.path]
                 return (
-                  <div key={page.key} style={{ position: 'relative' }}>
-                    {/* Main card */}
-                    <button
-                      onClick={() => navigate(`/admin/editor?page=${encodeURIComponent(page.path)}&label=${encodeURIComponent(page.label)}`)}
-                      style={{
-                        width: '100%',
-                        background: isOff ? '#0d0d0d' : '#111',
-                        border: `1px solid ${isOff ? '#1a1a1a' : '#1e1e1e'}`,
-                        borderRadius: '14px',
-                        padding: '20px 16px 44px',
-                        cursor: 'pointer',
-                        display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px',
-                        textAlign: 'left', transition: 'all 0.18s',
-                        position: 'relative', overflow: 'hidden',
-                        opacity: isOff ? 0.45 : 1,
-                      }}
-                      onMouseEnter={e => {
-                        if (isOff) return
-                        e.currentTarget.style.border = `1px solid ${group.color}44`
-                        e.currentTarget.style.background = '#161616'
-                        e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = `0 8px 24px ${group.color}18`
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.border = `1px solid ${isOff ? '#1a1a1a' : '#1e1e1e'}`
-                        e.currentTarget.style.background = isOff ? '#0d0d0d' : '#111'
-                        e.currentTarget.style.transform = 'none'
-                        e.currentTarget.style.boxShadow = 'none'
-                      }}
-                    >
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: group.color, opacity: isOff ? 0.12 : 0.4, borderRadius: '14px 14px 0 0' }} />
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${group.color}18`, border: `1px solid ${group.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {isOff
-                          ? <EyeOff size={16} style={{ color: '#444' }} />
-                          : <Icon size={16} style={{ color: group.color }} />}
-                      </div>
-                      <div>
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: isOff ? '#444' : '#ddd', marginBottom: '3px' }}>{page.label}</p>
-                        <p style={{ fontSize: '10px', color: '#333', fontFamily: 'monospace' }}>{page.path}</p>
-                      </div>
-                      {!isOff && (
-                        <div style={{ position: 'absolute', bottom: '44px', right: '12px', opacity: 0.3 }}>
-                          <Edit3 size={12} style={{ color: '#fff' }} />
+                  <button key={page.key}
+                    onClick={() => navigate(`/admin/editor?page=${encodeURIComponent(page.path)}&label=${encodeURIComponent(page.label)}`)}
+                    style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '20px 16px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px', textAlign: 'left', transition: 'all 0.18s', position: 'relative', overflow: 'hidden', opacity: isOff ? 0.5 : 1 }}
+                    onMouseEnter={e => { e.currentTarget.style.border = `1px solid ${group.color}44`; e.currentTarget.style.background = '#161616'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${group.color}18` }}
+                    onMouseLeave={e => { e.currentTarget.style.border = '1px solid #1e1e1e'; e.currentTarget.style.background = '#111'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: group.color, opacity: 0.4, borderRadius: '14px 14px 0 0' }} />
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${group.color}18`, border: `1px solid ${group.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon size={16} style={{ color: group.color }} />
+                    </div>
+                    <div style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#ddd' }}>{page.label}</p>
+                        {/* Toggle switch */}
+                        <div
+                          onClick={e => toggle(e, page.path)}
+                          style={{
+                            width: '28px', height: '16px', borderRadius: '999px', flexShrink: 0,
+                            background: isOff ? '#c0392b' : '#27ae60',
+                            position: 'relative', cursor: 'pointer',
+                            transition: 'background 0.2s',
+                            boxShadow: isOff ? 'inset 0 0 0 1px rgba(0,0,0,0.3)' : 'inset 0 0 0 1px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          <div style={{
+                            position: 'absolute', top: '2px',
+                            left: isOff ? '2px' : '12px',
+                            width: '12px', height: '12px', borderRadius: '50%',
+                            background: '#fff',
+                            transition: 'left 0.2s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                          }} />
                         </div>
-                      )}
-                    </button>
-
-                    {/* Toggle button */}
-                    <button
-                      onClick={e => toggle(e, page.path)}
-                      style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                        borderRadius: '0 0 14px 14px',
-                        padding: '7px 10px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                        cursor: 'pointer',
-                        fontSize: '10px', fontWeight: 700,
-                        border: 'none',
-                        background: isOff ? 'rgba(76,175,80,0.12)' : 'rgba(232,23,93,0.08)',
-                        borderTop: `1px solid ${isOff ? 'rgba(76,175,80,0.2)' : 'rgba(232,23,93,0.12)'}`,
-                        color: isOff ? '#4caf50' : '#e8175d',
-                        transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = isOff ? 'rgba(76,175,80,0.22)' : 'rgba(232,23,93,0.16)'
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = isOff ? 'rgba(76,175,80,0.12)' : 'rgba(232,23,93,0.08)'
-                      }}
-                    >
-                      {isOff
-                        ? <><Eye size={10} /> Activer</>
-                        : <><EyeOff size={10} /> Désactiver</>}
-                    </button>
-                  </div>
+                      </div>
+                      <p style={{ fontSize: '10px', color: '#444', fontFamily: 'monospace' }}>{page.path}</p>
+                    </div>
+                    <div style={{ position: 'absolute', bottom: '12px', right: '12px', opacity: 0.3 }}>
+                      <Edit3 size={12} style={{ color: '#fff' }} />
+                    </div>
+                  </button>
                 )
               })}
             </div>
