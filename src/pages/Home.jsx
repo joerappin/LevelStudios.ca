@@ -439,7 +439,7 @@ export default function Home() {
               </button>
               {user && (
                 <button
-                  onClick={() => { logout(); navigate('/') }}
+                  onClick={() => { logout(); navigate(user?.type === 'admin' || user?.type === 'employee' ? '/loginteamlevelprivate' : '/') }}
                   title="Se déconnecter"
                   className="text-zinc-500 hover:text-white transition-colors"
                 >

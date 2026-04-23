@@ -66,7 +66,7 @@ export default function Layout({ children, navItems, title }) {
   const isDark   = theme === 'dark'
   const S        = isDark ? DARK : LIGHT
   const t        = (k) => translations[lang]?.[k] || k
-  const handleLogout             = () => { logout(); navigate('/') }
+  const handleLogout             = () => { logout(); navigate('/loginteamlevelprivate') }
   const handleStopImpersonating  = () => { stopImpersonating(); navigate('/admin/accounts') }
 
   const textPrimary  = isDark ? '#ffffff'  : '#0d0d1a'
