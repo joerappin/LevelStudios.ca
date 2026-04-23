@@ -101,6 +101,11 @@ export default function NewReservation() {
 
   const [step, setStep]     = useState(1)
   const [done, setDone]     = useState(false)
+
+  useEffect(() => {
+    window.__editorSetStep = (n) => setStep(n)
+    return () => { delete window.__editorSetStep }
+  }, [])
   const [promoResult, setPromoResult] = useState(null)
   const [promoError, setPromoError]   = useState('')
   const [quickRegisterOpen, setQuickRegisterOpen] = useState(false)

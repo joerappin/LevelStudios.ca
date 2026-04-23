@@ -200,9 +200,33 @@ const INJECT_SCRIPT = `
     if (d.type === 'enter-text-edit' && selected) enterTextEdit(selected)
     if (d.type === 'exit-text-edit') exitTextEdit()
     if (d.type === 'refresh-selbox' && selected) placeBox(selBox, selected)
+    if (d.type === 'go-to-step' && window.__editorSetStep) {
+      window.__editorSetStep(d.step)
+    }
+    if (d.type === 'scroll-to-id') {
+      const el = document.getElementById(d.id)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   })
 })()
 `
+
+const PAGE_STEP_CONFIGS = {
+  '/reservation': [
+    { label: '1 · Studio',       type: 'step', value: 1 },
+    { label: '2 · Choix',        type: 'step', value: 2 },
+    { label: '3 · Service',      type: 'step', value: 3 },
+    { label: '4 · Date & Heure', type: 'step', value: 4 },
+    { label: '5 · Options',      type: 'step', value: 5 },
+    { label: '6 · Confirmation', type: 'step', value: 6 },
+  ],
+  '/client/reservations': [
+    { label: 'En-tête',    type: 'scroll', value: '__section-header' },
+    { label: 'Filtres',    type: 'scroll', value: '__section-filters' },
+    { label: 'Tableau',    type: 'scroll', value: '__section-table' },
+    { label: 'Pagination', type: 'scroll', value: '__section-pagination' },
+  ],
+}
 
 const FONT_FAMILIES = [
   'inherit', 'Georgia, serif', '"Times New Roman", serif',
@@ -234,6 +258,9 @@ export default function AdminPageEditor() {
   const [history,   setHistory]       = useState(() => getHistory())
   const [pending,   setPending]       = useState([])
   const [saved,     setSaved]         = useState(false)
+  const [activeStep, setActiveStep]   = useState(null)
+
+  const pageSteps = PAGE_STEP_CONFIGS[pagePath] || null
 
   const iframeOrigin = window.location.origin
 
@@ -419,6 +446,42 @@ export default function AdminPageEditor() {
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: pending.length ? 'linear-gradient(135deg,#e8175d,#ff4d8d)' : '#1a1a1a', border: 'none', borderRadius: '8px', padding: '7px 16px', cursor: pending.length ? 'pointer' : 'default', color: pending.length ? '#fff' : '#333', fontSize: '12px', fontWeight: 700, boxShadow: pending.length ? '0 4px 16px rgba(232,23,93,0.3)' : 'none', transition: 'all 0.2s' }}
         >{saved ? <><Check size={12} /> Appliqué !</> : <><Check size={12} /> Appliquer au site</>}</button>
       </div>
+
+      {/* ── Step bar ── */}
+      {pageSteps && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0', background: '#0a0a0a', borderBottom: '1px solid #161616', flexShrink: 0, overflowX: 'auto', padding: '0 16px' }}
+          className="__step-bar"
+        >
+          <span style={{ fontSize: '10px', color: '#444', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap', marginRight: '12px', flexShrink: 0 }}>
+            {pagePath === '/reservation' ? 'Étapes' : 'Sections'}
+          </span>
+          {pageSteps.map((s, i) => {
+            const isActive = activeStep === s.value
+            return (
+              <button key={i}
+                onClick={() => {
+                  setActiveStep(s.value)
+                  if (s.type === 'step') sendToIframe({ type: 'go-to-step', step: s.value })
+                  else sendToIframe({ type: 'scroll-to-id', id: s.value })
+                }}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '10px 14px',
+                  fontSize: '12px', fontWeight: isActive ? 700 : 500,
+                  color: isActive ? '#e8175d' : '#555',
+                  borderBottom: `2px solid ${isActive ? '#e8175d' : 'transparent'}`,
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = '#ccc' }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = '#555' }}
+              >
+                {s.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── Main ── */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

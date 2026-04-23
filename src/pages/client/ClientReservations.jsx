@@ -66,12 +66,12 @@ export default function ClientReservations() {
   return (
     <ClientLayout title={t('my_reservations')}>
       <div className="space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div id="__section-header" className="flex flex-col sm:flex-row sm:items-center gap-3">
           <h2 className={`text-2xl font-bold ${textPrimary} flex-1`}>{t('my_reservations')}</h2>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3">
+        <div id="__section-filters" className="flex flex-wrap gap-3">
           <div className="relative">
             <Search size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
             <input
@@ -106,7 +106,7 @@ export default function ClientReservations() {
         </div>
 
         {/* Table */}
-        <div className={`${card} overflow-hidden`}>
+        <div id="__section-table" className={`${card} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -195,7 +195,7 @@ export default function ClientReservations() {
           </div>
 
           {totalPages > 1 && (
-            <div className={`flex items-center justify-between px-4 py-3 border-t text-sm ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
+            <div id="__section-pagination" className={`flex items-center justify-between px-4 py-3 border-t text-sm ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
               <span className={textSecondary}>Page {page} / {totalPages}</span>
               <div className="flex items-center gap-1">
                 <button
