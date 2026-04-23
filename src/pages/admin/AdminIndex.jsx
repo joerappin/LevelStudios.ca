@@ -4,7 +4,7 @@ import {
   Home, Mail, CalendarDays, User, Users, BarChart2,
   Layers, MessageSquare, Megaphone, Package, ShoppingBag,
   ClipboardList, BookOpen, Wrench, Tag, Clock,
-  Plane, DollarSign, Edit3, Crown, UserCheck
+  Plane, DollarSign, Edit3, Crown, UserCheck, LogIn
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -14,9 +14,10 @@ const PAGE_GROUPS = [
     group: 'Pages publiques',
     color: '#e8175d',
     pages: [
-      { key: 'home',        label: 'Accueil',      path: '/',            icon: Home },
-      { key: 'contact',     label: 'Contact',      path: '/contact',     icon: Mail },
-      { key: 'reservation', label: 'Réservation',  path: '/reservation', icon: CalendarDays },
+      { key: 'home',        label: 'Accueil',      path: '/',                          icon: Home },
+      { key: 'contact',     label: 'Contact',      path: '/contact',                   icon: Mail },
+      { key: 'reservation', label: 'Réservation',  path: '/reservation',               icon: CalendarDays },
+      { key: 'login-team',  label: 'Connexion Équipe', path: '/loginteamlevelprivate', icon: LogIn },
     ]
   },
   {
