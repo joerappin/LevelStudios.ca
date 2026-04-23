@@ -262,7 +262,8 @@ export default function AdminPageEditor() {
 
   const pageSteps = PAGE_STEP_CONFIGS[pagePath] || null
 
-  const iframeOrigin = window.location.origin
+  const iframeOrigin  = window.location.origin
+  const autoSaveRef   = useRef(null)
 
   // ── Inject editor script ────────────────────────────────────────────────
   const injectScript = useCallback(() => {
@@ -324,12 +325,12 @@ export default function AdminPageEditor() {
   const cur = { ...(selected?.styles || {}), ...pendingForSel }
 
   // ── Save ────────────────────────────────────────────────────────────────
-  const handleSave = () => {
-    if (!pending.length) return
+  const doSave = useCallback((rules) => {
+    if (!rules.length) return
     const current = getOverrides()
     pushHistory(current, `${pageLabel} — ${new Date().toLocaleTimeString('fr-FR')}`)
     const merged = [...(current.rules || [])]
-    for (const p of pending) {
+    for (const p of rules) {
       const idx = merged.findIndex(r => r.selector === p.selector)
       if (idx >= 0) merged[idx] = { ...merged[idx], styles: { ...merged[idx].styles, ...p.styles } }
       else merged.push(p)
@@ -337,6 +338,19 @@ export default function AdminPageEditor() {
     const updated = { ...current, rules: merged }
     saveOverrides(updated); setOverrides(updated); setHistory(getHistory())
     setPending([]); setSaved(true); setTimeout(() => setSaved(false), 2000)
+  }, [pageLabel])
+
+  // Auto-save 600ms after last change
+  useEffect(() => {
+    if (!pending.length) return
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
+    autoSaveRef.current = setTimeout(() => doSave(pending), 600)
+    return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current) }
+  }, [pending, doSave])
+
+  const handleSave = () => {
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
+    doSave(pending)
   }
 
   const handleUndo = () => {
@@ -425,8 +439,14 @@ export default function AdminPageEditor() {
           </span>
         )}
         {pending.length > 0 && !textEditMode && (
-          <span style={{ background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.22)', color: '#e8175d', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px' }}>
-            {pending.length} modif. en attente
+          <span style={{ background: 'rgba(255,152,0,0.1)', border: '1px solid rgba(255,152,0,0.25)', color: '#ff9800', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff9800', animation: 'pulse 1s infinite' }} />
+            Application dans 0.6s…
+          </span>
+        )}
+        {saved && !pending.length && (
+          <span style={{ background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.25)', color: '#4caf50', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px' }}>
+            ✓ Appliqué sur le site
           </span>
         )}
 
@@ -442,9 +462,12 @@ export default function AdminPageEditor() {
           onMouseLeave={e => e.currentTarget.style.color = history.length ? '#aaa' : '#333'}
         ><RotateCcw size={11} /> Annuler</button>
 
-        <button onClick={handleSave} disabled={!pending.length}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: pending.length ? 'linear-gradient(135deg,#e8175d,#ff4d8d)' : '#1a1a1a', border: 'none', borderRadius: '8px', padding: '7px 16px', cursor: pending.length ? 'pointer' : 'default', color: pending.length ? '#fff' : '#333', fontSize: '12px', fontWeight: 700, boxShadow: pending.length ? '0 4px 16px rgba(232,23,93,0.3)' : 'none', transition: 'all 0.2s' }}
-        >{saved ? <><Check size={12} /> Appliqué !</> : <><Check size={12} /> Appliquer au site</>}</button>
+        <button onClick={handleSave}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', border: 'none', borderRadius: '8px', padding: '7px 16px', cursor: 'pointer', color: '#fff', fontSize: '12px', fontWeight: 700, boxShadow: '0 4px 16px rgba(232,23,93,0.3)', transition: 'all 0.2s', opacity: pending.length ? 1 : 0.5 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={e => e.currentTarget.style.opacity = pending.length ? '1' : '0.5'}
+        >{saved && !pending.length ? <><Check size={12} /> Appliqué !</> : <><Check size={12} /> Appliquer au site</>}</button>
+        <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
       </div>
 
       {/* ── Step bar ── */}
