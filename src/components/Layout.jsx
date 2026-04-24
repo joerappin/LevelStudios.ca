@@ -71,7 +71,10 @@ export default function Layout({ children, navItems, title }) {
     const compute = () => {
       const mails = Store.getMails()
       const count = mails.filter(m =>
-        !m.draft && !m.read &&
+        !m.draft &&
+        !(Array.isArray(m.read_by_emails) && m.read_by_emails.length > 0
+          ? m.read_by_emails.includes(user.email)
+          : m.read) &&
         !m.trashed_by?.includes(user.email) &&
         (m.to?.some(r => r.email === user.email) || m.cc?.some(r => r.email === user.email))
       ).length

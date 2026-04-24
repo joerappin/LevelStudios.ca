@@ -59,6 +59,13 @@ function initials(name = '?') {
 function stripHtml(html = '') {
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
+// Un mail est "non lu" pour un utilisateur si son email n'est pas dans read_by_emails.
+// Rétrocompatible : si read_by_emails n'existe pas, on se rabat sur le champ read global.
+function isUnreadFor(mail, email) {
+  if (Array.isArray(mail.read_by_emails) && mail.read_by_emails.length > 0)
+    return !mail.read_by_emails.includes(email)
+  return !mail.read
+}
 
 // ─── RecipientRow ─────────────────────────────────────────────────────────────
 function RecipientRow({ label, recipients, onAdd, onRemove, allContacts, isDark, textPrimary, textSecondary }) {
@@ -437,7 +444,7 @@ export default function MessagingPanel({ navItems, title = 'Messagerie' }) {
 
   // ── Counts ─────────────────────────────────────────────────────────────────
   const inboxUnread = myMails.filter(m =>
-    !m.draft && !m.read && !m.trashed_by?.includes(myEmail) &&
+    !m.draft && isUnreadFor(m, myEmail) && !m.trashed_by?.includes(myEmail) &&
     (m.to?.some(r => r.email === myEmail) || m.cc?.some(r => r.email === myEmail))
   ).length
   const draftCount = myMails.filter(m => m.draft && m.from_email === myEmail && !m.trashed_by?.includes(myEmail)).length
@@ -455,7 +462,14 @@ export default function MessagingPanel({ navItems, title = 'Messagerie' }) {
     const isRecipient = mail.to?.some(r => r.email === myEmail) || mail.cc?.some(r => r.email === myEmail)
     if (isRecipient) {
       const updates = {}
-      if (!mail.read) updates.read = true
+      // Tracking per-user (nouveau système)
+      const readByEmails = mail.read_by_emails || []
+      if (!readByEmails.includes(myEmail)) {
+        updates.read_by_emails = [...readByEmails, myEmail]
+        // read global = true dès qu'au moins un destinataire lit (pour les ✓✓ expéditeur)
+        if (!mail.read) updates.read = true
+      }
+      // Accusé de lecture planning
       if (mail.requires_receipt) {
         const already = (mail.read_by || []).some(r => r.email === myEmail)
         if (!already) {
@@ -634,7 +648,7 @@ export default function MessagingPanel({ navItems, title = 'Messagerie' }) {
               const displayName = fromMe
                 ? (m.to?.[0]?.name || m.to?.[0]?.email || '?')
                 : (m.from_name || m.from_email)
-              const unread = !m.read && !fromMe && !m.draft
+              const unread = isUnreadFor(m, myEmail) && !fromMe && !m.draft
               return (
                 <button key={m.id} onClick={() => handleSelect(m)}
                   className={`w-full px-4 py-3 flex flex-col gap-0.5 text-left transition-colors border-b ${
