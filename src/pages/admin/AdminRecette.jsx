@@ -4,7 +4,7 @@ import {
   Receipt, TrendingUp, ChevronLeft, ChevronRight,
   RotateCcw, Tag, BarChart2, Building2, CalendarDays,
   CheckCircle2, CreditCard, FileText, Plus, X, Check,
-  Pencil, Trash2, ArrowRight, Download, Save,
+  Pencil, Trash2, ArrowRight, Save,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -19,11 +19,21 @@ const STUDIO_COLORS = ['bg-violet-500', 'bg-blue-500', 'bg-emerald-500']
 const STUDIO_TEXT   = ['text-violet-400', 'text-blue-400', 'text-emerald-400']
 const STUDIO_BG     = ['bg-violet-500/10', 'bg-blue-500/10', 'bg-emerald-500/10']
 const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
-const MONTHS_LONG = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
 const DAYS_FR   = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
-const TPS_RATE = 0.05
-const TVQ_RATE = 0.09975
-const round2 = v => Math.round(v * 100) / 100
+const TPS_RATE  = 0.05
+const TVQ_RATE  = 0.09975
+const round2    = v => Math.round(v * 100) / 100
+
+const INV_STATUS = {
+  paid:   { label: 'Payée',    cls: 'bg-green-500/15 text-green-400 border-green-500/25' },
+  unpaid: { label: 'À payer',  cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
+}
+const DEV_STATUS = {
+  draft:    { label: 'Brouillon', cls: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/25' },
+  sent:     { label: 'Envoyé',    cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25' },
+  accepted: { label: 'Accepté',   cls: 'bg-green-500/15 text-green-400 border-green-500/25' },
+  refused:  { label: 'Refusé',    cls: 'bg-red-500/15 text-red-400 border-red-500/25' },
+}
 
 function getMonday(d) {
   const day = d.getDay()
@@ -32,12 +42,12 @@ function getMonday(d) {
   monday.setHours(0, 0, 0, 0)
   return monday
 }
-
 function toYMD(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function BarChart({ data, isDark, textSecondary, formatVal }) {
+// ─── Bar chart ────────────────────────────────────────────────────────────────
+function BarChart({ data, isDark, textSecondary }) {
   const maxVal = Math.max(...data.map(d => d.value), 1)
   return (
     <div className="flex items-end gap-0.5 h-36 w-full">
@@ -47,14 +57,11 @@ function BarChart({ data, isDark, textSecondary, formatVal }) {
           <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group relative">
             {d.value > 0 && (
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:flex bg-zinc-800 text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap z-10 shadow-lg">
-                {formatVal ? formatVal(d.value) : formatPrice(d.value)}
+                {formatPrice(d.value)}
               </div>
             )}
-            <div
-              className={`w-full rounded-t transition-all ${d.value > 0 ? 'bg-violet-500/80 hover:bg-violet-500' : isDark ? 'bg-zinc-800' : 'bg-gray-100'}`}
-              style={{ height: `${pct}%` }}
-            />
-            <span className={`text-[8px] truncate w-full text-center leading-tight ${textSecondary}`} style={{ maxWidth: '100%' }}>{d.label}</span>
+            <div className={`w-full rounded-t transition-all ${d.value > 0 ? 'bg-violet-500/80 hover:bg-violet-500' : isDark ? 'bg-zinc-800' : 'bg-gray-100'}`} style={{ height: `${pct}%` }} />
+            <span className={`text-[8px] truncate w-full text-center leading-tight ${textSecondary}`}>{d.label}</span>
           </div>
         )
       })}
@@ -65,15 +72,13 @@ function BarChart({ data, isDark, textSecondary, formatVal }) {
 function StatCard({ label, value, icon, color, card, textPrimary, textSecondary }) {
   return (
     <div className={`border rounded-2xl p-5 ${card}`}>
-      <div className={`flex items-center gap-2 mb-2 text-xs font-semibold ${textSecondary}`}>
-        <span className={color}>{icon}</span>{label}
-      </div>
+      <div className={`flex items-center gap-2 mb-2 text-xs font-semibold ${textSecondary}`}><span className={color}>{icon}</span>{label}</div>
       <div className={`text-2xl font-black ${textPrimary}`}>{value}</div>
     </div>
   )
 }
 
-// ─── Invoice preview ──────────────────────────────────────────────────────────
+// ─── Invoice preview (module-level — safe) ───────────────────────────────────
 function InvoicePreview({ invoice, template, isDark }) {
   const tp = isDark ? 'text-white' : 'text-gray-900'
   const ts = isDark ? 'text-zinc-400' : 'text-gray-500'
@@ -85,8 +90,7 @@ function InvoicePreview({ invoice, template, isDark }) {
   const tvq = round2(totalHT * TVQ_RATE)
   const ttc = round2(totalHT + tps + tvq)
   return (
-    <div className={`border rounded-2xl p-6 text-sm ${bg} ${border}`} style={{ fontFamily: 'Inter, sans-serif' }}>
-      {/* Header */}
+    <div className={`border rounded-2xl p-6 text-sm ${bg} ${border}`}>
       <div className="flex justify-between items-start mb-6">
         <div>
           <div className="font-black text-xl text-violet-500 mb-1">{template?.company || 'Level Studios'}</div>
@@ -103,14 +107,12 @@ function InvoicePreview({ invoice, template, isDark }) {
           {invoice?.dueDate && <div className={`text-xs ${ts}`}>Échéance : {invoice.dueDate}</div>}
         </div>
       </div>
-      {/* Client */}
       <div className={`rounded-xl p-3 mb-5 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}`}>
         <div className={`text-xs font-bold uppercase tracking-wide mb-1 ${ts}`}>Facturer à</div>
         <div className={`font-semibold ${tp}`}>{invoice?.clientName || 'Nom du client'}</div>
         {invoice?.clientCompany && <div className={`text-xs ${ts}`}>{invoice.clientCompany}</div>}
         {invoice?.clientEmail && <div className={`text-xs ${ts}`}>{invoice.clientEmail}</div>}
       </div>
-      {/* Items table */}
       <table className="w-full text-xs mb-4">
         <thead>
           <tr className={`border-b ${border}`}>
@@ -131,7 +133,6 @@ function InvoicePreview({ invoice, template, isDark }) {
           ))}
         </tbody>
       </table>
-      {/* Totals */}
       <div className="flex justify-end mb-5">
         <div className="w-48 space-y-1 text-xs">
           <div className={`flex justify-between ${ts}`}><span>Sous-total HT</span><span>{totalHT} CAD</span></div>
@@ -140,7 +141,6 @@ function InvoicePreview({ invoice, template, isDark }) {
           <div className={`flex justify-between font-bold border-t pt-1 ${border} ${tp}`}><span>Total TTC</span><span className="text-violet-500">{ttc} CAD</span></div>
         </div>
       </div>
-      {/* Footer */}
       {(template?.paymentTerms || template?.bankInfo || template?.footer) && (
         <div className={`border-t pt-4 text-xs space-y-1 ${border} ${ts}`}>
           {template?.paymentTerms && <div><span className="font-semibold">Conditions : </span>{template.paymentTerms}</div>}
@@ -154,26 +154,221 @@ function InvoicePreview({ invoice, template, isDark }) {
   )
 }
 
+// ─── Invoice table — module-level so React never remounts it ─────────────────
+function InvTable({ list, isDark, textPrimary, textSecondary, tableHead, tableRow, onEdit, onMarkPaid, onDelete }) {
+  if (list.length === 0) return <p className={`text-sm text-center py-10 ${textSecondary}`}>Aucune facture</p>
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className={`border-b text-xs font-semibold ${tableHead}`}>
+            <th className="text-left px-4 py-3">N°</th>
+            <th className="text-left px-4 py-3">Client</th>
+            <th className="text-left px-4 py-3 hidden sm:table-cell">Date</th>
+            <th className="text-right px-4 py-3">Montant TTC</th>
+            <th className="text-left px-4 py-3">Statut</th>
+            <th className="text-left px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map(inv => {
+            const st = INV_STATUS[inv.status] || INV_STATUS.unpaid
+            return (
+              <tr key={inv.id} className={`border-b transition-colors ${tableRow}`}>
+                <td className={`px-4 py-3 font-mono text-xs ${textSecondary}`}>{inv.id}</td>
+                <td className="px-4 py-3">
+                  <div className={`font-medium ${textPrimary}`}>{inv.clientName}</div>
+                  {inv.clientEmail && <div className={`text-xs ${textSecondary}`}>{inv.clientEmail}</div>}
+                </td>
+                <td className={`px-4 py-3 hidden sm:table-cell ${textSecondary} text-xs`}>{inv.date}</td>
+                <td className={`px-4 py-3 text-right font-bold ${textPrimary}`}>{formatPrice(inv.totalTTC)}</td>
+                <td className="px-4 py-3">
+                  <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${st.cls}`}>{st.label}</span>
+                </td>
+                <td className="px-4 py-3">
+                  {!inv.source && (
+                    <div className="flex gap-1">
+                      <button onClick={() => onEdit(inv)} title="Modifier" className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors"><Pencil size={12} /></button>
+                      {inv.status === 'unpaid' && (
+                        <button onClick={() => onMarkPaid(inv.id)} title="Marquer payée" className="p-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 transition-colors"><Check size={12} /></button>
+                      )}
+                      <button onClick={() => onDelete(inv.id)} title="Supprimer" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"><Trash2 size={12} /></button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// ─── Invoice / Quote modal — module-level so inputs never lose focus ──────────
+function InvoiceModal({
+  type, onClose, onSave,
+  form, onFieldChange, onItemChange, onAddItem, onRemoveItem,
+  isEditing, template,
+  isDark, textPrimary, textSecondary, inputCls, divider,
+}) {
+  const totalHT = form.items.reduce((s, i) => s + (Number(i.qty) || 1) * (Number(i.unitPrice) || 0), 0)
+  const tps = round2(totalHT * TPS_RATE)
+  const tvq = round2(totalHT * TVQ_RATE)
+  const ttc = round2(totalHT + tps + tvq)
+
+  const fields = [
+    { label: 'Nom client',   key: 'clientName',   placeholder: 'Jean Dupont' },
+    { label: 'Email client', key: 'clientEmail',   placeholder: 'jean@mail.com' },
+    { label: 'Société',      key: 'clientCompany', placeholder: 'Nom société' },
+    { label: 'Date',         key: 'date',          type: 'date' },
+    type === 'quote'
+      ? { label: "Valide jusqu'au", key: 'validUntil', type: 'date' }
+      : { label: 'Échéance',        key: 'dueDate',    type: 'date' },
+    type === 'invoice'
+      ? { label: 'Statut', key: 'status', type: 'select', options: [{ value: 'unpaid', label: 'À payer' }, { value: 'paid', label: 'Payée' }] }
+      : null,
+  ].filter(Boolean)
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className={`border rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200 shadow-xl'}`}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${divider}`}>
+          <h3 className={`font-bold text-lg ${textPrimary}`}>
+            {isEditing ? 'Modifier' : 'Nouveau'} {type === 'quote' ? 'devis' : 'facture'}
+          </h3>
+          <button onClick={onClose} className={textSecondary}><X size={20} /></button>
+        </div>
+
+        <div className="p-6 grid lg:grid-cols-2 gap-6">
+          {/* ── Form ── */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {fields.map(f => (
+                <div key={f.key}>
+                  <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{f.label}</label>
+                  {f.type === 'select' ? (
+                    <select
+                      value={form[f.key]}
+                      onChange={e => onFieldChange(f.key, e.target.value)}
+                      className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`}
+                    >
+                      {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={f.type || 'text'}
+                      value={form[f.key] || ''}
+                      onChange={e => onFieldChange(f.key, e.target.value)}
+                      placeholder={f.placeholder}
+                      className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`}
+                      style={{ colorScheme: isDark ? 'dark' : 'light' }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Line items */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className={`text-xs font-bold uppercase tracking-wide ${textSecondary}`}>Lignes</label>
+                <button onClick={onAddItem} className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300">
+                  <Plus size={12} /> Ajouter
+                </button>
+              </div>
+              <div className="space-y-2">
+                {form.items.map((item, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <input
+                      value={item.description}
+                      onChange={e => onItemChange(i, 'description', e.target.value)}
+                      placeholder="Description"
+                      className={`flex-1 px-2.5 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`}
+                    />
+                    <input
+                      type="number"
+                      value={item.qty}
+                      onChange={e => onItemChange(i, 'qty', e.target.value)}
+                      className={`w-14 px-2 py-1.5 text-xs rounded-lg border focus:outline-none text-center ${inputCls}`}
+                      min={1}
+                    />
+                    <input
+                      type="number"
+                      value={item.unitPrice}
+                      onChange={e => onItemChange(i, 'unitPrice', e.target.value)}
+                      placeholder="Prix"
+                      className={`w-20 px-2 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`}
+                    />
+                    {form.items.length > 1 && (
+                      <button onClick={() => onRemoveItem(i)} className="text-red-400 hover:text-red-300 mt-1"><X size={12} /></button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Notes</label>
+              <textarea
+                value={form.notes || ''}
+                onChange={e => onFieldChange('notes', e.target.value)}
+                rows={2}
+                className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 resize-none ${inputCls}`}
+                placeholder="Notes ou conditions particulières..."
+              />
+            </div>
+
+            {/* Totals */}
+            <div className={`rounded-xl p-4 space-y-1 text-sm ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
+              <div className={`flex justify-between ${textSecondary}`}><span>Sous-total HT</span><span>{totalHT} CAD</span></div>
+              <div className={`flex justify-between ${textSecondary}`}><span>TPS 5%</span><span>{tps} CAD</span></div>
+              <div className={`flex justify-between ${textSecondary}`}><span>TVQ 9.975%</span><span>{tvq} CAD</span></div>
+              <div className={`flex justify-between font-bold text-base border-t pt-2 ${divider} ${textPrimary}`}><span>Total TTC</span><span className="text-violet-400">{ttc} CAD</span></div>
+            </div>
+
+            <button
+              onClick={() => onSave(totalHT, ttc)}
+              className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+            >
+              <Save size={14} /> Enregistrer
+            </button>
+          </div>
+
+          {/* ── Preview ── */}
+          <div>
+            <p className={`text-xs font-bold uppercase tracking-wide mb-3 ${textSecondary}`}>Aperçu</p>
+            <InvoicePreview
+              invoice={{ ...form, type, id: isEditing?.id || (type === 'quote' ? 'DEV-2024-001' : 'FAC-2024-001') }}
+              template={template}
+              isDark={isDark}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Default form shapes ──────────────────────────────────────────────────────
 const emptyInvoiceForm = {
   clientName: '', clientEmail: '', clientCompany: '', clientAddress: '',
-  date: new Date().toISOString().split('T')[0],
-  dueDate: '',
+  date: new Date().toISOString().split('T')[0], dueDate: '',
   items: [{ description: '', qty: 1, unitPrice: 0 }],
-  notes: '',
-  status: 'unpaid',
-  type: 'invoice',
+  notes: '', status: 'unpaid', type: 'invoice',
 }
-
 const emptyDevisForm = {
   clientName: '', clientEmail: '', clientCompany: '',
-  date: new Date().toISOString().split('T')[0],
-  validUntil: '',
+  date: new Date().toISOString().split('T')[0], validUntil: '',
   items: [{ description: '', qty: 1, unitPrice: 0 }],
-  notes: '',
-  status: 'draft',
-  type: 'quote',
+  notes: '', status: 'draft', type: 'quote',
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function AdminRecette() {
   const { theme } = useApp()
   const isDark = theme === 'dark'
@@ -184,12 +379,11 @@ export default function AdminRecette() {
   const [chartYear, setChartYear] = useState(new Date().getFullYear())
   const [chartMonth, setChartMonth] = useState(new Date().getMonth())
 
-  // Main tab
   const [mainTab, setMainTab] = useState('recette')
 
   // Factures state
   const [invoices, setInvoices] = useState([])
-  const [invSubTab, setInvSubTab] = useState('unpaid') // 'unpaid' | 'paid' | 'editor'
+  const [invSubTab, setInvSubTab] = useState('unpaid')
   const [showInvModal, setShowInvModal] = useState(false)
   const [editingInv, setEditingInv] = useState(null)
   const [invForm, setInvForm] = useState(emptyInvoiceForm)
@@ -215,38 +409,35 @@ export default function AdminRecette() {
     setInvoices(all.filter(i => i.type === 'invoice'))
     setDevisList(all.filter(i => i.type === 'quote'))
   }
-
   useEffect(() => { reloadInvoices() }, [])
 
   const activeRes = useMemo(() => allRes.filter(r => !trashedEmails.has(r.client_email)), [allRes, trashedEmails])
 
-  // Invoices derived from reservations + manual
   const resInvoicesPaid = useMemo(() =>
     activeRes.filter(r => PAID.includes(r.status)).map(r => ({
       id: `RES-${r.id}`, type: 'invoice', clientName: r.client_name, clientEmail: r.client_email,
-      date: r.date, totalTTC: r.price || 0, totalHT: r.price_ht || 0, status: 'paid',
-      source: 'reservation', resId: r.id,
+      date: r.date, totalTTC: r.price || 0, totalHT: r.price_ht || 0, status: 'paid', source: 'reservation',
       items: [{ description: `Session ${r.service || 'ARGENT'} ${r.duration || 1}h — ${r.studio}`, qty: 1, unitPrice: r.price_ht || r.price || 0 }],
     })), [activeRes])
 
   const resInvoicesUnpaid = useMemo(() =>
     activeRes.filter(r => ['en_attente', 'a_payer'].includes(r.status)).map(r => ({
       id: `RES-${r.id}`, type: 'invoice', clientName: r.client_name, clientEmail: r.client_email,
-      date: r.date, totalTTC: r.price || 0, totalHT: r.price_ht || 0, status: 'unpaid',
-      source: 'reservation', resId: r.id,
+      date: r.date, totalTTC: r.price || 0, totalHT: r.price_ht || 0, status: 'unpaid', source: 'reservation',
       items: [{ description: `Session ${r.service || 'ARGENT'} ${r.duration || 1}h — ${r.studio}`, qty: 1, unitPrice: r.price_ht || r.price || 0 }],
     })), [activeRes])
 
   const allPaidInvoices   = [...resInvoicesPaid,   ...invoices.filter(i => i.status === 'paid')]
   const allUnpaidInvoices = [...resInvoicesUnpaid, ...invoices.filter(i => i.status === 'unpaid')]
 
-  const card         = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
-  const textPrimary  = isDark ? 'text-white' : 'text-gray-900'
-  const textSecondary= isDark ? 'text-zinc-400' : 'text-gray-500'
-  const tableHead    = isDark ? 'text-zinc-500 border-zinc-800' : 'text-gray-500 border-gray-200'
-  const tableRow     = isDark ? 'border-zinc-800/50 hover:bg-zinc-800/20' : 'border-gray-100 hover:bg-gray-50'
-  const inputCls     = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 focus:ring-violet-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-violet-500'
-  const divider      = isDark ? 'border-zinc-800' : 'border-gray-100'
+  // Theme shortcuts
+  const card          = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
+  const textPrimary   = isDark ? 'text-white' : 'text-gray-900'
+  const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
+  const tableHead     = isDark ? 'text-zinc-500 border-zinc-800' : 'text-gray-500 border-gray-200'
+  const tableRow      = isDark ? 'border-zinc-800/50 hover:bg-zinc-800/20' : 'border-gray-100 hover:bg-gray-50'
+  const inputCls      = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500 focus:ring-violet-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-violet-500'
+  const divider       = isDark ? 'border-zinc-800' : 'border-gray-100'
 
   const now = new Date()
   const todayStr = toYMD(now)
@@ -255,8 +446,7 @@ export default function AdminRecette() {
     const d = new Date(r.date)
     if (period === 'day')   return r.date === todayStr
     if (period === 'week') {
-      const mon = getMonday(now)
-      const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23, 59, 59)
+      const mon = getMonday(now); const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23, 59, 59)
       return d >= mon && d <= sun
     }
     if (period === 'month') return d.getMonth() === chartMonth && d.getFullYear() === chartYear
@@ -273,35 +463,24 @@ export default function AdminRecette() {
   const hours     = countable.reduce((s, r) => s + (r.duration || 0), 0)
 
   const studioStats = STUDIOS.map((s, si) => {
-    const sRes  = countable.filter(r => r.studio === s)
+    const sRes = countable.filter(r => r.studio === s)
     const sPaid = sRes.filter(r => PAID.includes(r.status))
     return { name: s, ca: sPaid.reduce((acc, r) => acc + (r.price || 0), 0), sessions: sRes.length, hours: sRes.reduce((acc, r) => acc + (r.duration || 0), 0), colorBar: STUDIO_COLORS[si], colorText: STUDIO_TEXT[si], colorBg: STUDIO_BG[si] }
   })
 
   const chartData = useMemo(() => {
     const paidAll = activeRes.filter(r => PAID.includes(r.status))
-    if (period === 'year' || period === 'all') {
-      return MONTHS_FR.map((label, mi) => ({ label, value: paidAll.filter(r => { const d = new Date(r.date); return d.getMonth() === mi && d.getFullYear() === chartYear }).reduce((s, r) => s + (r.price || 0), 0) }))
-    }
-    if (period === 'month') {
-      const days = new Date(chartYear, chartMonth + 1, 0).getDate()
-      return Array.from({ length: days }, (_, di) => {
-        const dateStr = `${chartYear}-${String(chartMonth + 1).padStart(2, '0')}-${String(di + 1).padStart(2, '0')}`
-        return { label: String(di + 1), value: paidAll.filter(r => r.date === dateStr).reduce((s, r) => s + (r.price || 0), 0) }
-      })
-    }
-    if (period === 'week') {
-      const mon = getMonday(now)
-      return DAYS_FR.map((label, di) => { const d = new Date(mon); d.setDate(mon.getDate() + di); return { label, value: paidAll.filter(r => r.date === toYMD(d)).reduce((s, r) => s + (r.price || 0), 0) } })
-    }
-    const TIME_SLOTS = ['09','10','11','12','13','14','15','16','17','18','19','20','21']
-    return TIME_SLOTS.map(h => ({ label: `${h}h`, value: paidAll.filter(r => r.date === todayStr && r.start_time?.startsWith(h)).reduce((s, r) => s + (r.price || 0), 0) }))
+    if (period === 'year' || period === 'all') return MONTHS_FR.map((label, mi) => ({ label, value: paidAll.filter(r => { const d = new Date(r.date); return d.getMonth() === mi && d.getFullYear() === chartYear }).reduce((s, r) => s + (r.price || 0), 0) }))
+    if (period === 'month') { const days = new Date(chartYear, chartMonth + 1, 0).getDate(); return Array.from({ length: days }, (_, di) => { const dateStr = `${chartYear}-${String(chartMonth + 1).padStart(2, '0')}-${String(di + 1).padStart(2, '0')}`; return { label: String(di + 1), value: paidAll.filter(r => r.date === dateStr).reduce((s, r) => s + (r.price || 0), 0) } }) }
+    if (period === 'week') { const mon = getMonday(now); return DAYS_FR.map((label, di) => { const d = new Date(mon); d.setDate(mon.getDate() + di); return { label, value: paidAll.filter(r => r.date === toYMD(d)).reduce((s, r) => s + (r.price || 0), 0) } }) }
+    const SLOTS = ['09','10','11','12','13','14','15','16','17','18','19','20','21']
+    return SLOTS.map(h => ({ label: `${h}h`, value: paidAll.filter(r => r.date === todayStr && r.start_time?.startsWith(h)).reduce((s, r) => s + (r.price || 0), 0) }))
   }, [activeRes, period, chartYear, chartMonth])
 
-  const allPaid   = activeRes.filter(r => !SKIP.includes(r.status) && PAID.includes(r.status))
-  const caTotal   = allPaid.reduce((s, r) => s + (r.price || 0), 0)
-  const refunded  = activeRes.filter(r => r.status === 'rembourse')
-  const refundedCA= refunded.reduce((s, r) => s + (r.price || 0), 0)
+  const allPaid    = activeRes.filter(r => !SKIP.includes(r.status) && PAID.includes(r.status))
+  const caTotal    = allPaid.reduce((s, r) => s + (r.price || 0), 0)
+  const refunded   = activeRes.filter(r => r.status === 'rembourse')
+  const refundedCA = refunded.reduce((s, r) => s + (r.price || 0), 0)
   const discounted    = activeRes.filter(r => r.promo_code)
   const discountedCA  = discounted.reduce((s, r) => s + (r.price || 0), 0)
 
@@ -314,44 +493,32 @@ export default function AdminRecette() {
     { key: 'day', label: 'Jour' }, { key: 'week', label: 'Semaine' },
     { key: 'month', label: 'Mois' }, { key: 'year', label: 'Année' }, { key: 'all', label: 'Total' },
   ]
-
   const periodLabel = (() => {
-    if (period === 'day')   return `${now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
+    if (period === 'day')   return now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
     if (period === 'week') { const mon = getMonday(now); const sun = new Date(mon); sun.setDate(mon.getDate() + 6); return `${mon.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${sun.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` }
     if (period === 'month') return `${MONTHS_FR[chartMonth]} ${chartYear}`
     if (period === 'year')  return String(chartYear)
     return 'Depuis le début'
   })()
 
-  // ─── Invoice form helpers ──────────────────────────────────────────────────
-  const setInv = (k, v) => setInvForm(f => ({ ...f, [k]: v }))
-  const setInvItem = (i, k, v) => setInvForm(f => { const items = [...f.items]; items[i] = { ...items[i], [k]: v }; return { ...f, items } })
-  const addInvItem = () => setInvForm(f => ({ ...f, items: [...f.items, { description: '', qty: 1, unitPrice: 0 }] }))
-  const removeInvItem = (i) => setInvForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
-  const invTotalHT = invForm.items.reduce((s, i) => s + (Number(i.qty) || 1) * (Number(i.unitPrice) || 0), 0)
-  const invTPS = round2(invTotalHT * TPS_RATE)
-  const invTVQ = round2(invTotalHT * TVQ_RATE)
-  const invTTC = round2(invTotalHT + invTPS + invTVQ)
+  // ─── Invoice handlers ──────────────────────────────────────────────────────
+  const handleInvFieldChange  = (k, v) => setInvForm(f => ({ ...f, [k]: v }))
+  const handleInvItemChange   = (i, k, v) => setInvForm(f => { const items = [...f.items]; items[i] = { ...items[i], [k]: v }; return { ...f, items } })
+  const handleInvAddItem      = () => setInvForm(f => ({ ...f, items: [...f.items, { description: '', qty: 1, unitPrice: 0 }] }))
+  const handleInvRemoveItem   = (i) => setInvForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
 
-  function handleSaveInvoice() {
-    if (editingInv) {
-      Store.updateInvoice(editingInv.id, { ...invForm, totalHT: invTotalHT, totalTTC: invTTC })
-    } else {
-      Store.addInvoice({ ...invForm, totalHT: invTotalHT, totalTTC: invTTC })
-    }
+  function handleSaveInvoice(totalHT, totalTTC) {
+    if (editingInv) Store.updateInvoice(editingInv.id, { ...invForm, totalHT, totalTTC })
+    else Store.addInvoice({ ...invForm, totalHT, totalTTC })
     reloadInvoices(); setShowInvModal(false); setEditingInv(null); setInvForm(emptyInvoiceForm)
   }
-
-  function handleDeleteInvoice(id) {
-    if (!confirm('Supprimer cette facture ?')) return
-    Store.deleteInvoice(id); reloadInvoices()
-  }
-
   function openEditInv(inv) {
     setEditingInv(inv)
     setInvForm({ clientName: inv.clientName || '', clientEmail: inv.clientEmail || '', clientCompany: inv.clientCompany || '', clientAddress: inv.clientAddress || '', date: inv.date || '', dueDate: inv.dueDate || '', items: inv.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: inv.notes || '', status: inv.status || 'unpaid', type: 'invoice' })
     setShowInvModal(true)
   }
+  function handleMarkInvPaid(id) { Store.updateInvoice(id, { status: 'paid' }); reloadInvoices() }
+  function handleDeleteInv(id) { if (!confirm('Supprimer cette facture ?')) return; Store.deleteInvoice(id); reloadInvoices() }
 
   function saveTemplate() {
     Store.saveInvoiceTemplate(templateForm)
@@ -360,195 +527,42 @@ export default function AdminRecette() {
     setTimeout(() => setTemplateSaved(false), 2000)
   }
 
-  // ─── Devis form helpers ────────────────────────────────────────────────────
-  const setDev = (k, v) => setDevisForm(f => ({ ...f, [k]: v }))
-  const setDevItem = (i, k, v) => setDevisForm(f => { const items = [...f.items]; items[i] = { ...items[i], [k]: v }; return { ...f, items } })
-  const addDevItem = () => setDevisForm(f => ({ ...f, items: [...f.items, { description: '', qty: 1, unitPrice: 0 }] }))
-  const removeDevItem = (i) => setDevisForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
-  const devTotalHT = devisForm.items.reduce((s, i) => s + (Number(i.qty) || 1) * (Number(i.unitPrice) || 0), 0)
-  const devTTC = round2(devTotalHT * (1 + TPS_RATE + TVQ_RATE))
+  // ─── Devis handlers ────────────────────────────────────────────────────────
+  const handleDevFieldChange  = (k, v) => setDevisForm(f => ({ ...f, [k]: v }))
+  const handleDevItemChange   = (i, k, v) => setDevisForm(f => { const items = [...f.items]; items[i] = { ...items[i], [k]: v }; return { ...f, items } })
+  const handleDevAddItem      = () => setDevisForm(f => ({ ...f, items: [...f.items, { description: '', qty: 1, unitPrice: 0 }] }))
+  const handleDevRemoveItem   = (i) => setDevisForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))
 
-  function handleSaveDevis() {
-    if (editingDevis) {
-      Store.updateInvoice(editingDevis.id, { ...devisForm, totalHT: devTotalHT, totalTTC: devTTC })
-    } else {
-      Store.addInvoice({ ...devisForm, totalHT: devTotalHT, totalTTC: devTTC })
-    }
+  function handleSaveDevis(totalHT, totalTTC) {
+    if (editingDevis) Store.updateInvoice(editingDevis.id, { ...devisForm, totalHT, totalTTC })
+    else Store.addInvoice({ ...devisForm, totalHT, totalTTC })
     reloadInvoices(); setShowDevisModal(false); setEditingDevis(null); setDevisForm(emptyDevisForm)
   }
-
+  function openEditDevis(d) {
+    setEditingDevis(d)
+    setDevisForm({ clientName: d.clientName || '', clientEmail: d.clientEmail || '', clientCompany: d.clientCompany || '', date: d.date || '', validUntil: d.validUntil || '', items: d.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: d.notes || '', status: d.status || 'draft', type: 'quote' })
+    setShowDevisModal(true)
+  }
   function convertToInvoice(devis) {
     if (!confirm(`Convertir le devis ${devis.id} en facture ?`)) return
-    Store.updateInvoice(devis.id, { type: 'invoice', status: 'unpaid', id: undefined })
+    Store.updateInvoice(devis.id, { type: 'invoice', status: 'unpaid' })
     reloadInvoices()
   }
-
-  function handleDeleteDevis(id) {
-    if (!confirm('Supprimer ce devis ?')) return
-    Store.deleteInvoice(id); reloadInvoices()
-  }
+  function handleDeleteDevis(id) { if (!confirm('Supprimer ce devis ?')) return; Store.deleteInvoice(id); reloadInvoices() }
 
   const MAIN_TABS = [
-    { key: 'recette', label: 'Recette', icon: <TrendingUp size={14} /> },
+    { key: 'recette',  label: 'Recette',  icon: <TrendingUp size={14} /> },
     { key: 'factures', label: 'Factures', icon: <Receipt size={14} /> },
-    { key: 'devis', label: 'Devis', icon: <FileText size={14} /> },
+    { key: 'devis',    label: 'Devis',    icon: <FileText size={14} /> },
   ]
-
-  const INV_STATUS = { paid: { label: 'Payée', cls: 'bg-green-500/15 text-green-400 border-green-500/25' }, unpaid: { label: 'À payer', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' } }
-  const DEV_STATUS = { draft: { label: 'Brouillon', cls: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/25' }, sent: { label: 'Envoyé', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25' }, accepted: { label: 'Accepté', cls: 'bg-green-500/15 text-green-400 border-green-500/25' }, refused: { label: 'Refusé', cls: 'bg-red-500/15 text-red-400 border-red-500/25' } }
-
-  function InvTable({ list }) {
-    if (list.length === 0) return <p className={`text-sm text-center py-10 ${textSecondary}`}>Aucune facture</p>
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead><tr className={`border-b text-xs font-semibold ${tableHead}`}>
-            <th className="text-left px-4 py-3">N°</th>
-            <th className="text-left px-4 py-3">Client</th>
-            <th className="text-left px-4 py-3 hidden sm:table-cell">Date</th>
-            <th className="text-right px-4 py-3">Montant TTC</th>
-            <th className="text-left px-4 py-3">Statut</th>
-            <th className="text-left px-4 py-3">Actions</th>
-          </tr></thead>
-          <tbody>
-            {list.map(inv => {
-              const st = INV_STATUS[inv.status] || INV_STATUS.unpaid
-              return (
-                <tr key={inv.id} className={`border-b transition-colors ${tableRow}`}>
-                  <td className={`px-4 py-3 font-mono text-xs ${textSecondary}`}>{inv.id}</td>
-                  <td className="px-4 py-3">
-                    <div className={`font-medium ${textPrimary}`}>{inv.clientName}</div>
-                    {inv.clientEmail && <div className={`text-xs ${textSecondary}`}>{inv.clientEmail}</div>}
-                  </td>
-                  <td className={`px-4 py-3 hidden sm:table-cell ${textSecondary} text-xs`}>{inv.date}</td>
-                  <td className={`px-4 py-3 text-right font-bold ${textPrimary}`}>{formatPrice(inv.totalTTC)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${st.cls}`}>{st.label}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1">
-                      {!inv.source && (
-                        <>
-                          <button onClick={() => openEditInv(inv)} title="Modifier" className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors"><Pencil size={12} /></button>
-                          {inv.status === 'unpaid' && (
-                            <button onClick={() => { Store.updateInvoice(inv.id, { status: 'paid' }); reloadInvoices() }} title="Marquer payée" className="p-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 transition-colors"><Check size={12} /></button>
-                          )}
-                          <button onClick={() => handleDeleteInvoice(inv.id)} title="Supprimer" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"><Trash2 size={12} /></button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
-  function InvoiceModal({ onClose, type }) {
-    const form = type === 'quote' ? devisForm : invForm
-    const setForm = type === 'quote' ? setDev : setInv
-    const setItem = type === 'quote' ? setDevItem : setInvItem
-    const addItem = type === 'quote' ? addDevItem : addInvItem
-    const removeItem = type === 'quote' ? removeDevItem : removeInvItem
-    const totalHT = type === 'quote' ? devTotalHT : invTotalHT
-    const tps = round2(totalHT * TPS_RATE)
-    const tvq = round2(totalHT * TVQ_RATE)
-    const ttc = round2(totalHT + tps + tvq)
-    const save = type === 'quote' ? handleSaveDevis : handleSaveInvoice
-
-    return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
-        <div className={`border rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200 shadow-xl'}`} onClick={e => e.stopPropagation()}>
-          <div className={`flex items-center justify-between px-6 py-4 border-b ${divider}`}>
-            <h3 className={`font-bold text-lg ${textPrimary}`}>{editingInv || editingDevis ? 'Modifier' : 'Nouveau'} {type === 'quote' ? 'devis' : 'facture'}</h3>
-            <button onClick={onClose} className={textSecondary}><X size={20} /></button>
-          </div>
-          <div className="p-6 grid lg:grid-cols-2 gap-6">
-            {/* Form */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: 'Nom client', key: 'clientName', placeholder: 'Jean Dupont' },
-                  { label: 'Email client', key: 'clientEmail', placeholder: 'jean@mail.com' },
-                  { label: 'Société', key: 'clientCompany', placeholder: 'Nom société' },
-                  { label: 'Date', key: 'date', type: 'date' },
-                  type === 'quote'
-                    ? { label: 'Valide jusqu\'au', key: 'validUntil', type: 'date' }
-                    : { label: 'Échéance', key: 'dueDate', type: 'date' },
-                  !type === 'quote' && { label: 'Statut', key: 'status', type: 'select', options: [{ value: 'unpaid', label: 'À payer' }, { value: 'paid', label: 'Payée' }] },
-                ].filter(Boolean).map(f => (
-                  <div key={f.key}>
-                    <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{f.label}</label>
-                    {f.type === 'select' ? (
-                      <select value={form[f.key]} onChange={e => setForm(f.key, e.target.value)} className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`}>
-                        {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
-                    ) : (
-                      <input type={f.type || 'text'} value={form[f.key]} onChange={e => setForm(f.key, e.target.value)} placeholder={f.placeholder} className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
-              {/* Items */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className={`text-xs font-bold uppercase tracking-wide ${textSecondary}`}>Lignes</label>
-                  <button onClick={addItem} className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300"><Plus size={12} /> Ajouter</button>
-                </div>
-                <div className="space-y-2">
-                  {form.items.map((item, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <input value={item.description} onChange={e => setItem(i, 'description', e.target.value)} placeholder="Description" className={`flex-1 px-2.5 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`} />
-                      <input type="number" value={item.qty} onChange={e => setItem(i, 'qty', e.target.value)} className={`w-14 px-2 py-1.5 text-xs rounded-lg border focus:outline-none text-center ${inputCls}`} min={1} />
-                      <input type="number" value={item.unitPrice} onChange={e => setItem(i, 'unitPrice', e.target.value)} placeholder="Prix" className={`w-20 px-2 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`} />
-                      {form.items.length > 1 && <button onClick={() => removeItem(i)} className="text-red-400 hover:text-red-300 mt-1"><X size={12} /></button>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Notes</label>
-                <textarea value={form.notes} onChange={e => setForm('notes', e.target.value)} rows={2} className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 resize-none ${inputCls}`} placeholder="Notes ou conditions particulières..." />
-              </div>
-              {/* Totals */}
-              <div className={`rounded-xl p-4 space-y-1 text-sm ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
-                <div className={`flex justify-between ${textSecondary}`}><span>Sous-total HT</span><span>{totalHT} CAD</span></div>
-                <div className={`flex justify-between ${textSecondary}`}><span>TPS 5%</span><span>{tps} CAD</span></div>
-                <div className={`flex justify-between ${textSecondary}`}><span>TVQ 9.975%</span><span>{tvq} CAD</span></div>
-                <div className={`flex justify-between font-bold text-base border-t pt-2 ${divider} ${textPrimary}`}><span>Total TTC</span><span className="text-violet-400">{ttc} CAD</span></div>
-              </div>
-              <button onClick={save} className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-                <Save size={14} /> Enregistrer
-              </button>
-            </div>
-            {/* Preview */}
-            <div>
-              <p className={`text-xs font-bold uppercase tracking-wide mb-3 ${textSecondary}`}>Aperçu</p>
-              <InvoicePreview invoice={{ ...form, items: form.items, type, id: editingInv?.id || editingDevis?.id || (type === 'quote' ? 'DEV-2024-001' : 'FAC-2024-001') }} template={template} isDark={isDark} />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <Layout navItems={ADMIN_NAV} title="Recette">
       {/* ── Main tab selector ── */}
       <div className={`flex gap-1 mb-6 border-b pb-0 ${divider}`}>
         {MAIN_TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setMainTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all ${
-              mainTab === t.key
-                ? 'border-violet-500 text-violet-400'
-                : `border-transparent ${textSecondary} hover:text-violet-400`
-            }`}
-          >
+          <button key={t.key} onClick={() => setMainTab(t.key)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-all ${mainTab === t.key ? 'border-violet-500 text-violet-400' : `border-transparent ${textSecondary} hover:text-violet-400`}`}>
             {t.icon}{t.label}
           </button>
         ))}
@@ -614,7 +628,7 @@ export default function AdminRecette() {
           <div className={`border rounded-2xl p-6 ${card}`}>
             <div className="flex items-center gap-2 mb-5"><Building2 className="w-4 h-4 text-violet-400" /><h3 className={`font-bold ${textPrimary}`}>CA par studio</h3></div>
             <div className="grid sm:grid-cols-3 gap-4">
-              {studioStats.map((s) => {
+              {studioStats.map(s => {
                 const pct = ca > 0 ? Math.round((s.ca / ca) * 100) : 0
                 return (
                   <div key={s.name} className={`rounded-xl p-4 ${s.colorBg} border ${isDark ? 'border-white/5' : 'border-black/5'}`}>
@@ -634,7 +648,7 @@ export default function AdminRecette() {
           </div>
 
           <div className={`border rounded-2xl p-6 ${card}`}>
-            <div className="flex items-center gap-2 mb-5"><BarChart2 className="w-4 h-4 text-violet-400" /><h3 className={`font-bold ${textPrimary}`}>{period === 'year' || period === 'all' ? `Évolution mensuelle ${chartYear}` : period === 'month' ? `CA journalier — ${MONTHS_FR[chartMonth]} ${chartYear}` : period === 'week' ? 'CA cette semaine' : "CA aujourd'hui par tranche horaire"}</h3></div>
+            <div className="flex items-center gap-2 mb-5"><BarChart2 className="w-4 h-4 text-violet-400" /><h3 className={`font-bold ${textPrimary}`}>{period === 'year' || period === 'all' ? `Évolution mensuelle ${chartYear}` : period === 'month' ? `CA journalier — ${MONTHS_FR[chartMonth]} ${chartYear}` : period === 'week' ? 'CA cette semaine' : "CA aujourd'hui"}</h3></div>
             <BarChart data={chartData} isDark={isDark} textSecondary={textSecondary} />
             <div className={`flex justify-between mt-3 text-[10px] ${textSecondary}`}><span>0</span><span>{formatPrice(Math.max(...chartData.map(d => d.value), 0))}</span></div>
           </div>
@@ -644,7 +658,7 @@ export default function AdminRecette() {
             <table className="w-full">
               <thead><tr className={`border-b text-xs font-semibold ${tableHead}`}><th className="text-left px-5 py-3">Studio</th><th className="text-right px-5 py-3">Sessions</th><th className="text-right px-5 py-3 hidden sm:table-cell">Heures</th><th className="text-right px-5 py-3">CA TTC</th><th className="text-right px-5 py-3 hidden md:table-cell">Part %</th></tr></thead>
               <tbody>
-                {studioStats.map((s) => {
+                {studioStats.map(s => {
                   const pct = ca > 0 ? ((s.ca / ca) * 100).toFixed(1) : '0.0'
                   return (
                     <tr key={s.name} className={`border-b transition-colors ${tableRow}`}>
@@ -665,7 +679,7 @@ export default function AdminRecette() {
             <div className={`border rounded-2xl p-6 ${card}`}>
               <div className="flex items-center gap-2 mb-5"><RotateCcw className="w-4 h-4 text-pink-400" /><h3 className={`font-bold ${textPrimary}`}>Remboursements</h3><span className={`text-xs ${textSecondary}`}>— tout historique</span></div>
               {refunded.length === 0 ? <p className={`text-sm ${textSecondary}`}>Aucun remboursement enregistré.</p> : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className={`rounded-xl p-3 ${isDark ? 'bg-pink-500/5 border border-pink-500/20' : 'bg-pink-50 border border-pink-200'}`}><div className="text-xs font-semibold mb-1 text-pink-400">Nombre</div><div className="text-2xl font-black text-pink-400">{refunded.length}</div></div>
                     <div className={`rounded-xl p-3 ${isDark ? 'bg-pink-500/5 border border-pink-500/20' : 'bg-pink-50 border border-pink-200'}`}><div className="text-xs font-semibold mb-1 text-pink-400">Montant total</div><div className="text-xl font-black text-pink-400">{formatPrice(refundedCA)}</div></div>
@@ -677,11 +691,9 @@ export default function AdminRecette() {
             <div className={`border rounded-2xl p-6 ${card}`}>
               <div className="flex items-center gap-2 mb-5"><Tag className="w-4 h-4 text-amber-400" /><h3 className={`font-bold ${textPrimary}`}>Tarifs réduits</h3><span className={`text-xs ${textSecondary}`}>— avec code promo</span></div>
               {discounted.length === 0 ? <p className={`text-sm ${textSecondary}`}>Aucune réservation avec code promo.</p> : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`rounded-xl p-3 ${isDark ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}><div className="text-xs font-semibold mb-1 text-amber-400">Nombre</div><div className="text-2xl font-black text-amber-400">{discounted.length}</div></div>
-                    <div className={`rounded-xl p-3 ${isDark ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}><div className="text-xs font-semibold mb-1 text-amber-400">CA promos</div><div className="text-xl font-black text-amber-400">{formatPrice(discountedCA)}</div></div>
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={`rounded-xl p-3 ${isDark ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}><div className="text-xs font-semibold mb-1 text-amber-400">Nombre</div><div className="text-2xl font-black text-amber-400">{discounted.length}</div></div>
+                  <div className={`rounded-xl p-3 ${isDark ? 'bg-amber-500/5 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}><div className="text-xs font-semibold mb-1 text-amber-400">CA promos</div><div className="text-xl font-black text-amber-400">{formatPrice(discountedCA)}</div></div>
                 </div>
               )}
             </div>
@@ -692,7 +704,6 @@ export default function AdminRecette() {
       {/* ── FACTURES tab ── */}
       {mainTab === 'factures' && (
         <div className="space-y-5">
-          {/* Sub-tabs */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className={`flex rounded-xl border overflow-hidden text-sm font-medium ${isDark ? 'border-zinc-700' : 'border-gray-200'}`}>
               {[{ key: 'unpaid', label: `À payer (${allUnpaidInvoices.length})` }, { key: 'paid', label: `Payées (${allPaidInvoices.length})` }, { key: 'editor', label: 'Modèle' }].map(({ key, label }) => (
@@ -711,9 +722,9 @@ export default function AdminRecette() {
               <div className={`px-5 py-3 border-b flex items-center gap-2 ${divider}`}>
                 <CreditCard className="w-4 h-4 text-amber-400" />
                 <h3 className={`font-semibold text-sm ${textPrimary}`}>Factures à payer</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold`}>{allUnpaidInvoices.length}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold">{allUnpaidInvoices.length}</span>
               </div>
-              <InvTable list={allUnpaidInvoices} />
+              <InvTable list={allUnpaidInvoices} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary} tableHead={tableHead} tableRow={tableRow} onEdit={openEditInv} onMarkPaid={handleMarkInvPaid} onDelete={handleDeleteInv} />
             </div>
           )}
 
@@ -722,30 +733,26 @@ export default function AdminRecette() {
               <div className={`px-5 py-3 border-b flex items-center gap-2 ${divider}`}>
                 <CheckCircle2 className="w-4 h-4 text-green-400" />
                 <h3 className={`font-semibold text-sm ${textPrimary}`}>Factures payées</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold`}>{allPaidInvoices.length}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">{allPaidInvoices.length}</span>
               </div>
-              <InvTable list={allPaidInvoices} />
+              <InvTable list={allPaidInvoices} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary} tableHead={tableHead} tableRow={tableRow} onEdit={openEditInv} onMarkPaid={handleMarkInvPaid} onDelete={handleDeleteInv} />
             </div>
           )}
 
           {invSubTab === 'editor' && (
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Template editor */}
               <div className={`border rounded-2xl p-6 space-y-4 ${card}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Pencil className="w-4 h-4 text-violet-400" />
-                  <h3 className={`font-bold ${textPrimary}`}>Modèle de facture</h3>
-                </div>
+                <div className="flex items-center gap-2 mb-2"><Pencil className="w-4 h-4 text-violet-400" /><h3 className={`font-bold ${textPrimary}`}>Modèle de facture</h3></div>
                 {[
-                  { label: 'Nom de la société', key: 'company', placeholder: 'Level Studios' },
-                  { label: 'Adresse', key: 'address', placeholder: 'Montréal, QC, Canada' },
-                  { label: 'Email', key: 'email', placeholder: 'contact@levelstudios.ca' },
-                  { label: 'Téléphone', key: 'phone', placeholder: '+1 514 000 0000' },
-                  { label: 'Site web', key: 'website', placeholder: 'levelstudios.ca' },
-                  { label: 'N° TPS', key: 'tps', placeholder: '123456789 RT0001' },
-                  { label: 'N° TVQ', key: 'tvq', placeholder: '1234567890 TQ0001' },
-                  { label: 'Conditions de paiement', key: 'paymentTerms', placeholder: 'Paiement à 30 jours' },
-                  { label: 'Informations bancaires', key: 'bankInfo', placeholder: 'Banque / IBAN / etc.' },
+                  { label: 'Nom de la société',       key: 'company',      placeholder: 'Level Studios' },
+                  { label: 'Adresse',                  key: 'address',      placeholder: 'Montréal, QC, Canada' },
+                  { label: 'Email',                    key: 'email',        placeholder: 'contact@levelstudios.ca' },
+                  { label: 'Téléphone',                key: 'phone',        placeholder: '+1 514 000 0000' },
+                  { label: 'Site web',                 key: 'website',      placeholder: 'levelstudios.ca' },
+                  { label: 'N° TPS',                   key: 'tps',          placeholder: '123456789 RT0001' },
+                  { label: 'N° TVQ',                   key: 'tvq',          placeholder: '1234567890 TQ0001' },
+                  { label: 'Conditions de paiement',   key: 'paymentTerms', placeholder: 'Paiement à 30 jours' },
+                  { label: 'Informations bancaires',   key: 'bankInfo',     placeholder: 'Banque / IBAN / etc.' },
                 ].map(f => (
                   <div key={f.key}>
                     <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{f.label}</label>
@@ -760,7 +767,6 @@ export default function AdminRecette() {
                   {templateSaved ? <><Check size={14} /> Enregistré</> : <><Save size={14} /> Enregistrer le modèle</>}
                 </button>
               </div>
-              {/* Live preview */}
               <div>
                 <p className={`text-xs font-bold uppercase tracking-wide mb-3 ${textSecondary}`}>Aperçu du modèle</p>
                 <InvoicePreview invoice={null} template={templateForm} isDark={isDark} />
@@ -777,7 +783,7 @@ export default function AdminRecette() {
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-violet-400" />
               <h2 className={`text-xl font-bold ${textPrimary}`}>Devis</h2>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-100 text-gray-500'} font-semibold`}>{devisList.length}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-100 text-gray-500'}`}>{devisList.length}</span>
             </div>
             <button onClick={() => { setEditingDevis(null); setDevisForm(emptyDevisForm); setShowDevisModal(true) }} className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
               <Plus size={14} /> Nouveau devis
@@ -817,21 +823,18 @@ export default function AdminRecette() {
                           <td className={`px-4 py-3 hidden md:table-cell ${textSecondary} text-xs`}>{d.validUntil || '—'}</td>
                           <td className={`px-4 py-3 text-right font-bold ${textPrimary}`}>{formatPrice(d.totalTTC)}</td>
                           <td className="px-4 py-3">
-                            <select
-                              value={d.status}
-                              onChange={e => { Store.updateInvoice(d.id, { status: e.target.value }); reloadInvoices() }}
-                              className={`text-xs px-2 py-0.5 rounded-lg border ${st.cls} bg-transparent cursor-pointer`}
-                            >
+                            <select value={d.status} onChange={e => { Store.updateInvoice(d.id, { status: e.target.value }); reloadInvoices() }}
+                              className={`text-xs px-2 py-0.5 rounded-lg border bg-transparent cursor-pointer ${st.cls}`}>
                               {Object.entries(DEV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                             </select>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1 flex-wrap">
-                              <button onClick={() => { setEditingDevis(d); setDevisForm({ clientName: d.clientName || '', clientEmail: d.clientEmail || '', clientCompany: d.clientCompany || '', date: d.date || '', validUntil: d.validUntil || '', items: d.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: d.notes || '', status: d.status || 'draft', type: 'quote' }); setShowDevisModal(true) }} className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors" title="Modifier"><Pencil size={12} /></button>
-                              <button onClick={() => convertToInvoice(d)} title="Convertir en facture" className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs font-semibold transition-colors">
+                              <button onClick={() => openEditDevis(d)} className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors" title="Modifier"><Pencil size={12} /></button>
+                              <button onClick={() => convertToInvoice(d)} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs font-semibold transition-colors" title="Convertir en facture">
                                 <ArrowRight size={11} /> Facture
                               </button>
-                              <button onClick={() => handleDeleteDevis(d.id)} title="Supprimer" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"><Trash2 size={12} /></button>
+                              <button onClick={() => handleDeleteDevis(d.id)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Supprimer"><Trash2 size={12} /></button>
                             </div>
                           </td>
                         </tr>
@@ -845,9 +848,45 @@ export default function AdminRecette() {
         </div>
       )}
 
-      {/* Invoice modal */}
-      {showInvModal && <InvoiceModal onClose={() => { setShowInvModal(false); setEditingInv(null) }} type="invoice" />}
-      {showDevisModal && <InvoiceModal onClose={() => { setShowDevisModal(false); setEditingDevis(null) }} type="quote" />}
+      {/* ── Modals ── */}
+      {showInvModal && (
+        <InvoiceModal
+          type="invoice"
+          onClose={() => { setShowInvModal(false); setEditingInv(null) }}
+          onSave={handleSaveInvoice}
+          form={invForm}
+          onFieldChange={handleInvFieldChange}
+          onItemChange={handleInvItemChange}
+          onAddItem={handleInvAddItem}
+          onRemoveItem={handleInvRemoveItem}
+          isEditing={editingInv}
+          template={template}
+          isDark={isDark}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          inputCls={inputCls}
+          divider={divider}
+        />
+      )}
+      {showDevisModal && (
+        <InvoiceModal
+          type="quote"
+          onClose={() => { setShowDevisModal(false); setEditingDevis(null) }}
+          onSave={handleSaveDevis}
+          form={devisForm}
+          onFieldChange={handleDevFieldChange}
+          onItemChange={handleDevItemChange}
+          onAddItem={handleDevAddItem}
+          onRemoveItem={handleDevRemoveItem}
+          isEditing={editingDevis}
+          template={template}
+          isDark={isDark}
+          textPrimary={textPrimary}
+          textSecondary={textSecondary}
+          inputCls={inputCls}
+          divider={divider}
+        />
+      )}
     </Layout>
   )
 }
