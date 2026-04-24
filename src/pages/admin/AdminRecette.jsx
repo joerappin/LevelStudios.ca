@@ -24,6 +24,22 @@ const TPS_RATE  = 0.05
 const TVQ_RATE  = 0.09975
 const round2    = v => Math.round(v * 100) / 100
 
+const FORMULES = [
+  { key: 'BRONZE', label: 'BRONZE', hourlyRate: 149 },
+  { key: 'ARGENT', label: 'ARGENT', hourlyRate: 199 },
+  { key: 'OR',     label: 'OR',     hourlyRate: 499 },
+]
+const OPTIONS_LIST = [
+  { key: 'photo',    label: 'Photo',             price: 44 },
+  { key: 'short',    label: 'Short vidéo',        price: 44 },
+  { key: 'miniature',label: 'Miniature',          price: 44 },
+  { key: 'live',     label: 'Live stream',        price: 662 },
+  { key: 'briefing', label: 'Briefing live',      price: 118 },
+  { key: 'replay',   label: 'Replay',             price: 74 },
+  { key: 'cm',       label: 'Community manager',  price: 147 },
+  { key: 'coaching', label: 'Coaching',           price: 588 },
+]
+
 const INV_STATUS = {
   paid:   { label: 'Payée',    cls: 'bg-green-500/15 text-green-400 border-green-500/25' },
   unpaid: { label: 'À payer',  cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
@@ -84,13 +100,17 @@ function InvoicePreview({ invoice, template, isDark }) {
   const ts = isDark ? 'text-zinc-400' : 'text-gray-500'
   const bg = isDark ? 'bg-zinc-800' : 'bg-white'
   const border = isDark ? 'border-zinc-700' : 'border-gray-200'
+  const sectionBg = isDark ? 'bg-zinc-900' : 'bg-gray-50'
   const items = invoice?.items || [{ description: 'Session ARGENT 2h', qty: 1, unitPrice: 398 }]
   const totalHT = items.reduce((s, i) => s + (i.qty || 1) * (i.unitPrice || 0), 0)
   const tps = round2(totalHT * TPS_RATE)
   const tvq = round2(totalHT * TVQ_RATE)
   const ttc = round2(totalHT + tps + tvq)
+  const hasPrestation = invoice?.formule || invoice?.nbPersonnes || invoice?.selectedOptions?.length > 0
+  const optLabels = (invoice?.selectedOptions || []).map(k => OPTIONS_LIST.find(o => o.key === k)?.label).filter(Boolean)
   return (
     <div className={`border rounded-2xl p-6 text-sm ${bg} ${border}`}>
+      {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
           <div className="font-black text-xl text-violet-500 mb-1">{template?.company || 'Level Studios'}</div>
@@ -105,14 +125,52 @@ function InvoicePreview({ invoice, template, isDark }) {
           <div className={`text-xs ${ts}`}>N° {invoice?.id || 'FAC-2024-001'}</div>
           <div className={`text-xs ${ts}`}>Date : {invoice?.date || new Date().toISOString().split('T')[0]}</div>
           {invoice?.dueDate && <div className={`text-xs ${ts}`}>Échéance : {invoice.dueDate}</div>}
+          {invoice?.validUntil && <div className={`text-xs ${ts}`}>Valide jusqu'au : {invoice.validUntil}</div>}
         </div>
       </div>
-      <div className={`rounded-xl p-3 mb-5 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}`}>
+
+      {/* Client */}
+      <div className={`rounded-xl p-3 mb-4 ${sectionBg}`}>
         <div className={`text-xs font-bold uppercase tracking-wide mb-1 ${ts}`}>Facturer à</div>
         <div className={`font-semibold ${tp}`}>{invoice?.clientName || 'Nom du client'}</div>
         {invoice?.clientCompany && <div className={`text-xs ${ts}`}>{invoice.clientCompany}</div>}
         {invoice?.clientEmail && <div className={`text-xs ${ts}`}>{invoice.clientEmail}</div>}
       </div>
+
+      {/* Prestation details */}
+      {hasPrestation && (
+        <div className={`rounded-xl p-3 mb-4 border ${border}`}>
+          <div className={`text-xs font-bold uppercase tracking-wide mb-2 ${ts}`}>Détails de la prestation</div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            {invoice.formule && (
+              <div>
+                <div className={`${ts} mb-0.5`}>Formule</div>
+                <div className={`font-bold text-violet-400`}>{invoice.formule}</div>
+              </div>
+            )}
+            {invoice.heures && (
+              <div>
+                <div className={`${ts} mb-0.5`}>Durée</div>
+                <div className={`font-semibold ${tp}`}>{invoice.heures}h</div>
+              </div>
+            )}
+            {invoice.nbPersonnes && (
+              <div>
+                <div className={`${ts} mb-0.5`}>Personnes</div>
+                <div className={`font-semibold ${tp}`}>{invoice.nbPersonnes}</div>
+              </div>
+            )}
+          </div>
+          {optLabels.length > 0 && (
+            <div className={`mt-2 pt-2 border-t ${border} text-xs`}>
+              <span className={ts}>Options incluses : </span>
+              <span className={`font-semibold ${tp}`}>{optLabels.join(' · ')}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Line items */}
       <table className="w-full text-xs mb-4">
         <thead>
           <tr className={`border-b ${border}`}>
@@ -133,6 +191,8 @@ function InvoicePreview({ invoice, template, isDark }) {
           ))}
         </tbody>
       </table>
+
+      {/* Totals */}
       <div className="flex justify-end mb-5">
         <div className="w-48 space-y-1 text-xs">
           <div className={`flex justify-between ${ts}`}><span>Sous-total HT</span><span>{totalHT} CAD</span></div>
@@ -141,6 +201,8 @@ function InvoicePreview({ invoice, template, isDark }) {
           <div className={`flex justify-between font-bold border-t pt-1 ${border} ${tp}`}><span>Total TTC</span><span className="text-violet-500">{ttc} CAD</span></div>
         </div>
       </div>
+
+      {/* Footer */}
       {(template?.paymentTerms || template?.bankInfo || template?.footer || invoice?.quoteDate) && (
         <div className={`border-t pt-4 text-xs space-y-1 ${border} ${ts}`}>
           {template?.paymentTerms && <div><span className="font-semibold">Conditions : </span>{template.paymentTerms}</div>}
@@ -221,6 +283,7 @@ function InvoiceModal({
   const tps = round2(totalHT * TPS_RATE)
   const tvq = round2(totalHT * TVQ_RATE)
   const ttc = round2(totalHT + tps + tvq)
+  const sectionBg = isDark ? 'bg-zinc-800/60' : 'bg-gray-50'
 
   const fields = [
     { label: 'Nom client',   key: 'clientName',   placeholder: 'Jean Dupont' },
@@ -235,10 +298,26 @@ function InvoiceModal({
       : null,
   ].filter(Boolean)
 
+  function importItems() {
+    const f = FORMULES.find(f => f.key === form.formule)
+    const newItems = []
+    if (f && form.heures) newItems.push({ description: `Session ${f.label} — ${form.heures}h`, qty: 1, unitPrice: f.hourlyRate * Number(form.heures) })
+    ;(form.selectedOptions || []).forEach(k => {
+      const opt = OPTIONS_LIST.find(o => o.key === k)
+      if (opt) newItems.push({ description: opt.label, qty: 1, unitPrice: opt.price })
+    })
+    if (newItems.length) onFieldChange('items', newItems)
+  }
+
+  function toggleOption(key) {
+    const cur = form.selectedOptions || []
+    onFieldChange('selectedOptions', cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key])
+  }
+
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className={`border rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200 shadow-xl'}`}
+        className={`border rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200 shadow-xl'}`}
         onClick={e => e.stopPropagation()}
       >
         <div className={`flex items-center justify-between px-6 py-4 border-b ${divider}`}>
@@ -251,30 +330,77 @@ function InvoiceModal({
         <div className="p-6 grid lg:grid-cols-2 gap-6">
           {/* ── Form ── */}
           <div className="space-y-4">
+
+            {/* Client fields */}
             <div className="grid grid-cols-2 gap-3">
               {fields.map(f => (
                 <div key={f.key}>
                   <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{f.label}</label>
                   {f.type === 'select' ? (
-                    <select
-                      value={form[f.key]}
-                      onChange={e => onFieldChange(f.key, e.target.value)}
-                      className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`}
-                    >
+                    <select value={form[f.key]} onChange={e => onFieldChange(f.key, e.target.value)} className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`}>
                       {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : (
-                    <input
-                      type={f.type || 'text'}
-                      value={form[f.key] || ''}
-                      onChange={e => onFieldChange(f.key, e.target.value)}
-                      placeholder={f.placeholder}
-                      className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`}
-                      style={{ colorScheme: isDark ? 'dark' : 'light' }}
-                    />
+                    <input type={f.type || 'text'} value={form[f.key] || ''} onChange={e => onFieldChange(f.key, e.target.value)} placeholder={f.placeholder}
+                      className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
                   )}
                 </div>
               ))}
+            </div>
+
+            {/* ── Prestation ── */}
+            <div className={`rounded-xl p-4 space-y-3 ${sectionBg}`}>
+              <div className={`text-xs font-bold uppercase tracking-wide ${textSecondary}`}>Prestation</div>
+
+              {/* Formule */}
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${textSecondary}`}>Formule</label>
+                <div className="flex gap-2">
+                  {FORMULES.map(f => (
+                    <button key={f.key} type="button" onClick={() => onFieldChange('formule', form.formule === f.key ? '' : f.key)}
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${form.formule === f.key ? 'bg-violet-600 border-violet-600 text-white' : isDark ? 'border-zinc-700 text-zinc-400 hover:border-violet-500 hover:text-violet-400' : 'border-gray-300 text-gray-500 hover:border-violet-400 hover:text-violet-600'}`}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Heures + Nb personnes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Heures</label>
+                  <input type="number" min={0.5} step={0.5} value={form.heures || ''} onChange={e => onFieldChange('heures', e.target.value)} placeholder="2"
+                    className={`w-full px-3 py-1.5 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`} />
+                </div>
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Nb de personnes</label>
+                  <input type="number" min={1} value={form.nbPersonnes || ''} onChange={e => onFieldChange('nbPersonnes', e.target.value)} placeholder="1"
+                    className={`w-full px-3 py-1.5 text-sm rounded-xl border focus:outline-none focus:ring-2 ${inputCls}`} />
+                </div>
+              </div>
+
+              {/* Options */}
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${textSecondary}`}>Options</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {OPTIONS_LIST.map(opt => {
+                    const selected = (form.selectedOptions || []).includes(opt.key)
+                    return (
+                      <button key={opt.key} type="button" onClick={() => toggleOption(opt.key)}
+                        className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs border transition-all text-left ${selected ? 'bg-violet-600/20 border-violet-500 text-violet-400' : isDark ? 'border-zinc-700 text-zinc-400 hover:border-zinc-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                        <span>{opt.label}</span>
+                        <span className={selected ? 'text-violet-400' : textSecondary}>{opt.price} $</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Import button */}
+              <button type="button" onClick={importItems}
+                className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-colors ${isDark ? 'border-violet-500/50 text-violet-400 hover:bg-violet-500/10' : 'border-violet-400 text-violet-600 hover:bg-violet-50'}`}>
+                <ArrowRight size={12} /> Importer dans les lignes
+              </button>
             </div>
 
             {/* Line items */}
@@ -288,26 +414,12 @@ function InvoiceModal({
               <div className="space-y-2">
                 {form.items.map((item, i) => (
                   <div key={i} className="flex gap-2 items-start">
-                    <input
-                      value={item.description}
-                      onChange={e => onItemChange(i, 'description', e.target.value)}
-                      placeholder="Description"
-                      className={`flex-1 px-2.5 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`}
-                    />
-                    <input
-                      type="number"
-                      value={item.qty}
-                      onChange={e => onItemChange(i, 'qty', e.target.value)}
-                      className={`w-14 px-2 py-1.5 text-xs rounded-lg border focus:outline-none text-center ${inputCls}`}
-                      min={1}
-                    />
-                    <input
-                      type="number"
-                      value={item.unitPrice}
-                      onChange={e => onItemChange(i, 'unitPrice', e.target.value)}
-                      placeholder="Prix"
-                      className={`w-20 px-2 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`}
-                    />
+                    <input value={item.description} onChange={e => onItemChange(i, 'description', e.target.value)} placeholder="Description"
+                      className={`flex-1 px-2.5 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`} />
+                    <input type="number" value={item.qty} onChange={e => onItemChange(i, 'qty', e.target.value)}
+                      className={`w-14 px-2 py-1.5 text-xs rounded-lg border focus:outline-none text-center ${inputCls}`} min={1} />
+                    <input type="number" value={item.unitPrice} onChange={e => onItemChange(i, 'unitPrice', e.target.value)} placeholder="Prix"
+                      className={`w-20 px-2 py-1.5 text-xs rounded-lg border focus:outline-none ${inputCls}`} />
                     {form.items.length > 1 && (
                       <button onClick={() => onRemoveItem(i)} className="text-red-400 hover:text-red-300 mt-1"><X size={12} /></button>
                     )}
@@ -319,13 +431,9 @@ function InvoiceModal({
             {/* Notes */}
             <div>
               <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Notes</label>
-              <textarea
-                value={form.notes || ''}
-                onChange={e => onFieldChange('notes', e.target.value)}
-                rows={2}
+              <textarea value={form.notes || ''} onChange={e => onFieldChange('notes', e.target.value)} rows={2}
                 className={`w-full px-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 resize-none ${inputCls}`}
-                placeholder="Notes ou conditions particulières..."
-              />
+                placeholder="Notes ou conditions particulières..." />
             </div>
 
             {/* Totals */}
@@ -336,10 +444,8 @@ function InvoiceModal({
               <div className={`flex justify-between font-bold text-base border-t pt-2 ${divider} ${textPrimary}`}><span>Total TTC</span><span className="text-violet-400">{ttc} CAD</span></div>
             </div>
 
-            <button
-              onClick={() => onSave(totalHT, ttc)}
-              className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
-            >
+            <button onClick={() => onSave(totalHT, ttc)}
+              className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
               <Save size={14} /> Enregistrer
             </button>
           </div>
@@ -394,7 +500,7 @@ function PreviewModal({ doc, template, isDark, onClose, onDownload }) {
   )
 }
 
-// ─── Print / download ─────────────────────────────────────────────────────────
+// ─── Print / download (format lettre 8.5×11") ────────────────────────────────
 function downloadDocument(doc, template) {
   const items = doc.items || []
   const totalHT = items.reduce((s, i) => s + (Number(i.qty) || 1) * (Number(i.unitPrice) || 0), 0)
@@ -402,34 +508,60 @@ function downloadDocument(doc, template) {
   const tvq = round2(totalHT * TVQ_RATE)
   const ttc = round2(totalHT + tps + tvq)
   const isQuote = doc.type === 'quote'
+  const optLabels = (doc.selectedOptions || []).map(k => OPTIONS_LIST.find(o => o.key === k)?.label).filter(Boolean)
+  const hasPrestation = doc.formule || doc.nbPersonnes || optLabels.length > 0
+
+  const prestationBlock = hasPrestation ? `
+<div class="prestation">
+  <div class="lbl">Détails de la prestation</div>
+  <div class="prow">
+    ${doc.formule ? `<div class="pcell"><div class="plbl">Formule</div><div class="pval" style="color:#7c3aed;font-weight:900">${doc.formule}</div></div>` : ''}
+    ${doc.heures  ? `<div class="pcell"><div class="plbl">Durée</div><div class="pval">${doc.heures}h</div></div>` : ''}
+    ${doc.nbPersonnes ? `<div class="pcell"><div class="plbl">Personnes</div><div class="pval">${doc.nbPersonnes}</div></div>` : ''}
+  </div>
+  ${optLabels.length ? `<div class="popts"><span style="color:#888">Options incluses : </span><strong>${optLabels.join(' · ')}</strong></div>` : ''}
+</div>` : ''
 
   const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8">
 <title>${isQuote ? 'Devis' : 'Facture'} ${doc.id || ''}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111;padding:40px;font-size:13px}
-.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
-.co{font-size:22px;font-weight:900;color:#7c3aed;margin-bottom:6px}
-.meta{color:#555;font-size:12px;line-height:1.7}
-.doc-title{font-size:28px;font-weight:900;text-align:right;color:#111}
-.doc-ref{text-align:right;color:#666;font-size:12px;margin-top:4px;line-height:1.7}
-.client-box{background:#f5f5f5;border-radius:10px;padding:14px 18px;margin-bottom:24px}
-.lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}
-.cn{font-size:14px;font-weight:600}.cs{font-size:12px;color:#666;margin-top:2px}
-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-thead th{border-bottom:2px solid #e5e5e5;padding:10px 8px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#666}
+html,body{width:215.9mm;background:#fff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;color:#111;font-size:12px;padding:18mm 20mm}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:18px;border-bottom:3px solid #7c3aed}
+.co{font-size:20px;font-weight:900;color:#7c3aed;margin-bottom:5px;letter-spacing:-.3px}
+.meta{color:#555;font-size:11px;line-height:1.7}
+.doc-title{font-size:26px;font-weight:900;text-align:right;color:#111;letter-spacing:-1px}
+.doc-ref{text-align:right;color:#666;font-size:11px;margin-top:5px;line-height:1.8}
+.client-box{background:#f7f7f7;border-radius:8px;padding:12px 16px;margin-bottom:16px}
+.prestation{border:1px solid #e8e8e8;border-radius:8px;padding:12px 16px;margin-bottom:16px}
+.lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#999;margin-bottom:6px}
+.cn{font-size:13px;font-weight:700}.cs{font-size:11px;color:#666;margin-top:2px}
+.prow{display:flex;gap:24px}
+.pcell{min-width:80px}
+.plbl{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:2px}
+.pval{font-size:13px;font-weight:600}
+.popts{margin-top:8px;padding-top:8px;border-top:1px solid #eee;font-size:11px;color:#555}
+table{width:100%;border-collapse:collapse;margin-bottom:18px}
+thead th{background:#f7f7f7;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#666}
 thead th:not(:first-child){text-align:right}
-tbody td{padding:10px 8px;border-bottom:1px solid #f0f0f0}
+tbody td{padding:9px 10px;border-bottom:1px solid #f0f0f0;font-size:12px}
 tbody td:not(:first-child){text-align:right}
-.totals{display:flex;justify-content:flex-end;margin-bottom:28px}
-.ti{width:220px}
-.tr{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:#555}
-.tr.tot{border-top:2px solid #e5e5e5;margin-top:6px;padding-top:8px;font-weight:900;font-size:15px;color:#111}
+.totals{display:flex;justify-content:flex-end;margin-bottom:24px}
+.ti{width:210px}
+.tr{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#666}
+.tr.tot{border-top:2px solid #222;margin-top:6px;padding-top:8px;font-weight:900;font-size:14px;color:#111}
 .tr.tot span:last-child{color:#7c3aed}
-.foot{border-top:1px solid #e5e5e5;padding-top:16px;font-size:11px;color:#666;line-height:1.9}
-.foot strong{font-weight:700}
-@media print{body{padding:20px}@page{margin:15mm}}
+.foot{border-top:1px solid #ddd;padding-top:14px;font-size:10px;color:#777;line-height:2}
+.foot strong{font-weight:700;color:#555}
+.watermark{position:fixed;bottom:18mm;right:20mm;font-size:9px;color:#ccc;font-style:italic}
+@media print{
+  html,body{width:215.9mm}
+  @page{size:letter;margin:0}
+  body{padding:18mm 20mm}
+  .watermark{position:fixed}
+}
 </style></head><body>
 <div class="header">
   <div>
@@ -439,10 +571,10 @@ tbody td:not(:first-child){text-align:right}
   <div>
     <div class="doc-title">${isQuote ? 'DEVIS' : 'FACTURE'}</div>
     <div class="doc-ref">
-      <div>N° ${doc.id || ''}</div>
+      <div><strong>N°</strong> ${doc.id || ''}</div>
       <div>Date : ${doc.date || ''}</div>
-      ${doc.dueDate ? `<div>Échéance : ${doc.dueDate}</div>` : ''}
-      ${doc.validUntil ? `<div>Valide jusqu'au : ${doc.validUntil}</div>` : ''}
+      ${doc.dueDate   ? `<div>Échéance : ${doc.dueDate}</div>` : ''}
+      ${doc.validUntil? `<div>Valide jusqu'au : ${doc.validUntil}</div>` : ''}
     </div>
   </div>
 </div>
@@ -450,11 +582,12 @@ tbody td:not(:first-child){text-align:right}
   <div class="lbl">Facturer à</div>
   <div class="cn">${doc.clientName || ''}</div>
   ${doc.clientCompany ? `<div class="cs">${doc.clientCompany}</div>` : ''}
-  ${doc.clientEmail ? `<div class="cs">${doc.clientEmail}</div>` : ''}
+  ${doc.clientEmail   ? `<div class="cs">${doc.clientEmail}</div>` : ''}
 </div>
+${prestationBlock}
 <table>
-  <thead><tr><th>Description</th><th>Qté</th><th>Prix unit.</th><th>Total HT</th></tr></thead>
-  <tbody>${items.map(it => `<tr><td>${it.description || ''}</td><td>${it.qty || 1}</td><td>${it.unitPrice} CAD</td><td>${(it.qty || 1) * it.unitPrice} CAD</td></tr>`).join('')}</tbody>
+  <thead><tr><th style="width:55%">Description</th><th>Qté</th><th>Prix unit.</th><th>Total HT</th></tr></thead>
+  <tbody>${items.map(it => `<tr><td>${it.description || ''}</td><td>${it.qty || 1}</td><td>${it.unitPrice} CAD</td><td><strong>${(it.qty || 1) * it.unitPrice} CAD</strong></td></tr>`).join('')}</tbody>
 </table>
 <div class="totals"><div class="ti">
   <div class="tr"><span>Sous-total HT</span><span>${totalHT} CAD</span></div>
@@ -464,13 +597,14 @@ tbody td:not(:first-child){text-align:right}
 </div></div>
 <div class="foot">
   ${template?.paymentTerms ? `<div><strong>Conditions :</strong> ${template.paymentTerms}</div>` : ''}
-  ${template?.bankInfo ? `<div><strong>Banque :</strong> ${template.bankInfo}</div>` : ''}
-  ${template?.tps ? `<div>N° TPS : ${template.tps}</div>` : ''}
-  ${template?.tvq ? `<div>N° TVQ : ${template.tvq}</div>` : ''}
-  ${doc.quoteDate ? `<div style="margin-top:8px;color:#999">Édition du devis : ${doc.quoteDate}</div>` : ''}
-  ${doc.notes ? `<div style="margin-top:6px"><em>${doc.notes}</em></div>` : ''}
-  ${template?.footer ? `<div style="margin-top:6px"><em>${template.footer}</em></div>` : ''}
+  ${template?.bankInfo     ? `<div><strong>Banque :</strong> ${template.bankInfo}</div>` : ''}
+  ${template?.tps          ? `<div>N° TPS : ${template.tps}</div>` : ''}
+  ${template?.tvq          ? `<div>N° TVQ : ${template.tvq}</div>` : ''}
+  ${doc.quoteDate          ? `<div style="margin-top:8px;color:#aaa">Édition du devis : ${doc.quoteDate}</div>` : ''}
+  ${doc.notes              ? `<div style="margin-top:6px"><em>${doc.notes}</em></div>` : ''}
+  ${template?.footer       ? `<div style="margin-top:6px"><em>${template.footer}</em></div>` : ''}
 </div>
+<div class="watermark">${template?.company || 'Level Studios'} — ${doc.id || ''}</div>
 </body></html>`
 
   const win = window.open('', '_blank')
@@ -486,12 +620,14 @@ const emptyInvoiceForm = {
   date: new Date().toISOString().split('T')[0], dueDate: '',
   items: [{ description: '', qty: 1, unitPrice: 0 }],
   notes: '', status: 'unpaid', type: 'invoice',
+  formule: '', heures: '', nbPersonnes: '', selectedOptions: [],
 }
 const emptyDevisForm = {
   clientName: '', clientEmail: '', clientCompany: '',
   date: new Date().toISOString().split('T')[0], validUntil: '',
   items: [{ description: '', qty: 1, unitPrice: 0 }],
   notes: '', status: 'draft', type: 'quote',
+  formule: '', heures: '', nbPersonnes: '', selectedOptions: [],
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -641,7 +777,7 @@ export default function AdminRecette() {
   }
   function openEditInv(inv) {
     setEditingInv(inv)
-    setInvForm({ clientName: inv.clientName || '', clientEmail: inv.clientEmail || '', clientCompany: inv.clientCompany || '', clientAddress: inv.clientAddress || '', date: inv.date || '', dueDate: inv.dueDate || '', items: inv.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: inv.notes || '', status: inv.status || 'unpaid', type: 'invoice' })
+    setInvForm({ clientName: inv.clientName || '', clientEmail: inv.clientEmail || '', clientCompany: inv.clientCompany || '', clientAddress: inv.clientAddress || '', date: inv.date || '', dueDate: inv.dueDate || '', items: inv.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: inv.notes || '', status: inv.status || 'unpaid', type: 'invoice', formule: inv.formule || '', heures: inv.heures || '', nbPersonnes: inv.nbPersonnes || '', selectedOptions: inv.selectedOptions || [] })
     setShowInvModal(true)
   }
   function handleMarkInvPaid(id) { Store.updateInvoice(id, { status: 'paid' }); reloadInvoices() }
@@ -667,7 +803,7 @@ export default function AdminRecette() {
   }
   function openEditDevis(d) {
     setEditingDevis(d)
-    setDevisForm({ clientName: d.clientName || '', clientEmail: d.clientEmail || '', clientCompany: d.clientCompany || '', date: d.date || '', validUntil: d.validUntil || '', items: d.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: d.notes || '', status: d.status || 'draft', type: 'quote' })
+    setDevisForm({ clientName: d.clientName || '', clientEmail: d.clientEmail || '', clientCompany: d.clientCompany || '', date: d.date || '', validUntil: d.validUntil || '', items: d.items || [{ description: '', qty: 1, unitPrice: 0 }], notes: d.notes || '', status: d.status || 'draft', type: 'quote', formule: d.formule || '', heures: d.heures || '', nbPersonnes: d.nbPersonnes || '', selectedOptions: d.selectedOptions || [] })
     setShowDevisModal(true)
   }
   function convertToInvoice(devis) {
