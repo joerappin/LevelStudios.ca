@@ -48,6 +48,9 @@ import EmployeeLeave from './pages/employee/EmployeeLeave'
 import EmployeeAccount from './pages/employee/EmployeeAccount'
 import EmployeeAlerts from './pages/employee/EmployeeAlerts'
 
+// Admin RH
+import AdminRH from './pages/admin/AdminRH'
+
 // Chef de Projet pages
 import ChefDashboard from './pages/chef/ChefDashboard'
 import ChefCalendar from './pages/chef/ChefCalendar'
@@ -60,6 +63,7 @@ import ChefMessaging from './pages/chef/ChefMessaging'
 import ChefAccount from './pages/chef/ChefAccount'
 import ChefSav from './pages/chef/ChefSav'
 import ChefPerf from './pages/chef/ChefPerf'
+import ChefRH from './pages/chef/ChefRH'
 
 // Rushes pages
 import EmployeeRushes from './pages/employee/EmployeeRushes'
@@ -184,6 +188,7 @@ function AppRoutes() {
       <Route path="/admin/satisfaction" element={<ProtectedRoute requiredType="admin"><AdminSatisfaction /></ProtectedRoute>} />
       <Route path="/admin/index" element={<ProtectedRoute requiredType="admin"><AdminIndex /></ProtectedRoute>} />
       <Route path="/admin/editor" element={<ProtectedRoute requiredType="admin"><AdminPageEditor /></ProtectedRoute>} />
+      <Route path="/admin/rh" element={<ProtectedRoute requiredType="admin"><AdminRH /></ProtectedRoute>} />
 
       <Route path="/employee/dashboard" element={<ProtectedRoute requiredType="employee"><EmployeeDashboard /></ProtectedRoute>} />
       <Route path="/employee/projects" element={<ProtectedRoute requiredType="employee"><EmployeeProjects /></ProtectedRoute>} />
@@ -206,6 +211,7 @@ function AppRoutes() {
       <Route path="/chef/account" element={<ProtectedRoute requiredType="employee"><ChefAccount /></ProtectedRoute>} />
       <Route path="/chef/sav" element={<ProtectedRoute requiredType="employee"><ChefSav /></ProtectedRoute>} />
       <Route path="/chef/perf" element={<ProtectedRoute requiredType="employee"><ChefPerf /></ProtectedRoute>} />
+      <Route path="/chef/rh" element={<ProtectedRoute requiredType="employee"><ChefRH /></ProtectedRoute>} />
 
       {/* Client pages — classic sidebar layout (used when admin/chef impersonates a client) */}
       <Route path="/client/dashboard"    element={<ProtectedRoute requiredType="client"><ClientDashboard /></ProtectedRoute>} />

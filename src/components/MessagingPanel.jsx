@@ -440,9 +440,19 @@ export default function MessagingPanel({ navItems, title = 'Messagerie' }) {
   const handleSelect = (mail) => {
     setSelectedMail(mail)
     const isRecipient = mail.to?.some(r => r.email === myEmail) || mail.cc?.some(r => r.email === myEmail)
-    if (!mail.read && isRecipient) {
-      Store.updateMail(mail.id, { read: true })
-      reload()
+    if (isRecipient) {
+      const updates = {}
+      if (!mail.read) updates.read = true
+      if (mail.requires_receipt) {
+        const already = (mail.read_by || []).some(r => r.email === myEmail)
+        if (!already) {
+          updates.read_by = [...(mail.read_by || []), { email: myEmail, name: myName, read_at: new Date().toISOString() }]
+        }
+      }
+      if (Object.keys(updates).length > 0) {
+        Store.updateMail(mail.id, updates)
+        reload()
+      }
     }
   }
 

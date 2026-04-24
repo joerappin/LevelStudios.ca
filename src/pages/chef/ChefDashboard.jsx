@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Calendar, ClipboardList, FolderOpen,
   Bell, HardDrive, MessageSquare, UserCircle, Clock, TrendingUp,
-  Users, CheckCircle, AlertCircle, PlusCircle, Headphones, Medal
+  Users, CheckCircle, AlertCircle, PlusCircle, Headphones, Medal, Briefcase,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -23,6 +23,7 @@ export const CHEF_NAV = [
   { label: 'Messagerie',   path: '/chef/messaging',    icon: <MessageSquare className="w-4 h-4" /> },
   { label: 'Performance',  path: '/chef/perf',         icon: <Medal className="w-4 h-4" /> },
   { label: 'SAV',          path: '/chef/sav',          icon: <Headphones className="w-4 h-4" /> },
+  { label: 'RH',           path: '/chef/rh',           icon: <Briefcase className="w-4 h-4" /> },
   { separator: true },
   { label: 'Profil',       path: '/chef/account',      icon: <UserCircle className="w-4 h-4" /> },
 ]

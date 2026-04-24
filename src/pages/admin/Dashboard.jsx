@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, Calendar, ClipboardList, FolderOpen, Zap,
   MessageSquare, HeadphonesIcon, Megaphone, Tag, Clock, BookOpen,
   Wrench, UserCheck, TrendingUp, AlertCircle, Bell, Plus, CreditCard,
-  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt, Grid, Camera,
+  Timer, BarChart3, CheckCircle2, UserPlus, FlaskConical, Star, DollarSign, GitBranch, Medal, Receipt, Grid, Camera, Briefcase,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { Store } from '../../data/store'
@@ -35,6 +35,7 @@ const NAV = [
   { separator: true },
   { labelKey: 'nav_check',         path: createPageUrl('AdminCheck'),         icon: <Clock className="w-4 h-4" /> },
   { labelKey: 'nav_perf',          path: '/admin/perf',                       icon: <Medal className="w-4 h-4" /> },
+  { label: 'RH',                   path: '/admin/rh',                         icon: <Briefcase className="w-4 h-4" /> },
   { labelKey: 'nav_boarding',      path: createPageUrl('AdminBoarding'),      icon: <UserCheck className="w-4 h-4" /> },
   { labelKey: 'nav_manual',        path: createPageUrl('AdminManual'),        icon: <BookOpen className="w-4 h-4" /> },
   { labelKey: 'nav_tool',          path: createPageUrl('AdminTool'),          icon: <Wrench className="w-4 h-4" /> },
