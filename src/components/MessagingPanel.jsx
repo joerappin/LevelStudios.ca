@@ -3,8 +3,21 @@ import {
   Send, Plus, X, Trash2, Inbox, AlertTriangle, Reply, Paperclip,
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter,
   AlignRight, AlignJustify, Search, FileText, Mail, FilePenLine,
-  Highlighter, Tag,
+  Highlighter, Tag, Check,
 } from 'lucide-react'
+
+// ─── Double coche style WhatsApp ──────────────────────────────────────────────
+function ReadTicks({ mail }) {
+  if (mail.draft || !mail.sent_at) return null
+  const isRead = !!mail.read
+  const color  = isRead ? '#3b82f6' : '#71717a'
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 1 }} title={isRead ? 'Lu' : 'Distribué'}>
+      <Check size={10} style={{ color, strokeWidth: 2.8 }} />
+      <Check size={10} style={{ color, strokeWidth: 2.8, marginLeft: '-5px' }} />
+    </span>
+  )
+}
 import Layout from './Layout'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
@@ -635,10 +648,13 @@ export default function MessagingPanel({ navItems, title = 'Messagerie' }) {
                       {unread && <span className="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />}
                       <span className={`text-sm truncate ${unread ? `font-bold ${textPrimary}` : textSecondary}`}>{displayName}</span>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {m.urgent && <AlertTriangle size={11} className="text-red-400" />}
-                      {m.attachments?.length > 0 && <Paperclip size={10} className={textSecondary} />}
-                      <span className={`text-[10px] ${textSecondary}`}>{fmtDate(m.created_at)}</span>
+                    <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        {m.urgent && <AlertTriangle size={11} className="text-red-400" />}
+                        {m.attachments?.length > 0 && <Paperclip size={10} className={textSecondary} />}
+                        <span className={`text-[10px] ${textSecondary}`}>{fmtDate(m.created_at)}</span>
+                      </div>
+                      {fromMe && !m.draft && <ReadTicks mail={m} />}
                     </div>
                   </div>
                   <span className={`text-xs truncate ${unread ? `font-semibold ${textPrimary}` : textSecondary}`}>
