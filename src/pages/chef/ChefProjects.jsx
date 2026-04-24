@@ -6,19 +6,22 @@ import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
 import { cn } from '../../utils'
 
-const PROD_COLUMNS = ['Booking','Todo','En ligne','Pré à faire','Retour de livraison','En cours','Export','Level OK','Montage','Argent Livré','Annulé','Absent','Problème']
+const PROD_COLUMNS = ['Booking','Today','En cours','Export','Essentiel Livré','Pré à faire','Montage','Argent Livré','Retour de livraison','Level OK','Annulé','Absent','Problème']
 const POST_COLUMNS = ['En attente de brief','Assigné Monteur','En cours','Retour','V1','V2','V3','Level OK','Problème']
 const STUDIOS = ['Tous', 'Studio A', 'Studio B', 'Studio C']
 
 const STATUS_COLORS = {
-  'En cours':     'bg-blue-500/20 text-blue-400',
-  'Argent Livré': 'bg-green-500/20 text-green-400',
-  'Annulé':       'bg-red-500/20 text-red-400',
-  'Problème':     'bg-red-600/20 text-red-500',
-  'Absent':       'bg-gray-500/20 text-gray-400',
-  'Level OK':     'bg-cyan-500/20 text-cyan-400',
-  'Export':       'bg-indigo-500/20 text-indigo-400',
-  'Retour':       'bg-orange-500/20 text-orange-400',
+  'Today':              'bg-violet-500/20 text-violet-400',
+  'En cours':           'bg-blue-500/20 text-blue-400',
+  'Export':             'bg-indigo-500/20 text-indigo-400',
+  'Essentiel Livré':    'bg-teal-500/20 text-teal-400',
+  'Argent Livré':       'bg-green-500/20 text-green-400',
+  'Retour de livraison':'bg-orange-500/20 text-orange-400',
+  'Level OK':           'bg-cyan-500/20 text-cyan-400',
+  'Annulé':             'bg-red-500/20 text-red-400',
+  'Absent':             'bg-gray-500/20 text-gray-400',
+  'Problème':           'bg-red-600/20 text-red-500',
+  'Retour':             'bg-orange-500/20 text-orange-400',
 }
 
 export default function ChefProjects() {
@@ -43,7 +46,7 @@ export default function ChefProjects() {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
     Store.getProjects().forEach(p => {
-      if (p.status === 'Booking' && p.date === today) Store.updateProject(p.id, { status: 'Todo' })
+      if (p.status === 'Booking' && p.date === today) Store.updateProject(p.id, { status: 'Today' })
     })
     setProjects(Store.getProjects())
     // Merge ls_employees + ls_accounts (employee type) to survive any sync gap
