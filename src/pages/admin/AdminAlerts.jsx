@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Send, Check, Clock, Film, AlertTriangle, AlertCircle, RotateCcw } from 'lucide-react'
+import { Bell, Send, Check, Clock, Film, AlertTriangle, AlertCircle, RotateCcw, CheckCircle2, FolderOpen } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -9,9 +9,12 @@ import { cn } from '../../utils'
 import { useReservations } from '../../hooks/useReservations'
 
 const ALERT_TYPES = [
-  { key: 'Retard',  label: 'Retard',  icon: Clock,          cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-  { key: 'Retour',  label: 'Retour',  icon: RotateCcw,      cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  { key: 'Urgent',  label: 'Urgent',  icon: AlertTriangle,  cls: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { key: 'Retard',           label: 'Retard',           icon: Clock,          cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+  { key: 'Retour',           label: 'Retour',           icon: RotateCcw,      cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  { key: 'Urgent',           label: 'Urgent',           icon: AlertTriangle,  cls: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { key: 'retour_livraison', label: 'Retour livraison', icon: FolderOpen,     cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  { key: 'assignation',      label: 'Assignation',      icon: FolderOpen,     cls: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
+  { key: 'tache_accomplie',  label: 'Tâche accomplie',  icon: CheckCircle2,   cls: 'bg-green-500/20 text-green-400 border-green-500/30' },
 ]
 
 function reservationLabel(r) {
@@ -225,28 +228,52 @@ export default function AdminAlerts() {
               </div>
             ) : (
               <div className="divide-y" style={{ borderColor: isDark ? '#27272a' : '#f3f4f6' }}>
-                {alerts.map(alert => {
+                {[...alerts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(alert => {
                   const typeInfo = ALERT_TYPES.find(t => t.key === alert.type)
                   const Icon = typeInfo?.icon || AlertCircle
-                  const isRead = alert.status === 'read' || alert.status === 'lu'
+                  const isRead = alert.status === 'read' || alert.status === 'lu' || alert.status === 'done'
+                  const isDone = alert.type === 'tache_accomplie'
+                  const typeLabel = typeInfo?.label || alert.type
                   return (
                     <div
                       key={alert.id}
-                      className={cn('px-5 py-4 flex items-start gap-4 transition-colors', !isRead && (isDark ? 'bg-zinc-800/30' : 'bg-violet-50/40'), isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-gray-50', 'cursor-pointer')}
+                      className={cn(
+                        'px-5 py-4 flex items-start gap-4 transition-colors cursor-pointer',
+                        isDone ? (isDark ? 'bg-green-500/5' : 'bg-green-50/60') : (!isRead && (isDark ? 'bg-zinc-800/30' : 'bg-violet-50/40')),
+                        isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-gray-50'
+                      )}
                       onClick={() => { Store.updateAlert(alert.id, { status: 'read' }); setAlerts(Store.getAlerts()) }}
                     >
-                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0', typeInfo?.cls || 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30')}>
+                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border', typeInfo?.cls || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30')}>
                         <Icon size={15} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={cn('text-sm font-semibold truncate', textPrimary)}>{alert.to_name || alert.to_email}</span>
-                          <span className={cn('flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full border font-semibold', typeInfo?.cls || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30')}>
-                            {alert.type}
-                          </span>
-                          {!isRead && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-violet-500" />}
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          {/* For tache_accomplie: show FROM (employee) prominently */}
+                          {isDone ? (
+                            <>
+                              <span className={cn('text-sm font-semibold', textPrimary)}>{alert.from_name || alert.from_email}</span>
+                              <span className={cn('flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full border font-semibold', typeInfo?.cls)}>
+                                {typeLabel}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className={cn('text-sm font-semibold truncate', textPrimary)}>→ {alert.to_name || alert.to_email}</span>
+                              <span className={cn('flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full border font-semibold', typeInfo?.cls || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30')}>
+                                {typeLabel}
+                              </span>
+                              {!isRead && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-violet-500" />}
+                            </>
+                          )}
                         </div>
                         <p className={cn('text-sm leading-snug', textPrimary)}>{alert.message}</p>
+                        {alert.project_title && (
+                          <div className={cn('flex items-center gap-1 mt-1.5 text-xs font-medium', textSecondary)}>
+                            <FolderOpen size={10} className="flex-shrink-0" />
+                            <span className="truncate">{alert.project_title}</span>
+                          </div>
+                        )}
                         {alert.reservation_label && (
                           <div className={cn('flex items-center gap-1 mt-1.5 text-xs', textSecondary)}>
                             <Film size={10} className="flex-shrink-0" />
@@ -260,7 +287,7 @@ export default function AdminAlerts() {
                           <span className={cn('flex items-center gap-1 text-xs', isRead ? 'text-green-400' : textSecondary)}>
                             {isRead ? <><Check size={10} /> Lu</> : <><Clock size={10} /> Non lu</>}
                           </span>
-                          {alert.from_name && (
+                          {!isDone && alert.from_name && (
                             <span className={cn('text-xs', textSecondary)}>· de {alert.from_name}</span>
                           )}
                         </div>

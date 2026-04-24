@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Check, Clock, Film, FolderOpen } from 'lucide-react'
+import { Bell, Check, Clock, Film, FolderOpen, CheckCircle2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { EMPLOYEE_NAV } from './EmployeeDashboard'
@@ -42,6 +42,27 @@ export default function EmployeeAlerts() {
   function markAllRead() {
     alerts.forEach(a => {
       if (a.status !== 'read' && a.status !== 'lu') Store.updateAlert(a.id, { status: 'read' })
+    })
+    reload()
+  }
+
+  function markTaskDone(alert) {
+    Store.updateAlert(alert.id, { status: 'done' })
+    // Notify all admins and chefs de projet
+    const admins = Store.getAccounts().filter(
+      a => a.type === 'admin' || ['admin', 'chef_projet'].includes(a.roleKey)
+    )
+    admins.forEach(admin => {
+      Store.addAlert({
+        to_email: admin.email,
+        to_name: admin.name,
+        from_name: user?.name || user?.email,
+        from_email: user?.email,
+        type: 'tache_accomplie',
+        message: `${user?.name || user?.email} a accompli la tâche demandée pour le projet "${alert.project_title || 'inconnu'}".`,
+        project_id: alert.project_id,
+        project_title: alert.project_title,
+      })
     })
     reload()
   }
@@ -145,6 +166,20 @@ export default function EmployeeAlerts() {
                       {isProjectAlert && (
                         <div className={cn('mt-2 text-xs font-semibold flex items-center gap-1', cls.split(' ')[1])}>
                           <FolderOpen size={11} /> Voir la carte dans To Do →
+                        </div>
+                      )}
+                      {/* Tâche accomplie button */}
+                      {isProjectAlert && alert.status !== 'done' && (
+                        <button
+                          onClick={e => { e.stopPropagation(); markTaskDone(alert) }}
+                          className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-500/15 hover:bg-green-500/25 border border-green-500/30 text-green-400 text-xs font-semibold transition-colors"
+                        >
+                          <CheckCircle2 size={13} /> Marquer la tâche comme accomplie
+                        </button>
+                      )}
+                      {isProjectAlert && alert.status === 'done' && (
+                        <div className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-xs font-semibold w-fit">
+                          <Check size={13} /> Tâche accomplie — retour envoyé
                         </div>
                       )}
                       <div className="flex items-center gap-3 mt-1.5">
