@@ -88,11 +88,11 @@ export default function AdminProjects() {
     if (targetCol === 'Retour de livraison' && project.assigned_to) {
       Store.addAlert({
         to_email: project.assigned_to,
-        title: 'Retour de livraison',
-        body: `Le projet "${project.title}" a été déplacé en Retour de livraison. Veuillez traiter cette demande.`,
+        from_name: user?.name || 'Admin',
         type: 'retour_livraison',
+        message: `La carte projet "${project.title}" est en Retour de livraison. Veuillez consulter la carte dans votre onglet To Do pour prendre connaissance du problème rencontré.`,
         project_id: project.id,
-        from: user?.name || 'Admin',
+        project_title: project.title,
       })
     }
     Store.updateProject(project.id, updates)
@@ -107,6 +107,21 @@ export default function AdminProjects() {
     setProjects(Store.getProjects())
     setShowAddModal(false)
     setAddForm({ title: '', client_name: '', client_email: '', studio: 'Studio A', status: columns[0], assigned_to: '', pipeline: mode })
+  }
+
+  function assignProject(projectId, newEmail, projectTitle) {
+    Store.updateProject(projectId, { assigned_to: newEmail })
+    setProjects(Store.getProjects())
+    if (newEmail) {
+      Store.addAlert({
+        to_email: newEmail,
+        from_name: user?.name || 'Admin',
+        type: 'assignation',
+        message: `Vous avez été assigné au projet "${projectTitle}". Consultez votre onglet To Do pour accéder à la carte.`,
+        project_id: projectId,
+        project_title: projectTitle,
+      })
+    }
   }
 
   function handleCommentAdded(projectId, count) {
@@ -206,7 +221,7 @@ export default function AdminProjects() {
                               <UserCheck size={10} className={p.assigned_to ? 'text-violet-400 ml-1.5 flex-shrink-0' : (isDark ? 'text-zinc-600 ml-1.5 flex-shrink-0' : 'text-gray-400 ml-1.5 flex-shrink-0')} />
                               <select
                                 value={p.assigned_to || ''}
-                                onChange={e => { Store.updateProject(p.id, { assigned_to: e.target.value }); setProjects(Store.getProjects()) }}
+                                onChange={e => assignProject(p.id, e.target.value, p.title)}
                                 className={cn('w-full text-[10px] px-1 py-1 bg-transparent cursor-pointer focus:outline-none', p.assigned_to ? (isDark ? 'text-violet-300 font-semibold' : 'text-violet-600 font-semibold') : (isDark ? 'text-zinc-400' : 'text-gray-500'))}
                               >
                                 <option value="">— Assigner</option>
@@ -288,8 +303,7 @@ export default function AdminProjects() {
                 <select
                   value={selectedCard.assigned_to || ''}
                   onChange={e => {
-                    Store.updateProject(selectedCard.id, { assigned_to: e.target.value })
-                    setProjects(Store.getProjects())
+                    assignProject(selectedCard.id, e.target.value, selectedCard.title)
                     setSelectedCard({ ...selectedCard, assigned_to: e.target.value })
                   }}
                   className={cn('w-full px-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-violet-500', inputClass)}

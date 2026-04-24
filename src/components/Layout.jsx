@@ -50,6 +50,7 @@ export default function Layout({ children, navItems, title }) {
   const [adminChatOpen, setAdminChatOpen] = useState(false)
   const [adminChatUnread, setAdminChatUnread] = useState(0)
   const [unreadMails, setUnreadMails]   = useState(0)
+  const [unreadAlerts, setUnreadAlerts] = useState(0)
 
   useEffect(() => {
     if (user?.type !== 'admin' && user?.roleKey !== 'chef_projet') return
@@ -79,6 +80,11 @@ export default function Layout({ children, navItems, title }) {
         (m.to?.some(r => r.email === user.email) || m.cc?.some(r => r.email === user.email))
       ).length
       setUnreadMails(count)
+      // Unread alerts for this user (employees)
+      const alertCount = Store.getAlerts().filter(
+        a => a.to_email === user.email && a.status !== 'read' && a.status !== 'lu'
+      ).length
+      setUnreadAlerts(alertCount)
     }
     compute()
     const id = setInterval(compute, 20000)
@@ -210,6 +216,20 @@ export default function Layout({ children, navItems, title }) {
                     minWidth: '18px', textAlign: 'center',
                     boxShadow: '0 0 8px rgba(232,23,93,0.7)',
                   }}>{unreadMails > 99 ? '99+' : unreadMails}</span>
+                </span>
+              ) : item.path?.includes('alerts') && unreadAlerts > 0 ? (
+                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{
+                    position: 'absolute', inset: 0, borderRadius: '999px',
+                    background: '#ef4444', opacity: 0.45,
+                    animation: 'mail-ping 1.4s cubic-bezier(0,0,0.2,1) infinite',
+                  }} />
+                  <span style={{
+                    position: 'relative', fontSize: '10px', padding: '1px 6px', borderRadius: '999px',
+                    fontWeight: 800, background: '#ef4444', color: '#fff',
+                    minWidth: '18px', textAlign: 'center',
+                    boxShadow: '0 0 8px rgba(239,68,68,0.7)',
+                  }}>{unreadAlerts > 99 ? '99+' : unreadAlerts}</span>
                 </span>
               ) : item.badge ? (
                 <span style={{
