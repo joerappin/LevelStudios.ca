@@ -154,9 +154,9 @@ export const Store = {
           newStatus = 'Annulé'
         } else if (updated.status === 'absent') {
           newStatus = 'Absent'
-        } else if (hasScheduleChange && (projects[pIdx].status === 'Booking' || projects[pIdx].status === 'Todo')) {
+        } else if (hasScheduleChange && (projects[pIdx].status === 'Booking' || projects[pIdx].status === 'Today')) {
           const today = new Date().toISOString().split('T')[0]
-          newStatus = updated.date === today ? 'Todo' : 'Booking'
+          newStatus = updated.date === today ? 'Today' : 'Booking'
         }
 
         projects[pIdx] = {
