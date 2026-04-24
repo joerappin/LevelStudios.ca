@@ -248,7 +248,7 @@ export default function ClientLayout({ children, transparent = false, title }) {
     )
 
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', background: S.page }}>
+      <div style={{ minHeight: '100vh', minWidth: 'fit-content', display: 'flex', background: S.page }}>
         {sidebarOpen && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 40, backdropFilter: 'blur(4px)' }}
             className="lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -271,7 +271,7 @@ export default function ClientLayout({ children, transparent = false, title }) {
             {impersonatedBy && <ModeToggle />}
           </header>
 
-          <main style={{ flex: 1, padding: '24px', overflowX: 'hidden', color: textPrimary }}>
+          <main style={{ flex: 1, padding: '24px', color: textPrimary }}>
             {children}
           </main>
         </div>
