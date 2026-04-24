@@ -656,4 +656,21 @@ export const Store = {
   saveInvoiceTemplate: (data) => {
     localStorage.setItem('ls_invoice_template', JSON.stringify(data))
   },
+
+  // Project comments (chat per card)
+  getAllProjectComments: () => {
+    try { return JSON.parse(localStorage.getItem('ls_proj_comments') || '[]') } catch { return [] }
+  },
+  getProjectComments: (projectId) => {
+    try { return JSON.parse(localStorage.getItem('ls_proj_comments') || '[]').filter(c => c.projectId === projectId) } catch { return [] }
+  },
+  addProjectComment: (data) => {
+    try {
+      const all = JSON.parse(localStorage.getItem('ls_proj_comments') || '[]')
+      const comment = { id: `CMT-${Date.now()}`, created_at: new Date().toISOString(), ...data }
+      all.push(comment)
+      localStorage.setItem('ls_proj_comments', JSON.stringify(all))
+      return comment
+    } catch { return null }
+  },
 }

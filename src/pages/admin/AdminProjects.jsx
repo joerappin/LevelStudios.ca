@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, X, ArrowRightLeft, UserCheck } from 'lucide-react'
+import { Plus, X, ArrowRightLeft, UserCheck, MessageCircle } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
 import { useApp } from '../../contexts/AppContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { cn } from '../../utils'
+import ProjectCommentsModal from '../../components/ProjectCommentsModal'
 
 const PROD_COLUMNS = ['Booking','Todo','En ligne','Pré à faire','Retour de livraison','En cours','Export','Level OK','Montage','Argent Livré','Annulé','Absent','Problème']
 const POST_COLUMNS = ['En attente de brief','Assigné Monteur','En cours','Retour','V1','V2','V3','Level OK','Problème']
@@ -23,6 +25,7 @@ const STATUS_COLORS = {
 
 export default function AdminProjects() {
   const { theme } = useApp()
+  const { user } = useAuth()
   const isDark = theme === 'dark'
   const [mode, setMode] = useState('PROD')
   const [studioFilter, setStudioFilter] = useState('Tous')
@@ -31,14 +34,21 @@ export default function AdminProjects() {
   const [employees, setEmployees] = useState([])
   const [selectedCard, setSelectedCard] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [chatProject, setChatProject] = useState(null)
+  const [commentCounts, setCommentCounts] = useState({})
   const [addForm, setAddForm] = useState({ title: '', client_name: '', client_email: '', studio: 'Studio A', status: 'Booking', assigned_to: '', pipeline: 'PROD' })
 
-  const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
-  const textPrimary = isDark ? 'text-white' : 'text-gray-900'
+  const card          = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
+  const textPrimary   = isDark ? 'text-white' : 'text-gray-900'
   const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
-  const inputClass = isDark
-    ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
-    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+  const inputClass    = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+
+  function reloadCommentCounts() {
+    const all = Store.getAllProjectComments()
+    const counts = {}
+    all.forEach(c => { counts[c.projectId] = (counts[c.projectId] || 0) + 1 })
+    setCommentCounts(counts)
+  }
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
@@ -46,6 +56,7 @@ export default function AdminProjects() {
       if (p.status === 'Booking' && p.date === today) Store.updateProject(p.id, { status: 'Todo' })
     })
     setProjects(Store.getProjects())
+    reloadCommentCounts()
     // Merge ls_employees + ls_accounts (employee type) to survive any sync gap
     const fromEmp = Store.getEmployees()
     const fromAcc = Store.getAccounts().filter(a =>
@@ -73,6 +84,17 @@ export default function AdminProjects() {
       updates.status = targetCol === 'Montage' ? 'En attente de brief' : 'Retour'
       updates.pipeline = 'POST'
     }
+    // Alert assigned employee when moved to "Retour de livraison"
+    if (targetCol === 'Retour de livraison' && project.assigned_to) {
+      Store.addAlert({
+        to_email: project.assigned_to,
+        title: 'Retour de livraison',
+        body: `Le projet "${project.title}" a été déplacé en Retour de livraison. Veuillez traiter cette demande.`,
+        type: 'retour_livraison',
+        project_id: project.id,
+        from: user?.name || 'Admin',
+      })
+    }
     Store.updateProject(project.id, updates)
     setProjects(Store.getProjects())
     if (selectedCard?.id === project.id) setSelectedCard({ ...project, ...updates })
@@ -85,6 +107,10 @@ export default function AdminProjects() {
     setProjects(Store.getProjects())
     setShowAddModal(false)
     setAddForm({ title: '', client_name: '', client_email: '', studio: 'Studio A', status: columns[0], assigned_to: '', pipeline: mode })
+  }
+
+  function handleCommentAdded(projectId, count) {
+    setCommentCounts(prev => ({ ...prev, [projectId]: count }))
   }
 
   return (
@@ -105,18 +131,10 @@ export default function AdminProjects() {
               </button>
             ))}
           </div>
-          <select
-            value={studioFilter}
-            onChange={e => setStudioFilter(e.target.value)}
-            className={cn('px-3 py-2 rounded-xl text-sm border', inputClass)}
-          >
+          <select value={studioFilter} onChange={e => setStudioFilter(e.target.value)} className={cn('px-3 py-2 rounded-xl text-sm border', inputClass)}>
             {STUDIOS.map(s => <option key={s}>{s}</option>)}
           </select>
-          <select
-            value={techFilter}
-            onChange={e => setTechFilter(e.target.value)}
-            className={cn('px-3 py-2 rounded-xl text-sm border', inputClass)}
-          >
+          <select value={techFilter} onChange={e => setTechFilter(e.target.value)} className={cn('px-3 py-2 rounded-xl text-sm border', inputClass)}>
             <option value="">Tous les techniciens</option>
             {employees.map(emp => <option key={emp.id} value={emp.email}>{emp.name}</option>)}
           </select>
@@ -124,8 +142,7 @@ export default function AdminProjects() {
             onClick={() => setShowAddModal(true)}
             className="ml-auto flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
           >
-            <Plus size={14} />
-            Ajouter
+            <Plus size={14} /> Ajouter
           </button>
         </div>
 
@@ -143,48 +160,63 @@ export default function AdminProjects() {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    {colProjects.map(p => (
-                      <div
-                        key={p.id}
-                        onClick={() => setSelectedCard(p)}
-                        className={cn('border rounded-xl p-3 cursor-pointer transition-all', card, isDark ? 'hover:border-violet-600' : 'hover:border-violet-400')}
-                      >
-                        <div className={cn('text-xs font-semibold mb-1 truncate', textPrimary)}>{p.title}</div>
-                        <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
-                        {p.studio && (
-                          <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-1">{p.studio}</div>
-                        )}
-                        {p.date && (
-                          <div className={cn('text-[10px] mb-1', textSecondary)}>
-                            {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
-                          </div>
-                        )}
-                        <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
-                          <select
-                            value={p.status}
-                            onChange={e => moveCard(p, e.target.value)}
-                            className={cn('w-full text-[10px] px-1.5 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-1 focus:ring-violet-500', isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-gray-50 border-gray-200 text-gray-600')}
-                          >
-                            {columns.map(c => <option key={c} value={c}>{c}</option>)}
-                            {mode === 'PROD' && <option value="Retour">↳ Retour (POST)</option>}
-                          </select>
-                          <div className={cn('flex items-center gap-1 rounded-lg border overflow-hidden', isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200')}>
-                            <UserCheck size={10} className={p.assigned_to ? 'text-violet-400 ml-1.5 flex-shrink-0' : (isDark ? 'text-zinc-600 ml-1.5 flex-shrink-0' : 'text-gray-400 ml-1.5 flex-shrink-0')} />
-                            <select
-                              value={p.assigned_to || ''}
-                              onChange={e => {
-                                Store.updateProject(p.id, { assigned_to: e.target.value })
-                                setProjects(Store.getProjects())
-                              }}
-                              className={cn('w-full text-[10px] px-1 py-1 bg-transparent cursor-pointer focus:outline-none', p.assigned_to ? (isDark ? 'text-violet-300 font-semibold' : 'text-violet-600 font-semibold') : (isDark ? 'text-zinc-400' : 'text-gray-500'))}
+                    {colProjects.map(p => {
+                      const msgCount = commentCounts[p.id] || 0
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => setSelectedCard(p)}
+                          className={cn('border rounded-xl p-3 cursor-pointer transition-all', card, isDark ? 'hover:border-violet-600' : 'hover:border-violet-400')}
+                        >
+                          {/* Title row with chat bubble */}
+                          <div className="flex items-start justify-between gap-1 mb-1">
+                            <div className={cn('text-xs font-semibold truncate', textPrimary)}>{p.title}</div>
+                            <button
+                              onClick={e => { e.stopPropagation(); setChatProject(p) }}
+                              className="relative flex-shrink-0 p-0.5 rounded hover:opacity-80 transition-opacity"
+                              title={`${msgCount} message${msgCount !== 1 ? 's' : ''}`}
                             >
-                              <option value="">— Assigner</option>
-                              {employees.map(emp => <option key={emp.id} value={emp.email}>{emp.name}</option>)}
+                              <MessageCircle size={13} className={msgCount > 0 ? 'text-violet-400' : (isDark ? 'text-zinc-600' : 'text-gray-300')} />
+                              {msgCount > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-violet-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5 leading-none">
+                                  {msgCount > 99 ? '99+' : msgCount}
+                                </span>
+                              )}
+                            </button>
+                          </div>
+                          <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
+                          {p.studio && (
+                            <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-1">{p.studio}</div>
+                          )}
+                          {p.date && (
+                            <div className={cn('text-[10px] mb-1', textSecondary)}>
+                              {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
+                            </div>
+                          )}
+                          <div className="mt-2 space-y-1.5" onClick={e => e.stopPropagation()}>
+                            <select
+                              value={p.status}
+                              onChange={e => moveCard(p, e.target.value)}
+                              className={cn('w-full text-[10px] px-1.5 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-1 focus:ring-violet-500', isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-gray-50 border-gray-200 text-gray-600')}
+                            >
+                              {columns.map(c => <option key={c} value={c}>{c}</option>)}
+                              {mode === 'PROD' && <option value="Retour">↳ Retour (POST)</option>}
                             </select>
+                            <div className={cn('flex items-center gap-1 rounded-lg border overflow-hidden', isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200')}>
+                              <UserCheck size={10} className={p.assigned_to ? 'text-violet-400 ml-1.5 flex-shrink-0' : (isDark ? 'text-zinc-600 ml-1.5 flex-shrink-0' : 'text-gray-400 ml-1.5 flex-shrink-0')} />
+                              <select
+                                value={p.assigned_to || ''}
+                                onChange={e => { Store.updateProject(p.id, { assigned_to: e.target.value }); setProjects(Store.getProjects()) }}
+                                className={cn('w-full text-[10px] px-1 py-1 bg-transparent cursor-pointer focus:outline-none', p.assigned_to ? (isDark ? 'text-violet-300 font-semibold' : 'text-violet-600 font-semibold') : (isDark ? 'text-zinc-400' : 'text-gray-500'))}
+                              >
+                                <option value="">— Assigner</option>
+                                {employees.map(emp => <option key={emp.id} value={emp.email}>{emp.name}</option>)}
+                              </select>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -202,7 +234,21 @@ export default function AdminProjects() {
           >
             <div className="flex items-center justify-between">
               <h3 className={cn('font-bold text-lg', textPrimary)}>{selectedCard.title}</h3>
-              <button onClick={() => setSelectedCard(null)} className={textSecondary}><X size={18} /></button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setChatProject(selectedCard); setSelectedCard(null) }}
+                  className="relative p-1.5 rounded-lg hover:bg-violet-500/10 transition-colors"
+                  title="Chat"
+                >
+                  <MessageCircle size={16} className="text-violet-400" />
+                  {(commentCounts[selectedCard.id] || 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full bg-violet-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5">
+                      {commentCounts[selectedCard.id]}
+                    </span>
+                  )}
+                </button>
+                <button onClick={() => setSelectedCard(null)} className={textSecondary}><X size={18} /></button>
+              </div>
             </div>
             <div className="space-y-2">
               {[
@@ -312,6 +358,15 @@ export default function AdminProjects() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Comments modal */}
+      {chatProject && (
+        <ProjectCommentsModal
+          project={chatProject}
+          onClose={() => setChatProject(null)}
+          onCommentAdded={handleCommentAdded}
+        />
       )}
     </Layout>
   )

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { X, ArrowRightLeft } from 'lucide-react'
+import { X, ArrowRightLeft, MessageCircle } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { EMPLOYEE_NAV } from './EmployeeDashboard'
 import { Store } from '../../data/store'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { cn } from '../../utils'
+import ProjectCommentsModal from '../../components/ProjectCommentsModal'
 
 // Columns visible to ALL employees regardless of assignment
 const PUBLIC_COLS = new Set(['Booking', 'Todo'])
@@ -32,6 +33,8 @@ export default function EmployeeProjects() {
   const [mode, setMode] = useState('PROD')
   const [projects, setProjects] = useState([])
   const [selectedCard, setSelectedCard] = useState(null)
+  const [chatProject, setChatProject] = useState(null)
+  const [commentCounts, setCommentCounts] = useState({})
   const timerRef = useRef(null)
 
   const card = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
@@ -43,12 +46,14 @@ export default function EmployeeProjects() {
 
   const reload = () => {
     const today = new Date().toISOString().split('T')[0]
-    // Auto-promote Booking → Todo on day-of
     Store.getProjects().forEach(p => {
       if (p.status === 'Booking' && p.date === today) Store.updateProject(p.id, { status: 'Todo' })
     })
-    // Load all projects — visibility filtered in render
     setProjects(Store.getProjects())
+    const all = Store.getAllProjectComments()
+    const counts = {}
+    all.forEach(c => { counts[c.projectId] = (counts[c.projectId] || 0) + 1 })
+    setCommentCounts(counts)
   }
 
   useEffect(() => {
@@ -129,36 +134,52 @@ export default function EmployeeProjects() {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    {colProjects.map(p => (
-                      <div
-                        key={p.id}
-                        onClick={() => setSelectedCard(p)}
-                        className={cn('border rounded-xl p-3 cursor-pointer transition-all', card, isDark ? 'hover:border-violet-600' : 'hover:border-violet-400')}
-                      >
-                        <div className={cn('text-xs font-semibold mb-1 truncate', textPrimary)}>{p.title}</div>
-                        <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
-                        {p.studio && (
-                          <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-1">{p.studio}</div>
-                        )}
-                        {p.date && (
-                          <div className={cn('text-[10px] mb-1', textSecondary)}>
-                            {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
+                    {colProjects.map(p => {
+                      const msgCount = commentCounts[p.id] || 0
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => setSelectedCard(p)}
+                          className={cn('border rounded-xl p-3 cursor-pointer transition-all', card, isDark ? 'hover:border-violet-600' : 'hover:border-violet-400')}
+                        >
+                          <div className="flex items-start justify-between gap-1 mb-1">
+                            <div className={cn('text-xs font-semibold truncate', textPrimary)}>{p.title}</div>
+                            <button
+                              onClick={e => { e.stopPropagation(); setChatProject(p) }}
+                              className="relative flex-shrink-0 p-0.5 rounded hover:opacity-80 transition-opacity"
+                              title={`${msgCount} message${msgCount !== 1 ? 's' : ''}`}
+                            >
+                              <MessageCircle size={13} className={msgCount > 0 ? 'text-violet-400' : (isDark ? 'text-zinc-600' : 'text-gray-300')} />
+                              {msgCount > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-violet-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5 leading-none">
+                                  {msgCount > 99 ? '99+' : msgCount}
+                                </span>
+                              )}
+                            </button>
                           </div>
-                        )}
-                        {/* Move select */}
-                        <div className="mt-2" onClick={e => e.stopPropagation()}>
-                          <select
-                            value={p.status}
-                            onChange={e => moveCard(p, e.target.value)}
-                            className={cn('w-full text-[10px] px-1.5 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-1 focus:ring-violet-500', isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-gray-50 border-gray-200 text-gray-600')}
-                          >
-                            {columns.map(c => <option key={c} value={c}>{c}</option>)}
-                            {mode === 'PROD' && <option value="Montage">↳ Montage (POST)</option>}
-                            {mode === 'PROD' && <option value="Retour">↳ Retour (POST)</option>}
-                          </select>
+                          <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
+                          {p.studio && (
+                            <div className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 inline-block mb-1">{p.studio}</div>
+                          )}
+                          {p.date && (
+                            <div className={cn('text-[10px] mb-1', textSecondary)}>
+                              {p.date}{p.start_time ? ` · ${p.start_time}` : ''}{p.end_time ? `–${p.end_time}` : ''}
+                            </div>
+                          )}
+                          <div className="mt-2" onClick={e => e.stopPropagation()}>
+                            <select
+                              value={p.status}
+                              onChange={e => moveCard(p, e.target.value)}
+                              className={cn('w-full text-[10px] px-1.5 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-1 focus:ring-violet-500', isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-gray-50 border-gray-200 text-gray-600')}
+                            >
+                              {columns.map(c => <option key={c} value={c}>{c}</option>)}
+                              {mode === 'PROD' && <option value="Montage">↳ Montage (POST)</option>}
+                              {mode === 'PROD' && <option value="Retour">↳ Retour (POST)</option>}
+                            </select>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -173,6 +194,15 @@ export default function EmployeeProjects() {
         )}
       </div>
 
+      {/* Comments modal */}
+      {chatProject && (
+        <ProjectCommentsModal
+          project={chatProject}
+          onClose={() => setChatProject(null)}
+          onCommentAdded={(id, count) => setCommentCounts(prev => ({ ...prev, [id]: count }))}
+        />
+      )}
+
       {/* Card detail modal */}
       {selectedCard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setSelectedCard(null)}>
@@ -182,7 +212,20 @@ export default function EmployeeProjects() {
           >
             <div className="flex items-center justify-between">
               <h3 className={cn('font-bold text-lg', textPrimary)}>{selectedCard.title}</h3>
-              <button onClick={() => setSelectedCard(null)} className={textSecondary}><X size={18} /></button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setChatProject(selectedCard); setSelectedCard(null) }}
+                  className="relative p-1.5 rounded-lg hover:bg-violet-500/10 transition-colors"
+                >
+                  <MessageCircle size={16} className="text-violet-400" />
+                  {(commentCounts[selectedCard.id] || 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full bg-violet-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5">
+                      {commentCounts[selectedCard.id]}
+                    </span>
+                  )}
+                </button>
+                <button onClick={() => setSelectedCard(null)} className={textSecondary}><X size={18} /></button>
+              </div>
             </div>
             <div className="space-y-2">
               {[
