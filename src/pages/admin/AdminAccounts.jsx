@@ -32,12 +32,20 @@ const EMPLOYEE_ROLES = [
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
   },
+  {
+    value: 'freelance',
+    label: 'Freelance',
+    description: 'Prestataire externe, mission ponctuelle',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+  },
 ]
 
 const ROLE_DISPLAY = {
   admin: 'Administrateur',
   chef_projet: 'Chef de projet',
   technicien: 'Technicien',
+  freelance: 'Freelance',
 }
 
 export default function AdminAccounts() {
@@ -219,8 +227,10 @@ export default function AdminAccounts() {
     setEmpError('')
     if (!empForm.role) return setEmpError('Veuillez sélectionner un rôle.')
     const roleName = ROLE_DISPLAY[empForm.role] || empForm.role
-    const lvl = empForm.role === 'admin' ? 1 : empForm.role === 'chef_projet' ? 2 : 3
-    const id = `LVL${lvl}${Math.floor(10000 + Math.random() * 90000)}`
+    const id = empForm.role === 'admin'      ? `LVL1${Math.floor(10000 + Math.random() * 90000)}`
+             : empForm.role === 'chef_projet' ? `LVL2${Math.floor(10000 + Math.random() * 90000)}`
+             : empForm.role === 'freelance'   ? `LVL3X${Math.floor(1000 + Math.random() * 9000)}`
+             :                                  `LVL3${Math.floor(10000 + Math.random() * 90000)}`
     const DEFAULT_PASSWORD = 'Levelstudios123!'
     const account = {
       id,
@@ -422,7 +432,7 @@ export default function AdminAccounts() {
                   <tbody>
                     {trashed.map(a => {
                       const isEmp = a.type !== 'client'
-                      const RC = { admin: { bg: 'bg-red-500/20', text: 'text-red-400' }, chef_projet: { bg: 'bg-violet-500/20', text: 'text-violet-400' }, technicien: { bg: 'bg-green-500/20', text: 'text-green-400' } }
+                      const RC = { admin: { bg: 'bg-red-500/20', text: 'text-red-400' }, chef_projet: { bg: 'bg-violet-500/20', text: 'text-violet-400' }, technicien: { bg: 'bg-green-500/20', text: 'text-green-400' }, freelance: { bg: 'bg-amber-500/20', text: 'text-amber-400' } }
                       const rc = isEmp ? (RC[a.roleKey] || { bg: 'bg-zinc-500/20', text: 'text-zinc-400' }) : { bg: 'bg-blue-500/20', text: 'text-blue-400' }
                       return (
                         <tr key={a.id} className={`border-b transition-colors opacity-60 ${tableRow}`}>
@@ -473,7 +483,7 @@ export default function AdminAccounts() {
               </thead>
               <tbody>
                 {filteredEmployees.map(e => {
-                  const RC = { admin: { bg: 'bg-red-500/20', text: 'text-red-400', badge: 'bg-red-500/10 text-red-400' }, chef_projet: { bg: 'bg-violet-500/20', text: 'text-violet-400', badge: 'bg-violet-500/10 text-violet-400' }, technicien: { bg: 'bg-green-500/20', text: 'text-green-400', badge: 'bg-green-500/10 text-green-400' } }
+                  const RC = { admin: { bg: 'bg-red-500/20', text: 'text-red-400', badge: 'bg-red-500/10 text-red-400' }, chef_projet: { bg: 'bg-violet-500/20', text: 'text-violet-400', badge: 'bg-violet-500/10 text-violet-400' }, technicien: { bg: 'bg-green-500/20', text: 'text-green-400', badge: 'bg-green-500/10 text-green-400' }, freelance: { bg: 'bg-amber-500/20', text: 'text-amber-400', badge: 'bg-amber-500/10 text-amber-400' } }
                   const rc = RC[e.roleKey] || { bg: 'bg-zinc-500/20', text: 'text-zinc-400', badge: 'bg-zinc-500/10 text-zinc-400' }
                   return (
                   <tr key={e.id} className={`border-b transition-colors ${tableRow}`}>

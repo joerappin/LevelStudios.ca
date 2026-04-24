@@ -444,6 +444,21 @@ export const Store = {
     localStorage.setItem('ls_emp_profiles', JSON.stringify(all))
   },
 
+  // Freelance missions — keyed by empId
+  getFreelanceMission: (empId) => {
+    try { return JSON.parse(localStorage.getItem('ls_freelance_missions') || '{}')[empId] || {} } catch { return {} }
+  },
+  saveFreelanceMission: (empId, data) => {
+    const all = (() => { try { return JSON.parse(localStorage.getItem('ls_freelance_missions') || '{}') } catch { return {} } })()
+    all[empId] = { ...(all[empId] || {}), ...data }
+    localStorage.setItem('ls_freelance_missions', JSON.stringify(all))
+  },
+  deleteFreelanceMission: (empId) => {
+    const all = (() => { try { return JSON.parse(localStorage.getItem('ls_freelance_missions') || '{}') } catch { return {} } })()
+    delete all[empId]
+    localStorage.setItem('ls_freelance_missions', JSON.stringify(all))
+  },
+
   // Employee software/tools licenses
   getEmployeeSoftware: (id) => {
     try { return JSON.parse(localStorage.getItem('ls_emp_software') || '{}')[id] || [] } catch { return [] }

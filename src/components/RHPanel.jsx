@@ -63,7 +63,7 @@ function loadPlanning() {
 function savePlanning(data) { localStorage.setItem('ls_rh_planning', JSON.stringify(data)) }
 
 // ─── PROJECTION TAB ───────────────────────────────────────────────────────────
-function ProjectionTab({ employees, isDark }) {
+function ProjectionTab({ employees, freelances = [], isDark }) {
   const [viewDate, setViewDate]     = useState(new Date())
   const [projection, setProjection] = useState(loadProjection)
   const [pickerCell, setPickerCell] = useState(null) // { empId, dateStr }
@@ -88,9 +88,9 @@ function ProjectionTab({ employees, isDark }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [pickerCell])
 
-  function getStatus(empId, dateStr, dow) {
+  function getStatus(empId, dateStr, dow, defaultStatus = 'present') {
     if (dow === 0 || dow === 6) return null // weekend
-    return projection[empId]?.[dateStr] || 'present'
+    return projection[empId]?.[dateStr] || defaultStatus
   }
 
   function setStatus(empId, dateStr, status) {
@@ -176,7 +176,6 @@ function ProjectionTab({ employees, isDark }) {
                 return (
                   <React.Fragment key={emp.id}>
                     <tr className={`border-b ${rowH}`}>
-                      {/* Nom cliquable → toggle résumé */}
                       <td
                         className={`px-4 py-2 sticky left-0 z-10 ${stickyBg} cursor-pointer select-none`}
                         onClick={() => setExpandedEmp(isExpanded ? null : emp.id)}
@@ -189,7 +188,7 @@ function ProjectionTab({ employees, isDark }) {
                       </td>
                       {monthDates.map(({ str, dow }) => {
                         const isWknd = dow === 0 || dow === 6
-                        const status = getStatus(emp.id, str, dow)
+                        const status = getStatus(emp.id, str, dow, 'present')
                         const s = status ? STATUSES[status] : null
                         const isOpen = pickerCell?.empId === emp.id && pickerCell?.dateStr === str
                         return (
@@ -232,7 +231,6 @@ function ProjectionTab({ employees, isDark }) {
                         )
                       })}
                     </tr>
-                    {/* Résumé mensuel de cet employé — visible uniquement si ligne ouverte */}
                     {isExpanded && (
                       <tr className={`border-b ${rowH}`}>
                         <td colSpan={daysInMonth + 1} className={`px-4 py-3 ${isDark ? 'bg-zinc-800/60' : 'bg-gray-50'}`}>
@@ -242,6 +240,100 @@ function ProjectionTab({ employees, isDark }) {
                               const count = monthDates.filter(({ str, dow }) => {
                                 if (dow === 0 || dow === 6) return false
                                 return (projection[emp.id]?.[str] || 'present') === key
+                              }).length
+                              return (
+                                <div key={key} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${isDark ? 'bg-zinc-900' : 'bg-white border border-gray-100'}`}>
+                                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: STATUSES[key].color }} />
+                                  <span className={`text-xs ${ts}`}>{STATUSES[key].label}</span>
+                                  <span className={`text-xs font-bold ${tp}`}>{count}j</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                )
+              })}
+
+              {/* ── Séparateur Freelance ──────────────────────────────────── */}
+              {freelances.length > 0 && (
+                <tr>
+                  <td colSpan={daysInMonth + 1} className={`px-4 py-2 ${isDark ? 'bg-zinc-800/40' : 'bg-amber-50/60'}`}>
+                    <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Freelances — Indisponible par défaut</span>
+                  </td>
+                </tr>
+              )}
+              {freelances.map(emp => {
+                const isExpanded = expandedEmp === emp.id
+                return (
+                  <React.Fragment key={emp.id}>
+                    <tr className={`border-b ${rowH}`}>
+                      <td
+                        className={`px-4 py-2 sticky left-0 z-10 ${stickyBg} cursor-pointer select-none`}
+                        onClick={() => setExpandedEmp(isExpanded ? null : emp.id)}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className={`text-sm font-semibold text-amber-400`}>{emp.name}</div>
+                          <ChevronDown size={12} className={`transition-transform duration-200 ${ts} ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                        <div className="text-xs text-amber-400/60">Freelance</div>
+                      </td>
+                      {monthDates.map(({ str, dow }) => {
+                        const isWknd = dow === 0 || dow === 6
+                        const status = getStatus(emp.id, str, dow, 'indisponible')
+                        const s = status ? STATUSES[status] : null
+                        const isOpen = pickerCell?.empId === emp.id && pickerCell?.dateStr === str
+                        return (
+                          <td key={str} className="text-center py-1.5 relative" style={{ width: 32 }}>
+                            {isWknd ? (
+                              <div className={`w-5 h-5 mx-auto rounded opacity-15 ${isDark ? 'bg-zinc-700' : 'bg-gray-300'}`} />
+                            ) : (
+                              <>
+                                <button
+                                  onClick={e => { e.stopPropagation(); setPickerCell(isOpen ? null : { empId: emp.id, dateStr: str }) }}
+                                  title={s?.label}
+                                  className="w-5 h-5 mx-auto rounded-full transition-transform hover:scale-125"
+                                  style={{ background: s?.color || STATUSES.indisponible.color }}
+                                />
+                                {isOpen && (
+                                  <div ref={pickerRef}
+                                    className={`absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 rounded-xl border shadow-2xl overflow-hidden ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200'}`}
+                                    style={{ minWidth: 200 }}>
+                                    {STATUS_ORDER.map(key => {
+                                      const s2 = STATUSES[key]
+                                      const current = (projection[emp.id]?.[str] || 'indisponible') === key
+                                      return (
+                                        <button key={key} onClick={() => setStatus(emp.id, str, key)}
+                                          className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-left transition-colors ${
+                                            current
+                                              ? isDark ? 'bg-zinc-700' : 'bg-gray-100'
+                                              : isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'
+                                          }`}>
+                                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: s2.color }} />
+                                          <span className={isDark ? 'text-zinc-200' : 'text-gray-700'}>{s2.label}</span>
+                                          {current && <Check size={11} className="ml-auto text-amber-400" />}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                    {isExpanded && (
+                      <tr className={`border-b ${rowH}`}>
+                        <td colSpan={daysInMonth + 1} className={`px-4 py-3 ${isDark ? 'bg-zinc-800/60' : 'bg-amber-50'}`}>
+                          <div className="text-xs font-semibold mb-2 text-amber-400">RÉSUMÉ DE {MONTHS_FR[month].toUpperCase()} — {emp.name}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {STATUS_ORDER.map(key => {
+                              const count = monthDates.filter(({ str, dow }) => {
+                                if (dow === 0 || dow === 6) return false
+                                return (projection[emp.id]?.[str] || 'indisponible') === key
                               }).length
                               return (
                                 <div key={key} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${isDark ? 'bg-zinc-900' : 'bg-white border border-gray-100'}`}>
@@ -602,23 +694,171 @@ function PlanningTab({ employees, isDark }) {
   )
 }
 
+// ─── FREELANCE TAB ────────────────────────────────────────────────────────────
+const EMPTY_MISSION = { mission: '', startDate: '', endDate: '', amountHT: '', taxRate: '14.975', notes: '' }
+
+function FreelanceTab({ freelances, isDark }) {
+  const [missions, setMissions]   = useState({})
+  const [editId, setEditId]       = useState(null)
+  const [form, setForm]           = useState(EMPTY_MISSION)
+  const [saved, setSaved]         = useState(false)
+
+  useEffect(() => {
+    const m = {}
+    freelances.forEach(f => { m[f.id] = Store.getFreelanceMission(f.id) })
+    setMissions(m)
+    if (freelances.length && !editId) setEditId(freelances[0].id)
+  }, [freelances]) // eslint-disable-line
+
+  useEffect(() => {
+    if (!editId) return
+    setForm({ ...EMPTY_MISSION, ...missions[editId] })
+  }, [editId]) // eslint-disable-line
+
+  function save() {
+    if (!editId) return
+    Store.saveFreelanceMission(editId, form)
+    setMissions(m => ({ ...m, [editId]: form }))
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const amountTTC = form.amountHT && form.taxRate
+    ? (parseFloat(form.amountHT) * (1 + parseFloat(form.taxRate) / 100)).toFixed(2)
+    : ''
+
+  const tp       = isDark ? 'text-white' : 'text-gray-900'
+  const ts       = isDark ? 'text-zinc-400' : 'text-gray-500'
+  const card     = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
+  const inputCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+  const rowH     = isDark ? 'border-zinc-800' : 'border-gray-100'
+
+  if (freelances.length === 0) {
+    return (
+      <div className={`border rounded-xl p-12 text-center ${card}`}>
+        <div className={`text-sm ${ts}`}>Aucun compte Freelance créé.<br/>Créez-en un depuis la gestion des comptes.</div>
+      </div>
+    )
+  }
+
+  const selected = freelances.find(f => f.id === editId)
+
+  return (
+    <div className="flex gap-5" style={{ minHeight: 420 }}>
+      {/* List */}
+      <div className={`border rounded-xl overflow-hidden flex-shrink-0 ${card}`} style={{ width: 240 }}>
+        <div className={`px-4 py-3 border-b text-xs font-semibold ${ts} ${rowH}`}>FREELANCES</div>
+        {freelances.map(f => {
+          const m = missions[f.id] || {}
+          const isActive = editId === f.id
+          return (
+            <button key={f.id} onClick={() => setEditId(f.id)}
+              className={`w-full text-left px-4 py-3 border-b transition-colors ${rowH} ${isActive ? isDark ? 'bg-amber-500/10' : 'bg-amber-50' : isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'}`}>
+              <div className={`text-sm font-semibold ${isActive ? 'text-amber-400' : tp}`}>{f.name}</div>
+              <div className={`text-xs truncate ${ts}`}>{m.mission || 'Aucune mission définie'}</div>
+              {m.startDate && m.endDate && (
+                <div className={`text-xs mt-0.5 ${ts}`}>
+                  {new Date(m.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  {' – '}
+                  {new Date(m.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Detail panel */}
+      {selected && (
+        <div className={`flex-1 border rounded-xl p-5 ${card}`}>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <div className={`text-base font-bold ${tp}`}>{selected.name}</div>
+              <div className="text-xs text-amber-400 font-semibold">{selected.id}</div>
+            </div>
+            <button onClick={save}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
+              {saved ? <><Check size={14} /> Sauvegardé</> : <><Check size={14} /> Enregistrer</>}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className={`block text-xs font-semibold mb-1.5 ${ts}`}>Mission / Description</label>
+              <textarea value={form.mission} onChange={e => setForm(f => ({ ...f, mission: e.target.value }))}
+                rows={3} placeholder="Décrire la mission du prestataire…"
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none ${inputCls}`} />
+            </div>
+            <div>
+              <label className={`block text-xs font-semibold mb-1.5 ${ts}`}>Date de début</label>
+              <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${inputCls}`} />
+            </div>
+            <div>
+              <label className={`block text-xs font-semibold mb-1.5 ${ts}`}>Date de fin</label>
+              <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${inputCls}`} />
+            </div>
+            <div>
+              <label className={`block text-xs font-semibold mb-1.5 ${ts}`}>Montant HT (CAD)</label>
+              <input type="number" min="0" step="0.01" value={form.amountHT} onChange={e => setForm(f => ({ ...f, amountHT: e.target.value }))}
+                placeholder="Ex : 2500.00"
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${inputCls}`} />
+            </div>
+            <div>
+              <label className={`block text-xs font-semibold mb-1.5 ${ts}`}>Taux de taxe (%)</label>
+              <input type="number" min="0" step="0.001" value={form.taxRate} onChange={e => setForm(f => ({ ...f, taxRate: e.target.value }))}
+                placeholder="Ex : 14.975"
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${inputCls}`} />
+            </div>
+
+            {/* TTC calculé automatiquement */}
+            {amountTTC && (
+              <div className={`sm:col-span-2 flex items-center gap-3 px-4 py-3 rounded-xl ${isDark ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}>
+                <div>
+                  <div className={`text-xs font-semibold ${ts}`}>Montant TTC</div>
+                  <div className="text-lg font-bold text-amber-400">{parseFloat(amountTTC).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}</div>
+                </div>
+                <div className={`ml-auto text-xs ${ts}`}>
+                  HT {parseFloat(form.amountHT).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                  {' + '}taxes ({form.taxRate}%)
+                </div>
+              </div>
+            )}
+
+            <div className="sm:col-span-2">
+              <label className={`block text-xs font-semibold mb-1.5 ${ts}`}>Notes internes</label>
+              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                rows={2} placeholder="Observations, clauses particulières…"
+                className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none ${inputCls}`} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
 export default function RHPanel() {
   const { theme }  = useApp()
   const isDark     = theme === 'dark'
   const [tab, setTab]         = useState('projection')
-  const [employees, setEmployees] = useState([])
+  const [allStaff, setAllStaff] = useState([])
 
   useEffect(() => {
     fetch('/api/accounts.php')
       .then(r => r.json())
       .then(accounts => {
-        setEmployees(accounts.filter(a => a.type !== 'client' && !a.deleted && a.active !== false))
+        setAllStaff(accounts.filter(a => a.type !== 'client' && !a.deleted && a.active !== false))
       })
       .catch(() => {
-        setEmployees(Store.getEmployees().filter(e => !e.deleted && e.active !== false))
+        setAllStaff(Store.getEmployees().filter(e => !e.deleted && e.active !== false))
       })
   }, [])
+
+  const employees  = allStaff.filter(e => e.roleKey !== 'freelance')
+  const freelances = allStaff.filter(e => e.roleKey === 'freelance')
 
   const tp = isDark ? 'text-white' : 'text-gray-900'
   const ts = isDark ? 'text-zinc-400' : 'text-gray-500'
@@ -626,6 +866,7 @@ export default function RHPanel() {
   const TABS = [
     { id: 'projection', label: 'Projection' },
     { id: 'planning',   label: 'Planning' },
+    { id: 'freelance',  label: `Freelance${freelances.length ? ` (${freelances.length})` : ''}` },
   ]
 
   return (
@@ -636,7 +877,7 @@ export default function RHPanel() {
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
               tab === t.id
-                ? 'bg-violet-600 text-white shadow-sm'
+                ? t.id === 'freelance' ? 'bg-amber-500 text-black shadow-sm' : 'bg-violet-600 text-white shadow-sm'
                 : isDark ? `${ts} hover:text-white` : `${ts} hover:text-gray-700`
             }`}>
             {t.label}
@@ -644,8 +885,9 @@ export default function RHPanel() {
         ))}
       </div>
 
-      {tab === 'projection' && <ProjectionTab employees={employees} isDark={isDark} />}
+      {tab === 'projection' && <ProjectionTab employees={employees} freelances={freelances} isDark={isDark} />}
       {tab === 'planning'   && <PlanningTab   employees={employees} isDark={isDark} />}
+      {tab === 'freelance'  && <FreelanceTab  freelances={freelances} isDark={isDark} />}
     </div>
   )
 }

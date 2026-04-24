@@ -178,15 +178,41 @@ export default function AdminBoarding() {
   const [software, setSoftware] = useState([])
   const softwareRef = useRef([])
 
+  // ── Freelance ─────────────────────────────────────────────────────────────
+  const [freelances, setFreelances]       = useState([])
+  const [freelanceId, setFreelanceId]     = useState('')
+  const [freelanceForm, setFreelanceForm] = useState({ mission: '', startDate: '', endDate: '', amountHT: '', taxRate: '14.975', notes: '' })
+  const [freelanceSaved, setFreelanceSaved] = useState(false)
+
   useEffect(() => {
-    const emps = Store.getEmployees().filter(e => !e.deleted)
-    setEmployees(emps)
-    if (emps.length > 0) {
-      setSelectedEmpId(emps[0].id)
-      setFicheEmpId(emps[0].id)
-      setCompteEmpId(emps[0].id)
-    }
+    fetch('/api/accounts.php')
+      .then(r => r.json())
+      .then(accounts => {
+        const emps = accounts.filter(a => a.type !== 'client' && !a.deleted)
+        setEmployees(emps.filter(e => e.roleKey !== 'freelance'))
+        const fls = emps.filter(e => e.roleKey === 'freelance')
+        setFreelances(fls)
+        const nonFl = emps.filter(e => e.roleKey !== 'freelance')
+        if (nonFl.length > 0) { setSelectedEmpId(nonFl[0].id); setFicheEmpId(nonFl[0].id); setCompteEmpId(nonFl[0].id) }
+        if (fls.length > 0) setFreelanceId(fls[0].id)
+      })
+      .catch(() => {
+        const emps = Store.getEmployees().filter(e => !e.deleted)
+        const nonFl = emps.filter(e => e.roleKey !== 'freelance')
+        const fls   = emps.filter(e => e.roleKey === 'freelance')
+        setEmployees(nonFl)
+        setFreelances(fls)
+        if (nonFl.length > 0) { setSelectedEmpId(nonFl[0].id); setFicheEmpId(nonFl[0].id); setCompteEmpId(nonFl[0].id) }
+        if (fls.length > 0) setFreelanceId(fls[0].id)
+      })
   }, [])
+
+  useEffect(() => {
+    if (!freelanceId) return
+    const m = Store.getFreelanceMission(freelanceId)
+    setFreelanceForm({ mission: '', startDate: '', endDate: '', amountHT: '', taxRate: '14.975', notes: '', ...m })
+    setFreelanceSaved(false)
+  }, [freelanceId])
 
   // Load profile when employee changes
   useEffect(() => {
@@ -268,10 +294,23 @@ export default function AdminBoarding() {
     Store.saveEmployeeSoftware(compteEmpId, updated)
   }
 
+  // ── Freelance save ─────────────────────────────────────────────────────────
+  const saveFreelance = () => {
+    if (!freelanceId) return
+    Store.saveFreelanceMission(freelanceId, freelanceForm)
+    setFreelanceSaved(true)
+    setTimeout(() => setFreelanceSaved(false), 2000)
+  }
+
+  const freelanceTTC = freelanceForm.amountHT && freelanceForm.taxRate
+    ? (parseFloat(freelanceForm.amountHT) * (1 + parseFloat(freelanceForm.taxRate) / 100)).toFixed(2)
+    : ''
+
   const TABS = [
     { key: 'checklist', label: 'Checklist intégration' },
     { key: 'fiche',     label: 'Fiche employé' },
     { key: 'comptes',   label: 'Comptes' },
+    { key: 'freelance', label: `Freelance${freelances.length ? ` (${freelances.length})` : ''}` },
   ]
 
   return (
@@ -282,7 +321,11 @@ export default function AdminBoarding() {
         <div className="flex gap-2 flex-wrap">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${tab === t.key ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                tab === t.key
+                  ? t.key === 'freelance' ? 'bg-amber-500 text-black' : 'bg-violet-600 text-white'
+                  : isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >{t.label}</button>
           ))}
         </div>
@@ -496,6 +539,157 @@ export default function AdminBoarding() {
             )}
           </div>
         )}
+
+        {/* ══ FREELANCE ════════════════════════════════════════════════════════ */}
+        {tab === 'freelance' && (
+          <div>
+            {freelances.length === 0 ? (
+              <div className={`border rounded-xl p-12 text-center ${card}`}>
+                <div className={`text-sm ${textSecondary}`}>
+                  Aucun compte Freelance créé.<br/>
+                  Ajoutez un compte de type <span className="text-amber-400 font-semibold">Freelance</span> depuis la gestion des comptes.
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-5" style={{ minHeight: 480 }}>
+                {/* Liste */}
+                <div className={`border rounded-xl overflow-hidden flex-shrink-0 ${card}`} style={{ width: 240 }}>
+                  <div className={`px-4 py-3 border-b text-xs font-semibold uppercase tracking-widest text-amber-400 ${divider}`}>
+                    Freelances
+                  </div>
+                  {freelances.map(f => {
+                    const m = Store.getFreelanceMission(f.id)
+                    const isActive = freelanceId === f.id
+                    return (
+                      <button key={f.id} onClick={() => setFreelanceId(f.id)}
+                        className={`w-full text-left px-4 py-3 border-b transition-colors ${divider} ${isActive ? isDark ? 'bg-amber-500/10' : 'bg-amber-50' : isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'}`}>
+                        <div className={`text-sm font-semibold ${isActive ? 'text-amber-400' : textPrimary}`}>{f.name}</div>
+                        <div className={`text-xs font-mono ${textSecondary}`}>{f.id}</div>
+                        {m.mission && <div className={`text-xs truncate mt-0.5 ${textSecondary}`}>{m.mission}</div>}
+                        {m.startDate && m.endDate && (
+                          <div className={`text-xs mt-0.5 ${textSecondary}`}>
+                            {new Date(m.startDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            {' – '}
+                            {new Date(m.endDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Fiche mission */}
+                {freelanceId && (() => {
+                  const fl = freelances.find(f => f.id === freelanceId)
+                  if (!fl) return null
+                  return (
+                    <div className={`flex-1 border rounded-xl p-6 ${card}`}>
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-6">
+                        <div>
+                          <h3 className={`text-lg font-bold ${textPrimary}`}>{fl.name}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">{fl.id}</span>
+                            <span className="text-xs font-semibold text-amber-400">Freelance</span>
+                          </div>
+                        </div>
+                        <button onClick={saveFreelance}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                            freelanceSaved
+                              ? 'bg-green-500 text-white'
+                              : 'bg-amber-500 hover:bg-amber-400 text-black'
+                          }`}>
+                          <Save size={14} />{freelanceSaved ? 'Sauvegardé !' : 'Enregistrer'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        {/* Mission */}
+                        <div className="sm:col-span-2">
+                          <label className={`block text-xs font-semibold mb-1.5 ${labelCls}`}>Mission / Description</label>
+                          <textarea
+                            value={freelanceForm.mission}
+                            onChange={e => setFreelanceForm(f => ({ ...f, mission: e.target.value }))}
+                            rows={3} placeholder="Décrire la mission du prestataire…"
+                            className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none ${inputCls}`}
+                          />
+                        </div>
+
+                        {/* Dates */}
+                        <div>
+                          <label className={`block text-xs font-semibold mb-1.5 ${labelCls}`}>Date de début</label>
+                          <input type="date" value={freelanceForm.startDate}
+                            onChange={e => setFreelanceForm(f => ({ ...f, startDate: e.target.value }))}
+                            className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${inputCls}`} />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-semibold mb-1.5 ${labelCls}`}>Date de fin</label>
+                          <input type="date" value={freelanceForm.endDate}
+                            onChange={e => setFreelanceForm(f => ({ ...f, endDate: e.target.value }))}
+                            className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${inputCls}`} />
+                        </div>
+
+                        {/* Durée calculée */}
+                        {freelanceForm.startDate && freelanceForm.endDate && (() => {
+                          const diff = Math.ceil((new Date(freelanceForm.endDate) - new Date(freelanceForm.startDate)) / 86400000)
+                          return diff > 0 ? (
+                            <div className={`sm:col-span-2 text-xs px-3 py-2 rounded-lg ${isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-gray-50 text-gray-600'}`}>
+                              Durée : <span className="font-bold">{diff} jour{diff > 1 ? 's' : ''}</span>
+                            </div>
+                          ) : null
+                        })()}
+
+                        {/* Montants */}
+                        <div>
+                          <label className={`block text-xs font-semibold mb-1.5 ${labelCls}`}>Montant HT (CAD)</label>
+                          <input type="number" min="0" step="0.01" value={freelanceForm.amountHT}
+                            onChange={e => setFreelanceForm(f => ({ ...f, amountHT: e.target.value }))}
+                            placeholder="Ex : 2500.00"
+                            className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${inputCls}`} />
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-semibold mb-1.5 ${labelCls}`}>Taux de taxe (%)</label>
+                          <input type="number" min="0" step="0.001" value={freelanceForm.taxRate}
+                            onChange={e => setFreelanceForm(f => ({ ...f, taxRate: e.target.value }))}
+                            placeholder="Ex : 14.975"
+                            className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${inputCls}`} />
+                        </div>
+
+                        {/* TTC auto */}
+                        {freelanceTTC && (
+                          <div className={`sm:col-span-2 flex items-center gap-4 px-4 py-3 rounded-xl border ${isDark ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+                            <div>
+                              <div className={`text-xs font-semibold ${textSecondary}`}>Montant TTC</div>
+                              <div className="text-xl font-bold text-amber-400">
+                                {parseFloat(freelanceTTC).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                              </div>
+                            </div>
+                            <div className={`ml-auto text-xs ${textSecondary}`}>
+                              HT {parseFloat(freelanceForm.amountHT).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' })}
+                              {' + taxes '}({freelanceForm.taxRate}%)
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        <div className="sm:col-span-2">
+                          <label className={`block text-xs font-semibold mb-1.5 ${labelCls}`}>Notes internes</label>
+                          <textarea
+                            value={freelanceForm.notes}
+                            onChange={e => setFreelanceForm(f => ({ ...f, notes: e.target.value }))}
+                            rows={2} placeholder="Observations, clauses particulières, coordonnées…"
+                            className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none ${inputCls}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </Layout>
   )
