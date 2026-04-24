@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  ChevronLeft, ChevronRight, Check, CheckCheck, Send, X, Edit2, Trash2,
+  ChevronLeft, ChevronRight, ChevronDown, Check, CheckCheck, Send, X, Edit2, Trash2,
 } from 'lucide-react'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
@@ -17,7 +17,7 @@ const STATUSES = {
 }
 const STATUS_ORDER = ['present', 'absent_injustifie', 'indisponible', 'retard', 'conge', 'arret']
 
-const STUDIOS = ['Studio A', 'Studio B', 'Studio C', 'Aucun']
+const STUDIOS = ['Présentiel', 'Télétravail']
 const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 const DAYS_SHORT_FR = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
@@ -67,6 +67,7 @@ function ProjectionTab({ employees, isDark }) {
   const [viewDate, setViewDate]     = useState(new Date())
   const [projection, setProjection] = useState(loadProjection)
   const [pickerCell, setPickerCell] = useState(null) // { empId, dateStr }
+  const [expandedEmp, setExpandedEmp] = useState(null) // empId | null
   const pickerRef = useRef()
 
   const year        = viewDate.getFullYear()
@@ -170,89 +171,98 @@ function ProjectionTab({ employees, isDark }) {
                   </td>
                 </tr>
               )}
-              {employees.map(emp => (
-                <tr key={emp.id} className={`border-b last:border-0 ${rowH}`}>
-                  <td className={`px-4 py-2 sticky left-0 z-10 ${stickyBg}`}>
-                    <div className={`text-sm font-semibold ${tp}`}>{emp.name}</div>
-                    <div className={`text-xs ${ts}`}>{emp.role}</div>
-                  </td>
-                  {monthDates.map(({ str, dow }) => {
-                    const isWknd = dow === 0 || dow === 6
-                    const status = getStatus(emp.id, str, dow)
-                    const s = status ? STATUSES[status] : null
-                    const isOpen = pickerCell?.empId === emp.id && pickerCell?.dateStr === str
-                    return (
-                      <td key={str} className="text-center py-1.5 relative" style={{ width: 32 }}>
-                        {isWknd ? (
-                          <div className={`w-5 h-5 mx-auto rounded opacity-15 ${isDark ? 'bg-zinc-700' : 'bg-gray-300'}`} />
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setPickerCell(isOpen ? null : { empId: emp.id, dateStr: str })}
-                              title={s?.label}
-                              className="w-5 h-5 mx-auto rounded-full transition-transform hover:scale-125 flex items-center justify-center"
-                              style={{ background: s?.color || '#22c55e' }}
-                            />
-                            {isOpen && (
-                              <div ref={pickerRef}
-                                className={`absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 rounded-xl border shadow-2xl overflow-hidden ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200'}`}
-                                style={{ minWidth: 200 }}>
-                                {STATUS_ORDER.map(key => {
-                                  const s2 = STATUSES[key]
-                                  const current = (projection[emp.id]?.[str] || 'present') === key
-                                  return (
-                                    <button key={key} onClick={() => setStatus(emp.id, str, key)}
-                                      className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-left transition-colors ${
-                                        current
-                                          ? isDark ? 'bg-zinc-700' : 'bg-gray-100'
-                                          : isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'
-                                      }`}>
-                                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: s2.color }} />
-                                      <span className={isDark ? 'text-zinc-200' : 'text-gray-700'}>{s2.label}</span>
-                                      {current && <Check size={11} className="ml-auto text-violet-400" />}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </>
-                        )}
+              {employees.map(emp => {
+                const isExpanded = expandedEmp === emp.id
+                return (
+                  <React.Fragment key={emp.id}>
+                    <tr className={`border-b ${rowH}`}>
+                      {/* Nom cliquable → toggle résumé */}
+                      <td
+                        className={`px-4 py-2 sticky left-0 z-10 ${stickyBg} cursor-pointer select-none`}
+                        onClick={() => setExpandedEmp(isExpanded ? null : emp.id)}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className={`text-sm font-semibold ${tp}`}>{emp.name}</div>
+                          <ChevronDown size={12} className={`transition-transform duration-200 ${ts} ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                        <div className={`text-xs ${ts}`}>{emp.role}</div>
                       </td>
-                    )
-                  })}
-                </tr>
-              ))}
+                      {monthDates.map(({ str, dow }) => {
+                        const isWknd = dow === 0 || dow === 6
+                        const status = getStatus(emp.id, str, dow)
+                        const s = status ? STATUSES[status] : null
+                        const isOpen = pickerCell?.empId === emp.id && pickerCell?.dateStr === str
+                        return (
+                          <td key={str} className="text-center py-1.5 relative" style={{ width: 32 }}>
+                            {isWknd ? (
+                              <div className={`w-5 h-5 mx-auto rounded opacity-15 ${isDark ? 'bg-zinc-700' : 'bg-gray-300'}`} />
+                            ) : (
+                              <>
+                                <button
+                                  onClick={e => { e.stopPropagation(); setPickerCell(isOpen ? null : { empId: emp.id, dateStr: str }) }}
+                                  title={s?.label}
+                                  className="w-5 h-5 mx-auto rounded-full transition-transform hover:scale-125 flex items-center justify-center"
+                                  style={{ background: s?.color || '#22c55e' }}
+                                />
+                                {isOpen && (
+                                  <div ref={pickerRef}
+                                    className={`absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 rounded-xl border shadow-2xl overflow-hidden ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-gray-200'}`}
+                                    style={{ minWidth: 200 }}>
+                                    {STATUS_ORDER.map(key => {
+                                      const s2 = STATUSES[key]
+                                      const current = (projection[emp.id]?.[str] || 'present') === key
+                                      return (
+                                        <button key={key} onClick={() => setStatus(emp.id, str, key)}
+                                          className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-left transition-colors ${
+                                            current
+                                              ? isDark ? 'bg-zinc-700' : 'bg-gray-100'
+                                              : isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'
+                                          }`}>
+                                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: s2.color }} />
+                                          <span className={isDark ? 'text-zinc-200' : 'text-gray-700'}>{s2.label}</span>
+                                          {current && <Check size={11} className="ml-auto text-violet-400" />}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                    {/* Résumé mensuel de cet employé — visible uniquement si ligne ouverte */}
+                    {isExpanded && (
+                      <tr className={`border-b ${rowH}`}>
+                        <td colSpan={daysInMonth + 1} className={`px-4 py-3 ${isDark ? 'bg-zinc-800/60' : 'bg-gray-50'}`}>
+                          <div className={`text-xs font-semibold mb-2 ${ts}`}>RÉSUMÉ DE {MONTHS_FR[month].toUpperCase()} — {emp.name}</div>
+                          <div className="flex flex-wrap gap-2">
+                            {STATUS_ORDER.map(key => {
+                              const count = monthDates.filter(({ str, dow }) => {
+                                if (dow === 0 || dow === 6) return false
+                                return (projection[emp.id]?.[str] || 'present') === key
+                              }).length
+                              return (
+                                <div key={key} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${isDark ? 'bg-zinc-900' : 'bg-white border border-gray-100'}`}>
+                                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: STATUSES[key].color }} />
+                                  <span className={`text-xs ${ts}`}>{STATUSES[key].label}</span>
+                                  <span className={`text-xs font-bold ${tp}`}>{count}j</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                )
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Counters summary */}
-      {employees.length > 0 && (
-        <div className={`mt-4 p-4 rounded-xl border ${card}`}>
-          <h4 className={`text-xs font-semibold mb-3 ${ts}`}>RÉSUMÉ DU MOIS</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {STATUS_ORDER.map(key => {
-              const count = employees.reduce((acc, emp) => {
-                return acc + monthDates.filter(({ str, dow }) => {
-                  if (dow === 0 || dow === 6) return false
-                  return (projection[emp.id]?.[str] || 'present') === key
-                }).length
-              }, 0)
-              return (
-                <div key={key} className={`rounded-lg p-3 ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: STATUSES[key].color }} />
-                    <span className={`text-xs ${ts}`}>{STATUSES[key].label}</span>
-                  </div>
-                  <div className={`text-xl font-bold ${tp}`}>{count}</div>
-                  <div className={`text-xs ${ts}`}>jour{count > 1 ? 's' : ''}</div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -263,7 +273,7 @@ function PlanningTab({ employees, isDark }) {
   const [weekStart, setWeekStart] = useState(() => getMondayOfWeek(new Date()))
   const [planning, setPlanning]   = useState(loadPlanning)
   const [editCell, setEditCell]   = useState(null) // { empId, dateStr }
-  const [editVal, setEditVal]     = useState({ start: '09:00', end: '18:00', studio: 'Studio A' })
+  const [editVal, setEditVal]     = useState({ start: '09:00', end: '18:00', studio: 'Présentiel' })
   const [sentMsg, setSentMsg]     = useState(null)
   const [sentMails, setSentMails] = useState([])
 
@@ -286,7 +296,7 @@ function PlanningTab({ employees, isDark }) {
 
   function openEdit(empId, dateStr) {
     const cur = getCell(empId, dateStr)
-    setEditVal(cur ? { ...cur } : { start: '09:00', end: '18:00', studio: 'Studio A' })
+    setEditVal(cur ? { ...cur } : { start: '09:00', end: '18:00', studio: 'Présentiel' })
     setEditCell({ empId, dateStr })
   }
 

@@ -49,6 +49,7 @@ export default function Layout({ children, navItems, title }) {
   const [alertCounts, setAlertCounts]   = useState({ Retard: 0, Retour: 0, Urgent: 0 })
   const [adminChatOpen, setAdminChatOpen] = useState(false)
   const [adminChatUnread, setAdminChatUnread] = useState(0)
+  const [unreadMails, setUnreadMails]   = useState(0)
 
   useEffect(() => {
     if (user?.type !== 'admin' && user?.roleKey !== 'chef_projet') return
@@ -62,6 +63,22 @@ export default function Layout({ children, navItems, title }) {
     }
     compute()
     const id = setInterval(compute, 30000)
+    return () => clearInterval(id)
+  }, [user])
+
+  useEffect(() => {
+    if (!user?.email) return
+    const compute = () => {
+      const mails = Store.getMails()
+      const count = mails.filter(m =>
+        !m.draft && !m.read &&
+        !m.trashed_by?.includes(user.email) &&
+        (m.to?.some(r => r.email === user.email) || m.cc?.some(r => r.email === user.email))
+      ).length
+      setUnreadMails(count)
+    }
+    compute()
+    const id = setInterval(compute, 20000)
     return () => clearInterval(id)
   }, [user])
 
@@ -176,14 +193,29 @@ export default function Layout({ children, navItems, title }) {
             >
               <span style={{ flexShrink: 0, opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{item.labelKey ? t(item.labelKey) : item.label}</span>
-              {item.badge && (
+              {/* Badge messagerie non lus — rayonnant */}
+              {item.path?.includes('messaging') && unreadMails > 0 ? (
+                <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{
+                    position: 'absolute', inset: 0, borderRadius: '999px',
+                    background: '#e8175d', opacity: 0.5,
+                    animation: 'mail-ping 1.4s cubic-bezier(0,0,0.2,1) infinite',
+                  }} />
+                  <span style={{
+                    position: 'relative', fontSize: '10px', padding: '1px 6px', borderRadius: '999px',
+                    fontWeight: 800, background: '#e8175d', color: '#fff',
+                    minWidth: '18px', textAlign: 'center',
+                    boxShadow: '0 0 8px rgba(232,23,93,0.7)',
+                  }}>{unreadMails > 99 ? '99+' : unreadMails}</span>
+                </span>
+              ) : item.badge ? (
                 <span style={{
                   fontSize: '10px', padding: '1px 6px', borderRadius: '999px', fontWeight: 700,
                   background: isActive ? 'rgba(6,6,6,0.2)' : D.tertiary,
-                  color: isActive ? '#060606' : '#060606',
+                  color: '#060606',
                   minWidth: '18px', textAlign: 'center',
                 }}>{item.badge}</span>
-              )}
+              ) : null}
             </button>
           )
         })}
@@ -263,6 +295,7 @@ export default function Layout({ children, navItems, title }) {
 
   return (
     <div style={{ minHeight: '100vh', minWidth: 'fit-content', display: 'flex', background: S.page }}>
+      <style>{`@keyframes mail-ping{0%{transform:scale(1);opacity:.6}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}`}</style>
       {sidebarOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 40, backdropFilter: 'blur(4px)' }}
           className="lg:hidden" onClick={() => setSidebarOpen(false)} />
