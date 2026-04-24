@@ -600,7 +600,14 @@ export default function RHPanel() {
   const [employees, setEmployees] = useState([])
 
   useEffect(() => {
-    setEmployees(Store.getEmployees().filter(e => e.active !== false))
+    fetch('/api/accounts.php')
+      .then(r => r.json())
+      .then(accounts => {
+        setEmployees(accounts.filter(a => a.type !== 'client' && !a.deleted && a.active !== false))
+      })
+      .catch(() => {
+        setEmployees(Store.getEmployees().filter(e => !e.deleted && e.active !== false))
+      })
   }, [])
 
   const tp = isDark ? 'text-white' : 'text-gray-900'
