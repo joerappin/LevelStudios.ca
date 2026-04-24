@@ -130,8 +130,8 @@ export default function AdminProjects() {
         </div>
 
         {/* Kanban board */}
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-3" style={{ minWidth: `${columns.length * 220}px` }}>
+        <div className="overflow-x-auto pb-4" style={{ background: isDark ? '#060606' : '#f4f4f8' }}>
+          <div className="flex gap-3" style={{ minWidth: `${columns.length * 220}px`, background: isDark ? '#060606' : '#f4f4f8', padding: '4px 0 8px' }}>
             {columns.map(col => {
               const colProjects = filtered.filter(p => p.status === col)
               return (

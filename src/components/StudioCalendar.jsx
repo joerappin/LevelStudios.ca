@@ -450,8 +450,77 @@ export default function StudioCalendar({ reservations = [], showClientDetails = 
           </>
         )}
 
-        {/* ── Week view ── */}
-        {calView === 'week' && renderTimeGrid(getWeekDays(cursor))}
+        {/* ── Week view ── card columns per day */}
+        {calView === 'week' && (() => {
+          const days = getWeekDays(cursor)
+          return (
+            <div className={cn('border rounded-2xl overflow-hidden flex-1', card)}>
+              {/* Header */}
+              <div className="grid grid-cols-7" style={{ borderBottom: `1px solid ${isDark ? '#27272a' : '#f3f4f6'}` }}>
+                {days.map((d, i) => {
+                  const ds      = dateStr(d)
+                  const isToday = ds === today
+                  const count   = filtered.filter(r => r.date === ds).length
+                  return (
+                    <div key={i} className="py-3 text-center" style={{ borderLeft: i > 0 ? `1px solid ${colLine}` : 'none' }}>
+                      <p className={cn('text-[10px] font-bold uppercase tracking-widest', ts)}>{DAYS[(d.getDay()+6)%7]}</p>
+                      <div className={cn('w-8 h-8 rounded-full mx-auto flex items-center justify-center font-bold text-sm mt-1', isToday ? 'bg-violet-600 text-white' : tp)}>
+                        {d.getDate()}
+                      </div>
+                      {count > 0 && <p className={cn('text-[9px] mt-0.5', ts)}>{count} sess.</p>}
+                    </div>
+                  )
+                })}
+              </div>
+              {/* Body */}
+              <div className="grid grid-cols-7" style={{ minHeight: 420 }}>
+                {days.map((d, i) => {
+                  const ds    = dateStr(d)
+                  const resas = filtered.filter(r => r.date === ds).sort((a,b) => (a.start_time||'').localeCompare(b.start_time||''))
+                  const isToday = ds === today
+                  return (
+                    <div key={i} style={{
+                      borderLeft: i > 0 ? `1px solid ${colLine}` : 'none',
+                      background: isToday ? (isDark ? 'rgba(139,92,246,0.04)' : 'rgba(139,92,246,0.02)') : 'transparent',
+                      padding: '8px 4px',
+                      display: 'flex', flexDirection: 'column', gap: '5px',
+                    }}>
+                      {resas.map(r => {
+                        const col = stColor(r.studio)
+                        return (
+                          <button
+                            key={r.id}
+                            onClick={() => setSelected(r)}
+                            style={{
+                              width: '100%', backgroundColor: col.light, color: col.text,
+                              borderLeft: `3px solid ${col.bg}`, borderRadius: '6px',
+                              padding: '5px 5px', textAlign: 'left', cursor: 'pointer', overflow: 'hidden',
+                              transition: 'opacity 0.15s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+                          >
+                            <p style={{ fontSize: '10px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {r.start_time ? `${r.start_time} · ` : ''}{showClientDetails ? (r.client_name?.split(' ')[0] || '—') : r.studio}
+                            </p>
+                            <p style={{ fontSize: '9px', opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '1px' }}>
+                              {r.studio}{r.service ? ` · ${r.service}` : ''}
+                            </p>
+                          </button>
+                        )
+                      })}
+                      {resas.length === 0 && (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '14px' }}>
+                          <span style={{ fontSize: '10px', opacity: 0.18, color: isDark ? '#fff' : '#000' }}>—</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Day view ── */}
         {calView === 'day' && renderTimeGrid([cursor])}

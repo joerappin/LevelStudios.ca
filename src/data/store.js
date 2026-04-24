@@ -623,4 +623,37 @@ export const Store = {
       localStorage.setItem('ls_video_settings', JSON.stringify(data))
     } catch {}
   },
+
+  // Invoices & Quotes
+  getInvoices: () => { try { return JSON.parse(localStorage.getItem('ls_invoices') || '[]') } catch { return [] } },
+  addInvoice: (data) => {
+    const list = (() => { try { return JSON.parse(localStorage.getItem('ls_invoices') || '[]') } catch { return [] } })()
+    const num = list.filter(i => i.type === data.type).length + 1
+    const prefix = data.type === 'quote' ? 'DEV' : 'FAC'
+    const year = new Date().getFullYear()
+    const id = `${prefix}-${year}-${String(num).padStart(3, '0')}`
+    const item = { id, created_at: new Date().toISOString(), ...data }
+    list.unshift(item)
+    localStorage.setItem('ls_invoices', JSON.stringify(list))
+    return item
+  },
+  updateInvoice: (id, data) => {
+    const list = (() => { try { return JSON.parse(localStorage.getItem('ls_invoices') || '[]') } catch { return [] } })()
+    const idx = list.findIndex(i => i.id === id)
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; localStorage.setItem('ls_invoices', JSON.stringify(list)) }
+  },
+  deleteInvoice: (id) => {
+    const list = (() => { try { return JSON.parse(localStorage.getItem('ls_invoices') || '[]') } catch { return [] } })()
+    localStorage.setItem('ls_invoices', JSON.stringify(list.filter(i => i.id !== id)))
+  },
+  getInvoiceTemplate: () => {
+    try {
+      const s = localStorage.getItem('ls_invoice_template')
+      if (!s) return { company: 'Level Studios', address: 'Montréal, QC, Canada', email: 'contact@levelstudios.ca', phone: '', website: 'levelstudios.ca', paymentTerms: 'Paiement à 30 jours', bankInfo: '', footer: 'Merci pour votre confiance. — Level Studios', tps: '123456789 RT0001', tvq: '1234567890 TQ0001' }
+      return JSON.parse(s)
+    } catch { return {} }
+  },
+  saveInvoiceTemplate: (data) => {
+    localStorage.setItem('ls_invoice_template', JSON.stringify(data))
+  },
 }

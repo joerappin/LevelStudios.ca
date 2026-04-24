@@ -412,6 +412,9 @@ export default function AdminReservations() {
                             {r.status === 'en_attente' && (
                               <button onClick={() => updateStatus(r.id, 'validee')} title="Valider" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><Check className="w-3.5 h-3.5" /></button>
                             )}
+                            {r.status === 'absent' && (
+                              <button onClick={() => updateStatus(r.id, 'en_attente')} title="Remettre en attente" className="p-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 transition-colors"><RotateCcw className="w-3.5 h-3.5" /></button>
+                            )}
                             {r.status !== 'absent' && r.status !== 'annulee' && r.status !== 'rembourse' && (
                               <button onClick={() => updateStatus(r.id, 'absent')} title="Marquer absent" className="p-1.5 bg-orange-500/20 hover:bg-orange-500/30 rounded-lg text-orange-400 transition-colors"><UserX className="w-3.5 h-3.5" /></button>
                             )}
