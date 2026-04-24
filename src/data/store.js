@@ -649,7 +649,7 @@ export const Store = {
   getInvoiceTemplate: () => {
     try {
       const s = localStorage.getItem('ls_invoice_template')
-      if (!s) return { company: 'Level Studios', address: 'Montréal, QC, Canada', email: 'contact@levelstudios.ca', phone: '', website: 'levelstudios.ca', paymentTerms: 'Paiement à 30 jours', bankInfo: '', footer: 'Merci pour votre confiance. — Level Studios', tps: '123456789 RT0001', tvq: '1234567890 TQ0001' }
+      if (!s) return { company: 'Level Studios', address: 'Montréal, QC, Canada', email: 'contact@levelstudios.ca', phone: '', website: 'levelstudios.ca', paymentTerms: 'Pour réception fichiers audios et vidéos', bankInfo: '', footer: 'Merci pour votre confiance. — Level Studios', tps: '123456789 RT0001', tvq: '1234567890 TQ0001' }
       return JSON.parse(s)
     } catch { return {} }
   },

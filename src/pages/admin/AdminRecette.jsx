@@ -4,7 +4,7 @@ import {
   Receipt, TrendingUp, ChevronLeft, ChevronRight,
   RotateCcw, Tag, BarChart2, Building2, CalendarDays,
   CheckCircle2, CreditCard, FileText, Plus, X, Check,
-  Pencil, Trash2, ArrowRight, Save,
+  Pencil, Trash2, ArrowRight, Save, Download,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -141,13 +141,14 @@ function InvoicePreview({ invoice, template, isDark }) {
           <div className={`flex justify-between font-bold border-t pt-1 ${border} ${tp}`}><span>Total TTC</span><span className="text-violet-500">{ttc} CAD</span></div>
         </div>
       </div>
-      {(template?.paymentTerms || template?.bankInfo || template?.footer) && (
+      {(template?.paymentTerms || template?.bankInfo || template?.footer || invoice?.quoteDate) && (
         <div className={`border-t pt-4 text-xs space-y-1 ${border} ${ts}`}>
           {template?.paymentTerms && <div><span className="font-semibold">Conditions : </span>{template.paymentTerms}</div>}
           {template?.bankInfo && <div><span className="font-semibold">Banque : </span>{template.bankInfo}</div>}
           {template?.tps && <div>N° TPS : {template.tps}</div>}
           {template?.tvq && <div>N° TVQ : {template.tvq}</div>}
           {template?.footer && <div className="mt-2 italic">{template.footer}</div>}
+          {invoice?.quoteDate && <div className="mt-2 text-zinc-500">Édition du devis : {invoice.quoteDate}</div>}
         </div>
       )}
     </div>
@@ -155,7 +156,7 @@ function InvoicePreview({ invoice, template, isDark }) {
 }
 
 // ─── Invoice table — module-level so React never remounts it ─────────────────
-function InvTable({ list, isDark, textPrimary, textSecondary, tableHead, tableRow, onEdit, onMarkPaid, onDelete }) {
+function InvTable({ list, isDark, textPrimary, textSecondary, tableHead, tableRow, onEdit, onMarkPaid, onDelete, onDownload }) {
   if (list.length === 0) return <p className={`text-sm text-center py-10 ${textSecondary}`}>Aucune facture</p>
   return (
     <div className="overflow-x-auto">
@@ -186,15 +187,18 @@ function InvTable({ list, isDark, textPrimary, textSecondary, tableHead, tableRo
                   <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${st.cls}`}>{st.label}</span>
                 </td>
                 <td className="px-4 py-3">
-                  {!inv.source && (
-                    <div className="flex gap-1">
-                      <button onClick={() => onEdit(inv)} title="Modifier" className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors"><Pencil size={12} /></button>
-                      {inv.status === 'unpaid' && (
-                        <button onClick={() => onMarkPaid(inv.id)} title="Marquer payée" className="p-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 transition-colors"><Check size={12} /></button>
-                      )}
-                      <button onClick={() => onDelete(inv.id)} title="Supprimer" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"><Trash2 size={12} /></button>
-                    </div>
-                  )}
+                  <div className="flex gap-1">
+                    <button onClick={() => onDownload(inv)} title="Télécharger" className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"><Download size={12} /></button>
+                    {!inv.source && (
+                      <>
+                        <button onClick={() => onEdit(inv)} title="Modifier" className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors"><Pencil size={12} /></button>
+                        {inv.status === 'unpaid' && (
+                          <button onClick={() => onMarkPaid(inv.id)} title="Marquer payée" className="p-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 transition-colors"><Check size={12} /></button>
+                        )}
+                        <button onClick={() => onDelete(inv.id)} title="Supprimer" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"><Trash2 size={12} /></button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             )
@@ -352,6 +356,92 @@ function InvoiceModal({
       </div>
     </div>
   )
+}
+
+// ─── Print / download ─────────────────────────────────────────────────────────
+function downloadDocument(doc, template) {
+  const items = doc.items || []
+  const totalHT = items.reduce((s, i) => s + (Number(i.qty) || 1) * (Number(i.unitPrice) || 0), 0)
+  const tps = round2(totalHT * TPS_RATE)
+  const tvq = round2(totalHT * TVQ_RATE)
+  const ttc = round2(totalHT + tps + tvq)
+  const isQuote = doc.type === 'quote'
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>${isQuote ? 'Devis' : 'Facture'} ${doc.id || ''}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111;padding:40px;font-size:13px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
+.co{font-size:22px;font-weight:900;color:#7c3aed;margin-bottom:6px}
+.meta{color:#555;font-size:12px;line-height:1.7}
+.doc-title{font-size:28px;font-weight:900;text-align:right;color:#111}
+.doc-ref{text-align:right;color:#666;font-size:12px;margin-top:4px;line-height:1.7}
+.client-box{background:#f5f5f5;border-radius:10px;padding:14px 18px;margin-bottom:24px}
+.lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:4px}
+.cn{font-size:14px;font-weight:600}.cs{font-size:12px;color:#666;margin-top:2px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+thead th{border-bottom:2px solid #e5e5e5;padding:10px 8px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#666}
+thead th:not(:first-child){text-align:right}
+tbody td{padding:10px 8px;border-bottom:1px solid #f0f0f0}
+tbody td:not(:first-child){text-align:right}
+.totals{display:flex;justify-content:flex-end;margin-bottom:28px}
+.ti{width:220px}
+.tr{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:#555}
+.tr.tot{border-top:2px solid #e5e5e5;margin-top:6px;padding-top:8px;font-weight:900;font-size:15px;color:#111}
+.tr.tot span:last-child{color:#7c3aed}
+.foot{border-top:1px solid #e5e5e5;padding-top:16px;font-size:11px;color:#666;line-height:1.9}
+.foot strong{font-weight:700}
+@media print{body{padding:20px}@page{margin:15mm}}
+</style></head><body>
+<div class="header">
+  <div>
+    <div class="co">${template?.company || 'Level Studios'}</div>
+    <div class="meta">${[template?.address, template?.email, template?.phone, template?.website].filter(Boolean).map(v => `<div>${v}</div>`).join('')}</div>
+  </div>
+  <div>
+    <div class="doc-title">${isQuote ? 'DEVIS' : 'FACTURE'}</div>
+    <div class="doc-ref">
+      <div>N° ${doc.id || ''}</div>
+      <div>Date : ${doc.date || ''}</div>
+      ${doc.dueDate ? `<div>Échéance : ${doc.dueDate}</div>` : ''}
+      ${doc.validUntil ? `<div>Valide jusqu'au : ${doc.validUntil}</div>` : ''}
+    </div>
+  </div>
+</div>
+<div class="client-box">
+  <div class="lbl">Facturer à</div>
+  <div class="cn">${doc.clientName || ''}</div>
+  ${doc.clientCompany ? `<div class="cs">${doc.clientCompany}</div>` : ''}
+  ${doc.clientEmail ? `<div class="cs">${doc.clientEmail}</div>` : ''}
+</div>
+<table>
+  <thead><tr><th>Description</th><th>Qté</th><th>Prix unit.</th><th>Total HT</th></tr></thead>
+  <tbody>${items.map(it => `<tr><td>${it.description || ''}</td><td>${it.qty || 1}</td><td>${it.unitPrice} CAD</td><td>${(it.qty || 1) * it.unitPrice} CAD</td></tr>`).join('')}</tbody>
+</table>
+<div class="totals"><div class="ti">
+  <div class="tr"><span>Sous-total HT</span><span>${totalHT} CAD</span></div>
+  <div class="tr"><span>TPS (5%)</span><span>${tps} CAD</span></div>
+  <div class="tr"><span>TVQ (9.975%)</span><span>${tvq} CAD</span></div>
+  <div class="tr tot"><span>Total TTC</span><span>${ttc} CAD</span></div>
+</div></div>
+<div class="foot">
+  ${template?.paymentTerms ? `<div><strong>Conditions :</strong> ${template.paymentTerms}</div>` : ''}
+  ${template?.bankInfo ? `<div><strong>Banque :</strong> ${template.bankInfo}</div>` : ''}
+  ${template?.tps ? `<div>N° TPS : ${template.tps}</div>` : ''}
+  ${template?.tvq ? `<div>N° TVQ : ${template.tvq}</div>` : ''}
+  ${doc.quoteDate ? `<div style="margin-top:8px;color:#999">Édition du devis : ${doc.quoteDate}</div>` : ''}
+  ${doc.notes ? `<div style="margin-top:6px"><em>${doc.notes}</em></div>` : ''}
+  ${template?.footer ? `<div style="margin-top:6px"><em>${template.footer}</em></div>` : ''}
+</div>
+</body></html>`
+
+  const win = window.open('', '_blank')
+  win.document.write(html)
+  win.document.close()
+  win.focus()
+  setTimeout(() => win.print(), 400)
 }
 
 // ─── Default form shapes ──────────────────────────────────────────────────────
@@ -544,8 +634,7 @@ export default function AdminRecette() {
     setShowDevisModal(true)
   }
   function convertToInvoice(devis) {
-    if (!confirm(`Convertir le devis ${devis.id} en facture ?`)) return
-    Store.updateInvoice(devis.id, { type: 'invoice', status: 'unpaid' })
+    Store.updateInvoice(devis.id, { type: 'invoice', status: 'unpaid', quoteDate: devis.date })
     reloadInvoices()
   }
   function handleDeleteDevis(id) { if (!confirm('Supprimer ce devis ?')) return; Store.deleteInvoice(id); reloadInvoices() }
@@ -724,7 +813,7 @@ export default function AdminRecette() {
                 <h3 className={`font-semibold text-sm ${textPrimary}`}>Factures à payer</h3>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold">{allUnpaidInvoices.length}</span>
               </div>
-              <InvTable list={allUnpaidInvoices} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary} tableHead={tableHead} tableRow={tableRow} onEdit={openEditInv} onMarkPaid={handleMarkInvPaid} onDelete={handleDeleteInv} />
+              <InvTable list={allUnpaidInvoices} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary} tableHead={tableHead} tableRow={tableRow} onEdit={openEditInv} onMarkPaid={handleMarkInvPaid} onDelete={handleDeleteInv} onDownload={inv => downloadDocument(inv, template)} />
             </div>
           )}
 
@@ -735,7 +824,7 @@ export default function AdminRecette() {
                 <h3 className={`font-semibold text-sm ${textPrimary}`}>Factures payées</h3>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">{allPaidInvoices.length}</span>
               </div>
-              <InvTable list={allPaidInvoices} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary} tableHead={tableHead} tableRow={tableRow} onEdit={openEditInv} onMarkPaid={handleMarkInvPaid} onDelete={handleDeleteInv} />
+              <InvTable list={allPaidInvoices} isDark={isDark} textPrimary={textPrimary} textSecondary={textSecondary} tableHead={tableHead} tableRow={tableRow} onEdit={openEditInv} onMarkPaid={handleMarkInvPaid} onDelete={handleDeleteInv} onDownload={inv => downloadDocument(inv, template)} />
             </div>
           )}
 
@@ -751,7 +840,7 @@ export default function AdminRecette() {
                   { label: 'Site web',                 key: 'website',      placeholder: 'levelstudios.ca' },
                   { label: 'N° TPS',                   key: 'tps',          placeholder: '123456789 RT0001' },
                   { label: 'N° TVQ',                   key: 'tvq',          placeholder: '1234567890 TQ0001' },
-                  { label: 'Conditions de paiement',   key: 'paymentTerms', placeholder: 'Paiement à 30 jours' },
+                  { label: 'Conditions de paiement',   key: 'paymentTerms', placeholder: 'Pour réception fichiers audios et vidéos' },
                   { label: 'Informations bancaires',   key: 'bankInfo',     placeholder: 'Banque / IBAN / etc.' },
                 ].map(f => (
                   <div key={f.key}>
@@ -830,9 +919,10 @@ export default function AdminRecette() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1 flex-wrap">
+                              <button onClick={() => downloadDocument(d, template)} title="Télécharger" className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"><Download size={12} /></button>
                               <button onClick={() => openEditDevis(d)} className="p-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 transition-colors" title="Modifier"><Pencil size={12} /></button>
                               <button onClick={() => convertToInvoice(d)} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs font-semibold transition-colors" title="Convertir en facture">
-                                <ArrowRight size={11} /> Facture
+                                <ArrowRight size={11} /> FACT
                               </button>
                               <button onClick={() => handleDeleteDevis(d.id)} className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Supprimer"><Trash2 size={12} /></button>
                             </div>
