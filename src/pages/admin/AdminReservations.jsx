@@ -51,6 +51,39 @@ const emptyForm = {
   sendEmail: true,
 }
 
+const StarDisplay = ({ value, isDark }) => (
+  <div className="flex gap-0.5">
+    {[1,2,3,4,5].map(n => (
+      <Star key={n} size={11} className={n <= value ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
+    ))}
+  </div>
+)
+
+const SectionHeader = ({ icon, title, textPrimary }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400">{icon}</div>
+    <h3 className={cn('font-semibold', textPrimary)}>{title}</h3>
+  </div>
+)
+
+const Field = ({ label, error, children, textPrimary }) => (
+  <div>
+    <label className={cn('block text-xs font-medium mb-1.5', textPrimary)}>{label}</label>
+    {children}
+    {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+  </div>
+)
+
+const FormInput = ({ inputCls, ...props }) => (
+  <input className={cn('w-full px-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-colors', inputCls)} {...props} />
+)
+
+const FormSelect = ({ value, onChange, options, inputCls }) => (
+  <select value={value} onChange={onChange} className={cn('w-full px-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-colors', inputCls)}>
+    {options.map(opt => <option key={opt.value ?? opt} value={opt.value ?? opt}>{opt.label ?? opt}</option>)}
+  </select>
+)
+
 function calcEndTime(start, dur) {
   const [h, m] = start.split(':').map(Number)
   const totalMin = h * 60 + m + dur * 60
@@ -256,38 +289,6 @@ export default function AdminReservations() {
     setForm(emptyForm)
   }
 
-  const StarDisplay = ({ value }) => (
-    <div className="flex gap-0.5">
-      {[1,2,3,4,5].map(n => (
-        <Star key={n} size={11} className={n <= value ? 'text-amber-400 fill-amber-400' : isDark ? 'text-zinc-700 fill-zinc-700' : 'text-gray-200 fill-gray-200'} />
-      ))}
-    </div>
-  )
-
-  const SectionHeader = ({ icon, title }) => (
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-8 h-8 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400">{icon}</div>
-      <h3 className={cn('font-semibold', textPrimary)}>{title}</h3>
-    </div>
-  )
-
-  const Field = ({ label, error, children }) => (
-    <div>
-      <label className={cn('block text-xs font-medium mb-1.5', textPrimary)}>{label}</label>
-      {children}
-      {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
-    </div>
-  )
-
-  const Input = (props) => (
-    <input className={cn('w-full px-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-colors', inputCls)} {...props} />
-  )
-
-  const Select = ({ value, onChange, options }) => (
-    <select value={value} onChange={onChange} className={cn('w-full px-3 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 transition-colors', inputCls)}>
-      {options.map(opt => <option key={opt.value ?? opt} value={opt.value ?? opt}>{opt.label ?? opt}</option>)}
-    </select>
-  )
 
   return (
     <Layout navItems={ADMIN_NAV} title="Réservations">
@@ -387,7 +388,7 @@ export default function AdminReservations() {
                     <td className="px-5 py-3.5 hidden sm:table-cell">
                       {r.rating ? (
                         <div className="flex flex-col gap-0.5">
-                          <StarDisplay value={r.rating} />
+                          <StarDisplay value={r.rating} isDark={isDark} />
                           {r.rating_comment && (
                             <p className={`text-[10px] max-w-[120px] truncate ${textSecondary}`} title={r.rating_comment}>
                               "{r.rating_comment}"
@@ -622,7 +623,7 @@ export default function AdminReservations() {
                   <div className="flex-1 space-y-5">
                     {/* Section 1: Client info */}
                     <div className={cn('border rounded-2xl p-6', card)}>
-                      <SectionHeader icon={<User size={16} />} title="Informations client" />
+                      <SectionHeader icon={<User size={16} />} title="Informations client" textPrimary={textPrimary} />
                       {/* Client picker */}
                       <div className="mb-4 relative">
                         <label className={cn('block text-xs font-medium mb-1.5', textPrimary)}>Client existant</label>
@@ -648,21 +649,21 @@ export default function AdminReservations() {
                         )}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <Field label="Prénom *" error={errors.firstName}>
-                          <Input value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="Jean" />
+                        <Field label="Prénom *" error={errors.firstName} textPrimary={textPrimary}>
+                          <FormInput inputCls={inputCls} value={form.firstName} onChange={e => set('firstName', e.target.value)} placeholder="Jean" />
                         </Field>
-                        <Field label="Nom *" error={errors.lastName}>
-                          <Input value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Dupont" />
+                        <Field label="Nom *" error={errors.lastName} textPrimary={textPrimary}>
+                          <FormInput inputCls={inputCls} value={form.lastName} onChange={e => set('lastName', e.target.value)} placeholder="Dupont" />
                         </Field>
-                        <Field label="Email *" error={errors.email}>
-                          <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="jean@exemple.fr" />
+                        <Field label="Email *" error={errors.email} textPrimary={textPrimary}>
+                          <FormInput inputCls={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="jean@exemple.fr" />
                         </Field>
-                        <Field label="Téléphone">
-                          <Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0612345678" />
+                        <Field label="Téléphone" textPrimary={textPrimary}>
+                          <FormInput inputCls={inputCls} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0612345678" />
                         </Field>
                         <div className="col-span-2">
-                          <Field label="Société (optionnel)">
-                            <Input value={form.company} onChange={e => set('company', e.target.value)} placeholder="Nom de la société" />
+                          <Field label="Société (optionnel)" textPrimary={textPrimary}>
+                            <FormInput inputCls={inputCls} value={form.company} onChange={e => set('company', e.target.value)} placeholder="Nom de la société" />
                           </Field>
                         </div>
                       </div>
@@ -670,25 +671,25 @@ export default function AdminReservations() {
 
                     {/* Section 2: Réservation */}
                     <div className={cn('border rounded-2xl p-6', card)}>
-                      <SectionHeader icon={<Calendar size={16} />} title="Réservation" />
+                      <SectionHeader icon={<Calendar size={16} />} title="Réservation" textPrimary={textPrimary} />
                       <div className="grid grid-cols-2 gap-4">
-                        <Field label="Studio">
-                          <Select value={form.studio} onChange={e => set('studio', e.target.value)} options={STUDIOS} />
+                        <Field label="Studio" textPrimary={textPrimary}>
+                          <FormSelect inputCls={inputCls} value={form.studio} onChange={e => set('studio', e.target.value)} options={STUDIOS} />
                         </Field>
-                        <Field label="Date *" error={errors.date}>
+                        <Field label="Date *" error={errors.date} textPrimary={textPrimary}>
                           <div className="flex gap-2">
-                            <Input type="date" value={form.date} onChange={e => set('date', e.target.value)} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
+                            <FormInput inputCls={inputCls} type="date" value={form.date} onChange={e => set('date', e.target.value)} style={{ colorScheme: isDark ? 'dark' : 'light' }} />
                             <DatePicker value={form.date} onChange={v => set('date', v)} isDark={isDark} />
                           </div>
                         </Field>
-                        <Field label="Heure de début">
-                          <Select value={form.startTime} onChange={e => set('startTime', e.target.value)} options={TIMES} />
+                        <Field label="Heure de début" textPrimary={textPrimary}>
+                          <FormSelect inputCls={inputCls} value={form.startTime} onChange={e => set('startTime', e.target.value)} options={TIMES} />
                         </Field>
-                        <Field label="Durée (heures)">
-                          <Select value={form.duration} onChange={e => set('duration', Number(e.target.value))} options={DURATIONS.map(d => ({ value: d, label: `${d}h` }))} />
+                        <Field label="Durée (heures)" textPrimary={textPrimary}>
+                          <FormSelect inputCls={inputCls} value={form.duration} onChange={e => set('duration', Number(e.target.value))} options={DURATIONS.map(d => ({ value: d, label: `${d}h` }))} />
                         </Field>
                         <div className="col-span-2">
-                          <Field label="Service">
+                          <Field label="Service" textPrimary={textPrimary}>
                             <div className="grid grid-cols-2 gap-2">
                               {SERVICES.map(s => (
                                 <button key={s.key} type="button" onClick={() => set('service', s.key)}
@@ -720,22 +721,22 @@ export default function AdminReservations() {
 
                     {/* Section 3: Paiement */}
                     <div className={cn('border rounded-2xl p-6', card)}>
-                      <SectionHeader icon={<CreditCard size={16} />} title="Paiement" />
+                      <SectionHeader icon={<CreditCard size={16} />} title="Paiement" textPrimary={textPrimary} />
                       <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                          <Field label="Numéro de carte">
-                            <Input value={form.cardNumber} onChange={e => set('cardNumber', e.target.value)} placeholder="1234 5678 9012 3456" maxLength={19} />
+                          <Field label="Numéro de carte" textPrimary={textPrimary}>
+                            <FormInput inputCls={inputCls} value={form.cardNumber} onChange={e => set('cardNumber', e.target.value)} placeholder="1234 5678 9012 3456" maxLength={19} />
                           </Field>
                         </div>
-                        <Field label="Expiration">
-                          <Input value={form.cardExpiry} onChange={e => set('cardExpiry', e.target.value)} placeholder="MM/AA" maxLength={5} />
+                        <Field label="Expiration" textPrimary={textPrimary}>
+                          <FormInput inputCls={inputCls} value={form.cardExpiry} onChange={e => set('cardExpiry', e.target.value)} placeholder="MM/AA" maxLength={5} />
                         </Field>
-                        <Field label="CVV">
-                          <Input value={form.cardCvv} onChange={e => set('cardCvv', e.target.value)} placeholder="123" maxLength={4} />
+                        <Field label="CVV" textPrimary={textPrimary}>
+                          <FormInput inputCls={inputCls} value={form.cardCvv} onChange={e => set('cardCvv', e.target.value)} placeholder="123" maxLength={4} />
                         </Field>
                         <div className="col-span-2">
-                          <Field label="Titulaire">
-                            <Input value={form.cardHolder} onChange={e => set('cardHolder', e.target.value)} placeholder="Prénom Nom" />
+                          <Field label="Titulaire" textPrimary={textPrimary}>
+                            <FormInput inputCls={inputCls} value={form.cardHolder} onChange={e => set('cardHolder', e.target.value)} placeholder="Prénom Nom" />
                           </Field>
                         </div>
                       </div>
@@ -743,7 +744,7 @@ export default function AdminReservations() {
 
                     {/* Section 4: Confirmation email */}
                     <div className={cn('border rounded-2xl p-6', card)}>
-                      <SectionHeader icon={<Settings size={16} />} title="Confirmation" />
+                      <SectionHeader icon={<Settings size={16} />} title="Confirmation" textPrimary={textPrimary} />
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={form.sendEmail} onChange={e => set('sendEmail', e.target.checked)} className="w-4 h-4 rounded accent-violet-600" />
                         <span className={cn('text-sm', textPrimary)}>Envoyer un ticket de confirmation par email</span>
