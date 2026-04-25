@@ -31,6 +31,13 @@ export default function ClientReservations() {
     setCancelModal(null)
   }
 
+  // Annulation autorisée uniquement si la réservation est à plus de 48h
+  const canCancel = (r) => {
+    if (!r.date) return false
+    const resaDate = new Date(`${r.date}T${r.start_time ? r.start_time + ':00' : '00:00:00'}`)
+    return (resaDate - new Date()) / (1000 * 60 * 60) >= 48
+  }
+
   const handlePay = (resa) => {
     Store.updateReservation(resa.id, { status: 'validee', paid_at: new Date().toISOString() })
     reload()
@@ -174,16 +181,22 @@ export default function ClientReservations() {
                             </button>
                           )}
                           {['validee', 'a_payer'].includes(r.status) && (
-                            <button
-                              onClick={() => setCancelModal(r)}
-                              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
-                                isDark
-                                  ? 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
-                                  : 'border-gray-200 text-gray-500 hover:text-gray-700'
-                              }`}
-                            >
-                              {t('cancel')}
-                            </button>
+                            canCancel(r) ? (
+                              <button
+                                onClick={() => setCancelModal(r)}
+                                className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                                  isDark
+                                    ? 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
+                                    : 'border-gray-200 text-gray-500 hover:text-gray-700'
+                                }`}
+                              >
+                                {t('cancel')}
+                              </button>
+                            ) : (
+                              <span className={`text-[10px] font-medium px-2 py-1 rounded-lg ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-gray-100 text-gray-400'}`} title="Annulation impossible moins de 48h avant la session">
+                                Non annulable
+                              </span>
+                            )
                           )}
                         </div>
                       </td>
