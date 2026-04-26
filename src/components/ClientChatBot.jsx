@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageSquare, X, Send, Zap, Bot, Check, CheckCheck } from 'lucide-react'
+import { MessageSquare, X, Send, Zap, Bot } from 'lucide-react'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -25,9 +25,11 @@ function BotText({ text }) {
   )
 }
 
-function ReadReceipt({ adminRead }) {
-  if (adminRead) return <CheckCheck className="w-3 h-3 text-blue-400 flex-shrink-0" />
-  return <Check className="w-3 h-3 text-zinc-500 flex-shrink-0" />
+function isOnline() {
+  const now = new Date()
+  const day = now.getDay() // 0=dim, 6=sam
+  const h = now.getHours()
+  return day >= 1 && day <= 5 && h >= 10 && h < 19
 }
 
 const WELCOME = {
@@ -207,11 +209,13 @@ export default function ClientChatBot() {
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-white" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-[#1e3a8a]" />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#1e3a8a] ${isOnline() ? 'bg-green-400' : 'bg-orange-400'}`} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white leading-none">Level Studios</p>
-              <p className="text-[10px] text-white/60 mt-0.5">{user?.name} · {user?.id}</p>
+              <p className="text-[10px] text-white/60 mt-0.5">
+                {isOnline() ? 'En ligne' : 'De retour prochainement'}
+              </p>
             </div>
             <button onClick={() => setOpen(false)}
               className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex-shrink-0">
@@ -247,11 +251,6 @@ export default function ClientChatBot() {
                         : <p className="text-xs text-white leading-relaxed whitespace-pre-line">{msg.body}</p>
                       }
                     </div>
-                    {isClient && (
-                      <div className="flex items-center gap-1 mt-0.5 mr-1">
-                        <ReadReceipt adminRead={msg.admin_read} />
-                      </div>
-                    )}
                   </div>
                 </div>
               )
