@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageSquare, X, Send, Zap, Bot } from 'lucide-react'
+import { MessageSquare, X, Send, Zap, Bot, Star } from 'lucide-react'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -22,6 +22,24 @@ function BotText({ text }) {
     <p className="text-xs text-zinc-200 leading-relaxed">
       {parts.map((p, i) => i % 2 === 1 ? <strong key={i} className="text-white">{p}</strong> : p)}
     </p>
+  )
+}
+
+function StarRating({ onRate }) {
+  const [hover,  setHover]  = useState(0)
+  const [picked, setPicked] = useState(0)
+  return (
+    <div className="flex gap-1.5 mt-2">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button key={n}
+          onMouseEnter={() => { if (!picked) setHover(n) }}
+          onMouseLeave={() => setHover(0)}
+          onClick={() => { if (picked) return; setPicked(n); onRate(n) }}
+          className={`transition-transform ${!picked ? 'hover:scale-110' : ''}`}>
+          <Star className={`w-7 h-7 transition-colors ${(hover || picked) >= n ? 'text-amber-400 fill-amber-400' : 'text-zinc-600'}`} />
+        </button>
+      ))}
+    </div>
   )
 }
 
@@ -83,13 +101,23 @@ export default function ClientChatBot() {
     }
   }, [user])
 
-  // Restore open conversation on mount
+  // Restore open conv, or show pending rating if any
   useEffect(() => {
     if (!user) return
     const existing = Store.getMessages().find(m => m.from_user_id === user.id && m.status === 'open')
     if (existing) {
       setConvStatus('open')
       setMessages([WELCOME, ...buildMessagesFromConv(existing)])
+      return
+    }
+    const pending = Store.getMessages().find(m => m.from_user_id === user.id && m.rating_requested && !m.rating)
+    if (pending) {
+      setConvStatus('closed')
+      setMessages([WELCOME, {
+        from: 'bot', type: 'rating',
+        body: 'Comment évaluez-vous votre expérience avec notre équipe ? ⭐',
+        created_at: new Date().toISOString(),
+      }])
     }
   }, [user])
 
@@ -120,8 +148,8 @@ export default function ClientChatBot() {
     } else if (convStatus === 'open') {
       setConvStatus('closed')
       setMessages(prev => [...prev, {
-        from: 'bot',
-        body: 'Notre équipe a clôturé ce sujet. ✅\n\nVous pouvez ouvrir une nouvelle demande en sélectionnant une action ci-dessous.',
+        from: 'bot', type: 'rating',
+        body: 'Notre équipe a clôturé ce sujet. ✅\n\nComment évaluez-vous votre expérience ? Votre avis nous aide à nous améliorer.',
         created_at: new Date().toISOString(),
       }])
     }
@@ -180,6 +208,17 @@ export default function ClientChatBot() {
         created_at: new Date().toISOString(),
       }])
     }, 600)
+  }
+
+  function submitRating(stars) {
+    const conv = Store.getMessages().find(m => m.from_user_id === user?.id && m.rating_requested && !m.rating)
+    if (conv) Store.updateMessage(conv.id, { rating: stars, rating_at: new Date().toISOString() })
+    setMessages(prev => prev.map(m => m.type === 'rating' ? { ...m, rated: true, ratingValue: stars } : m))
+    setTimeout(() => setMessages(prev => [...prev, {
+      from: 'bot',
+      body: `Merci pour votre note de ${stars}/5 ⭐ Votre avis est précieux pour nous !`,
+      created_at: new Date().toISOString(),
+    }]), 400)
   }
 
   function handleActionClick(action) {
@@ -246,7 +285,21 @@ export default function ClientChatBot() {
                     <div className={`rounded-xl px-3 py-2 max-w-[88%] inline-block ${
                       isClient ? 'bg-blue-600 rounded-tr-sm' : 'bg-zinc-800 rounded-tl-sm'
                     }`}>
-                      {isBot || isAdmin
+                      {isBot && msg.type === 'rating' ? (
+                        <>
+                          <BotText text={msg.body} />
+                          {!msg.rated
+                            ? <StarRating onRate={submitRating} />
+                            : (
+                              <div className="flex gap-1 mt-2">
+                                {[1,2,3,4,5].map(n => (
+                                  <Star key={n} className={`w-5 h-5 ${n <= msg.ratingValue ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'}`} />
+                                ))}
+                              </div>
+                            )
+                          }
+                        </>
+                      ) : isBot || isAdmin
                         ? <BotText text={msg.body} />
                         : <p className="text-xs text-white leading-relaxed whitespace-pre-line">{msg.body}</p>
                       }

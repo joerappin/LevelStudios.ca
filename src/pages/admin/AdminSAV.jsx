@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   Search, Send, MessageSquare, CheckCircle, XCircle, Trash2,
-  Check, CheckCheck, ChevronDown, History, X, Phone, Mail,
+  Check, CheckCheck, ChevronDown, History, X, Phone, Mail, Star,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -372,11 +372,18 @@ export default function AdminSAV() {
     }, 300)
   }
 
+  const resendRating = (m, e) => {
+    e.stopPropagation()
+    Store.updateMessage(m.id, { rating_requested: true })
+    setMessages(Store.getMessages())
+  }
+
   const toggleStatus = () => {
     if (!selected) return
     const newStatus = selected.status === 'closed' ? 'open' : 'closed'
-    Store.updateMessage(selected.id, { status: newStatus })
-    setSelected({ ...selected, status: newStatus })
+    const extra = newStatus === 'closed' ? { rating_requested: true } : {}
+    Store.updateMessage(selected.id, { status: newStatus, ...extra })
+    setSelected({ ...selected, status: newStatus, ...extra })
     setMessages(Store.getMessages())
   }
 
@@ -444,14 +451,16 @@ export default function AdminSAV() {
                 const isClosed     = m.status === 'closed'
                 const hasUnread    = !m.read
                 const isClientChat = m.is_client_chat
+                const ratingDone   = !!m.rating
+                const ratingPending = m.rating_requested && !m.rating
                 return (
-                  <button key={m.id} onClick={() => selectMsg(m)}
-                    className={`w-full text-left rounded-xl px-4 py-3.5 border transition-colors ${
+                  <div key={m.id} onClick={() => selectMsg(m)}
+                    className={`relative w-full text-left rounded-xl px-4 py-3.5 border transition-colors cursor-pointer ${
                       selected?.id === m.id
                         ? isDark ? 'bg-zinc-800 border-violet-500' : 'bg-violet-50 border-violet-400'
                         : isDark ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-600' : 'bg-white border-gray-200 hover:border-gray-300'
                     }`}>
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2 pr-8">
                       {hasUnread && <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0" />}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -483,10 +492,30 @@ export default function AdminSAV() {
                           {m.replies?.length > 0 && (
                             <span className="text-xs text-violet-400 font-medium">· {m.replies.length} msg{m.replies.length > 1 ? 's' : ''}</span>
                           )}
+                          {ratingDone && (
+                            <span className="flex items-center gap-0.5 text-[10px] text-amber-400">
+                              <Star className="w-3 h-3 fill-amber-400" />{m.rating}/5
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                  </button>
+                    {/* Star re-trigger button */}
+                    {isClosed && (
+                      <button
+                        onClick={(e) => resendRating(m, e)}
+                        title={ratingDone ? `Note : ${m.rating}/5` : 'Relancer la demande de notation'}
+                        className={`absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg border transition-colors ${
+                          ratingDone
+                            ? isDark ? 'border-zinc-700 text-amber-400 cursor-default' : 'border-gray-200 text-amber-500 cursor-default'
+                            : ratingPending
+                              ? 'border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                              : isDark ? 'border-zinc-700 text-zinc-600 hover:text-amber-400 hover:border-amber-500/40' : 'border-gray-200 text-gray-400 hover:text-amber-500'
+                        }`}>
+                        <Star className={`w-3.5 h-3.5 ${ratingDone ? 'fill-amber-400' : ''}`} />
+                      </button>
+                    )}
+                  </div>
                 )
               })}
             </div>

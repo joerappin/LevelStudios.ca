@@ -4,7 +4,7 @@ import {
   Bell, ChevronDown, ChevronUp, LogOut, User,
   Sun, Moon, Headphones,
   Home, CalendarDays, FolderOpen, CreditCard,
-  KeyRound, Menu, Film, LayoutDashboard,
+  KeyRound, Menu, Film, LayoutDashboard, Star,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
@@ -40,6 +40,40 @@ const LIGHT_T = {
 // ── Netflix layout accent ─────────────────────────────────────────────────────
 const ACCENT = '#00bcd4'
 
+function RatingPopup({ onSubmit }) {
+  const [hover,    setHover]    = useState(0)
+  const [selected, setSelected] = useState(0)
+  return (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.88)' }}>
+      <div className="rounded-2xl border border-zinc-700 p-8 w-80 text-center shadow-2xl" style={{ background: '#18181b' }}>
+        <div className="w-12 h-12 rounded-full bg-amber-500/15 flex items-center justify-center mx-auto mb-4">
+          <Star className="w-6 h-6 text-amber-400" />
+        </div>
+        <p className="text-lg font-bold text-white">Votre avis compte !</p>
+        <p className="text-sm text-zinc-400 mt-2 mb-5">Comment s'est passée votre expérience<br />avec notre équipe support ?</p>
+        <div className="flex justify-center gap-2">
+          {[1, 2, 3, 4, 5].map(n => (
+            <button key={n}
+              onMouseEnter={() => { if (!selected) setHover(n) }}
+              onMouseLeave={() => setHover(0)}
+              onClick={() => { if (!selected) setSelected(n) }}
+              className="transition-transform hover:scale-110">
+              <Star className={`w-9 h-9 transition-all ${(hover || selected) >= n ? 'text-amber-400 fill-amber-400' : 'text-zinc-600'}`} />
+            </button>
+          ))}
+        </div>
+        {selected > 0 && (
+          <button onClick={() => onSubmit(selected)}
+            className="mt-5 w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors">
+            Envoyer ma note →
+          </button>
+        )}
+        <p className="text-[10px] text-zinc-600 mt-3">Ce formulaire est requis avant de continuer</p>
+      </div>
+    </div>
+  )
+}
+
 export default function ClientLayout({ children, transparent = false, title }) {
   const { user, logout, impersonatedBy, stopImpersonating } = useAuth()
   const { theme, lang, toggleTheme, toggleLang } = useApp()
@@ -58,7 +92,19 @@ export default function ClientLayout({ children, transparent = false, title }) {
   const [scrolled,    setScrolled]    = useState(false)
   const [userMenu,    setUserMenu]    = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [ratingMsg,   setRatingMsg]   = useState(null)
   const userRef = useRef(null)
+
+  useEffect(() => {
+    if (!user) return
+    const pending = Store.getMessages().find(m =>
+      m.from_user_id === user.id &&
+      m.status === 'closed' &&
+      m.rating_requested &&
+      !m.rating
+    )
+    setRatingMsg(pending || null)
+  }, [user])
 
   const t      = (k) => translations[lang]?.[k] || k
   const isDark = theme === 'dark'
@@ -416,6 +462,14 @@ export default function ClientLayout({ children, transparent = false, title }) {
       <main style={{ padding: transparent ? 0 : `${impersonatedBy ? 128 : 92}px 24px 32px` }}>
         {children}
       </main>
+
+      {/* Popup notation SAV — non fermable */}
+      {ratingMsg && (
+        <RatingPopup onSubmit={(stars) => {
+          Store.updateMessage(ratingMsg.id, { rating: stars, rating_at: new Date().toISOString() })
+          setRatingMsg(null)
+        }} />
+      )}
 
       {/* Chatbot client */}
       <ClientChatBot />
