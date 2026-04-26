@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   Search, Send, MessageSquare, CheckCircle, XCircle, Trash2,
-  Check, CheckCheck, ChevronDown, History, X, Phone, Mail, User, Target,
+  Check, CheckCheck, ChevronDown, History, X, Phone, Mail,
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -10,7 +10,6 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { formatDate } from '../../utils'
 
-// ─── Closer kanban columns ─────────────────────────────────────────────────
 const LEAD_COLUMNS = [
   'Pool Leads',
   'Leads à contacter',
@@ -44,6 +43,13 @@ const LEAD_COL_BADGE = {
   'Follow Up':           'bg-green-500/20 text-green-300',
 }
 
+const KPI_COLORS = {
+  violet: 'text-violet-400',
+  amber:  'text-amber-400',
+  red:    'text-red-400',
+  green:  'text-green-400',
+}
+
 function fmtDt(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -51,7 +57,6 @@ function fmtDt(iso) {
     + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-// ─── History popup ─────────────────────────────────────────────────────────
 function HistoryPopup({ history, onClose, title }) {
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70" onClick={onClose}>
@@ -85,7 +90,6 @@ function HistoryPopup({ history, onClose, title }) {
   )
 }
 
-// ─── Lead card ─────────────────────────────────────────────────────────────
 function LeadCard({ lead, onMove, isDark }) {
   const [showHistory, setShowHistory] = useState(false)
   const [showMove,    setShowMove]    = useState(false)
@@ -102,7 +106,6 @@ function LeadCard({ lead, onMove, isDark }) {
   return (
     <>
       <div className={`border rounded-xl p-3 space-y-2 transition-colors ${isDark ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
-        {/* Top row */}
         <div className="flex items-start gap-2">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 mt-0.5">
             {(lead.name || '?')[0].toUpperCase()}
@@ -122,8 +125,6 @@ function LeadCard({ lead, onMove, isDark }) {
             </div>
           </div>
         </div>
-
-        {/* Info */}
         <div className="space-y-1">
           {lead.email && (
             <div className="flex items-center gap-1.5">
@@ -138,18 +139,13 @@ function LeadCard({ lead, onMove, isDark }) {
             </div>
           )}
         </div>
-
         {lead.subject && (
           <p className={`text-[10px] truncate italic ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>"{lead.subject}"</p>
         )}
         <div className={`text-[10px] ${isDark ? 'text-zinc-600' : 'text-gray-400'}`}>{fmtDt(lead.created_at)}</div>
-
-        {/* Actions */}
         <div className="flex items-center gap-1.5 pt-0.5" ref={ref}>
-          {/* Move dropdown */}
           <div className="relative flex-1">
-            <button
-              onClick={() => setShowMove(v => !v)}
+            <button onClick={() => setShowMove(v => !v)}
               className={`w-full flex items-center justify-between gap-1 px-2 py-1.5 rounded-lg text-[10px] font-semibold border transition-colors ${badge}`}>
               <span className="truncate">{lead.column}</span>
               <ChevronDown className="w-3 h-3 flex-shrink-0" />
@@ -169,8 +165,6 @@ function LeadCard({ lead, onMove, isDark }) {
               </div>
             )}
           </div>
-
-          {/* History */}
           <button onClick={() => setShowHistory(true)}
             className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors flex-shrink-0 ${
               isDark ? 'border-zinc-700 text-zinc-500 hover:text-violet-400 hover:border-violet-500/40' : 'border-gray-200 text-gray-400 hover:text-violet-600'
@@ -180,48 +174,72 @@ function LeadCard({ lead, onMove, isDark }) {
           </button>
         </div>
       </div>
-
       {showHistory && (
-        <HistoryPopup
-          history={lead.history}
-          title={lead.name || lead.email}
-          onClose={() => setShowHistory(false)}
-        />
+        <HistoryPopup history={lead.history} title={lead.name || lead.email} onClose={() => setShowHistory(false)} />
       )}
     </>
   )
 }
 
-// ─── Closer Board ──────────────────────────────────────────────────────────
 function CloserBoard({ isDark, user }) {
-  const [leads, setLeads]   = useState([])
-  const [search, setSearch] = useState('')
+  const [leads,         setLeads]         = useState([])
+  const [search,        setSearch]        = useState('')
+  const [selectedMonth, setSelectedMonth] = useState('all')
 
   const load = () => setLeads(Store.getLeads())
   useEffect(() => { load() }, [])
 
-  const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
-  const inputCls = isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+  const now = new Date()
+  const MONTHS = [{ value: 'all', label: 'Tous les mois' }]
+  for (let m = 0; m <= now.getMonth(); m++) {
+    const d = new Date(now.getFullYear(), m, 1)
+    MONTHS.push({
+      value: `${now.getFullYear()}-${String(m + 1).padStart(2, '0')}`,
+      label: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+    })
+  }
+
+  const monthFiltered = selectedMonth === 'all' ? leads : leads.filter(l => {
+    if (!l.created_at) return false
+    const d = new Date(l.created_at)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === selectedMonth
+  })
+
+  const kpi = {
+    total:     monthFiltered.length,
+    toCall:    monthFiltered.filter(l => ['Rappel 1', 'Rappel 2', 'Rappel 3'].includes(l.column)).length,
+    lost:      monthFiltered.filter(l => ['Leads Jamais pris', 'Annulation'].includes(l.column)).length,
+    converted: monthFiltered.filter(l => l.column === 'Follow Up').length,
+  }
 
   const filtered = search
-    ? leads.filter(l => [l.name, l.email, l.phone, l.formula].some(v => v?.toLowerCase().includes(search.toLowerCase())))
-    : leads
+    ? monthFiltered.filter(l => [l.name, l.email, l.phone, l.formula].some(v => v?.toLowerCase().includes(search.toLowerCase())))
+    : monthFiltered
 
   function moveLead(lead, newCol) {
     Store.updateLead(lead.id, { column: newCol }, {
-      action: 'Déplacé',
-      from: lead.column,
-      to: newCol,
-      by: user?.name || 'Admin',
+      action: 'Déplacé', from: lead.column, to: newCol, by: user?.name || 'Admin',
     })
     load()
   }
 
+  const textSecondary = isDark ? 'text-zinc-400' : 'text-gray-500'
+  const inputCls = isDark
+    ? 'bg-zinc-800 border-zinc-700 text-white placeholder-zinc-500'
+    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-xs">
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(e.target.value)}
+          className={`border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 ${inputCls}`}
+        >
+          {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </select>
+        <div className="relative flex-1 min-w-[180px]">
           <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
           <input
             value={search}
@@ -233,23 +251,36 @@ function CloserBoard({ isDark, user }) {
         <span className={`text-xs ${textSecondary}`}>{filtered.length} lead{filtered.length !== 1 ? 's' : ''}</span>
       </div>
 
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: 'Total leads', value: kpi.total,     color: 'violet', sub: '' },
+          { label: 'À rappeler',  value: kpi.toCall,    color: 'amber',  sub: 'Rappel 1 · 2 · 3' },
+          { label: 'Perdus',      value: kpi.lost,      color: 'red',    sub: 'Non pris · Annulation' },
+          { label: 'Convertis',   value: kpi.converted, color: 'green',  sub: 'Follow Up' },
+        ].map(k => (
+          <div key={k.label} className={`rounded-xl border p-3 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}>
+            <p className={`text-xs truncate ${textSecondary}`}>{k.label}</p>
+            <p className={`text-2xl font-bold mt-1 ${KPI_COLORS[k.color]}`}>{k.value}</p>
+            {k.sub && <p className={`text-[10px] mt-0.5 truncate ${isDark ? 'text-zinc-600' : 'text-gray-400'}`}>{k.sub}</p>}
+          </div>
+        ))}
+      </div>
+
       {/* Kanban */}
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-3" style={{ minWidth: `${LEAD_COLUMNS.length * 210}px` }}>
           {LEAD_COLUMNS.map(col => {
             const colLeads = filtered.filter(l => l.column === col)
-            const colCls = LEAD_COL_COLORS[col] || 'border-zinc-700/40'
             return (
-              <div key={col} className={`flex-shrink-0 w-48 border rounded-2xl flex flex-col overflow-hidden ${colCls}`}>
-                {/* Column header */}
+              <div key={col} className={`flex-shrink-0 w-48 border rounded-2xl flex flex-col overflow-hidden ${LEAD_COL_COLORS[col] || 'border-zinc-700/40'}`}>
                 <div className="px-3 py-2.5 border-b border-zinc-800/30 flex items-center justify-between gap-2">
                   <span className={`text-[11px] font-bold truncate ${isDark ? 'text-zinc-200' : 'text-gray-800'}`}>{col}</span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${LEAD_COL_BADGE[col] || 'bg-zinc-700 text-zinc-400'}`}>
                     {colLeads.length}
                   </span>
                 </div>
-                {/* Cards */}
-                <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-320px)]">
+                <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[calc(100vh-460px)]">
                   {colLeads.length === 0 ? (
                     <div className={`text-center text-[10px] py-4 ${isDark ? 'text-zinc-700' : 'text-gray-300'}`}>Vide</div>
                   ) : colLeads.map(lead => (
@@ -265,18 +296,16 @@ function CloserBoard({ isDark, user }) {
   )
 }
 
-// ─── Main AdminSAV ─────────────────────────────────────────────────────────
 export default function AdminSAV() {
   const { user } = useAuth()
   const { theme } = useApp()
   const isDark = theme === 'dark'
-  const [tab,          setTab]          = useState('messages') // 'messages' | 'closer'
-  const [messages,     setMessages]     = useState([])
-  const [selected,     setSelected]     = useState(null)
-  const [search,       setSearch]       = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [reply,        setReply]        = useState('')
-  const [sending,      setSending]      = useState(false)
+  const [tab,      setTab]      = useState('messages') // 'messages' | 'closed' | 'closer'
+  const [messages, setMessages] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [search,   setSearch]   = useState('')
+  const [reply,    setReply]    = useState('')
+  const [sending,  setSending]  = useState(false)
   const bottomRef = useRef(null)
 
   const card          = isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200 shadow-sm'
@@ -297,11 +326,11 @@ export default function AdminSAV() {
   }
 
   useEffect(() => { Store.purgeOldMessages(); load() }, [])
+  useEffect(() => { setSelected(null) }, [tab])
 
   const getName  = (m) => m.from_name  || m.client_name  || 'Client'
   const getEmail = (m) => m.from_email || m.client_email || ''
 
-  // Extrait ACTION et RES depuis le body préfixé par le chatbot client
   const parseMsgPreview = (m) => {
     const body = m.body || ''
     const action = (body.match(/\[ACTION:\s*([^\]]+)\]/) || [])[1]?.trim()
@@ -310,22 +339,21 @@ export default function AdminSAV() {
     return null
   }
 
+  const unreadCount = messages.filter(m => !m.read && m.status !== 'closed').length
+  const closedCount = messages.filter(m => m.status === 'closed').length
+
   const filtered = messages.filter(m => {
     const matchSearch = !search ||
       getName(m).toLowerCase().includes(search.toLowerCase()) ||
       m.subject?.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || m.status === statusFilter
-    return matchSearch && matchStatus
+    const matchTab = tab === 'closed' ? m.status === 'closed' : m.status !== 'closed'
+    return matchSearch && matchTab
   })
-
-  const unreadCount = messages.filter(m => !m.read).length
 
   const selectMsg = (m) => {
     Store.updateMessage(m.id, { read: true })
-    const updated = { ...m, read: true }
-    setSelected(updated)
-    const msgs = Store.getMessages()
-    setMessages(msgs)
+    setSelected({ ...m, read: true })
+    setMessages(Store.getMessages())
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
   }
 
@@ -347,9 +375,8 @@ export default function AdminSAV() {
   const toggleStatus = () => {
     if (!selected) return
     const newStatus = selected.status === 'closed' ? 'open' : 'closed'
-    const updated = { ...selected, status: newStatus }
     Store.updateMessage(selected.id, { status: newStatus })
-    setSelected(updated)
+    setSelected({ ...selected, status: newStatus })
     setMessages(Store.getMessages())
   }
 
@@ -360,12 +387,12 @@ export default function AdminSAV() {
     setMessages(Store.getMessages())
   }
 
-  // ── Tab bar ───────────────────────────────────────────────────────────────
   const TabBar = () => (
     <div className={`flex items-center gap-1 p-1 rounded-xl border flex-shrink-0 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-gray-100 border-gray-200'}`}>
       {[
-        { id: 'messages', label: 'Messages', badge: unreadCount },
-        { id: 'closer',   label: 'Closer',   badge: leadsCount },
+        { id: 'messages', label: 'Messages',          badge: unreadCount },
+        { id: 'closed',   label: 'Messages clôturés', badge: closedCount },
+        { id: 'closer',   label: 'Closer',            badge: leadsCount  },
       ].map(t => (
         <button key={t.id} onClick={() => setTab(t.id)}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
@@ -390,43 +417,32 @@ export default function AdminSAV() {
     <Layout navItems={ADMIN_NAV} title="SAV">
       <div className="flex flex-col gap-4" style={{ height: 'calc(100vh - 120px)' }}>
 
-        {/* Tab bar */}
+        {/* Tab bar + search */}
         <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
           <TabBar />
-
-          {tab === 'messages' && (
-            <>
-              <div className="relative flex-1 min-w-[180px]">
-                <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className={`w-full border rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 ${inputCls}`}
-                  placeholder="Rechercher un client ou sujet…"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className={`border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 ${inputCls}`}>
-                <option value="all">Tous</option>
-                <option value="open">Ouverts</option>
-                <option value="closed">Fermés</option>
-              </select>
-            </>
+          {(tab === 'messages' || tab === 'closed') && (
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className={`w-full border rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-violet-500 ${inputCls}`}
+                placeholder="Rechercher un client ou sujet…"
+              />
+            </div>
           )}
         </div>
 
-        {/* ── MESSAGES TAB ──────────────────────────────────────────────────── */}
-        {tab === 'messages' && (
+        {/* ── MESSAGES / CLOSED TABS ─────────────────────────────────────────── */}
+        {(tab === 'messages' || tab === 'closed') && (
           <div className="grid lg:grid-cols-5 gap-5 flex-1 min-h-0">
             {/* List */}
             <div className="lg:col-span-2 overflow-y-auto space-y-2 pr-1">
               {filtered.length === 0 ? (
                 <div className={`text-sm p-6 text-center ${textSecondary}`}>Aucun message</div>
               ) : filtered.map(m => {
-                const isClosed = m.status === 'closed'
-                const hasUnread = !m.read
+                const isClosed     = m.status === 'closed'
+                const hasUnread    = !m.read
                 const isClientChat = m.is_client_chat
                 return (
                   <button key={m.id} onClick={() => selectMsg(m)}
@@ -448,7 +464,7 @@ export default function AdminSAV() {
                               ? isDark ? 'bg-zinc-700 text-zinc-400' : 'bg-gray-100 text-gray-500'
                               : isClientChat ? 'bg-blue-500/15 text-blue-400' : 'bg-violet-500/15 text-violet-400'
                           }`}>
-                            {isClosed ? 'Fermé' : isClientChat ? 'Chat' : 'Ouvert'}
+                            {isClosed ? 'Clôturé' : isClientChat ? 'Chat' : 'Ouvert'}
                           </span>
                         </div>
                         {(() => {
@@ -479,7 +495,6 @@ export default function AdminSAV() {
             <div className={`lg:col-span-3 border rounded-2xl flex flex-col min-h-0 ${card}`}>
               {selected ? (
                 <>
-                  {/* Thread header */}
                   <div className={`flex items-start justify-between gap-3 px-5 py-4 border-b flex-shrink-0 ${divider}`}>
                     <div className="min-w-0">
                       <h3 className={`font-bold text-sm ${textPrimary}`}>{selected.subject}</h3>
@@ -509,9 +524,7 @@ export default function AdminSAV() {
                     </div>
                   </div>
 
-                  {/* Messages — WhatsApp style */}
                   <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                    {/* Original */}
                     <div className="flex gap-3">
                       <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-white text-[10px] font-bold">{getName(selected).charAt(0).toUpperCase()}</span>
@@ -527,10 +540,8 @@ export default function AdminSAV() {
                       </div>
                     </div>
 
-                    {/* Replies */}
                     {(selected.replies || []).map((r, i) => {
-                      const isAdmin  = r.from === 'admin'
-                      const isClient = r.from === 'client'
+                      const isAdmin = r.from === 'admin'
                       return (
                         <div key={i} className={`flex gap-3 ${isAdmin ? 'flex-row-reverse' : ''}`}>
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isAdmin ? 'bg-blue-600' : 'bg-violet-600'}`}>
@@ -552,9 +563,8 @@ export default function AdminSAV() {
                             }`}>
                               {r.body}
                             </div>
-                            {/* WhatsApp read receipts — visible côté admin pour ses propres messages */}
                             {isAdmin && (
-                              <div className={`flex items-center gap-1 mt-0.5 ${isAdmin ? 'justify-end' : ''}`}>
+                              <div className="flex items-center gap-1 mt-0.5 justify-end">
                                 {selected.unread_for_client === false
                                   ? <><CheckCheck className="w-3 h-3 text-blue-400" /><span className="text-[9px] text-blue-400">Lu</span></>
                                   : <><Check className="w-3 h-3 text-zinc-500" /><span className="text-[9px] text-zinc-500">Envoyé</span></>
@@ -568,7 +578,6 @@ export default function AdminSAV() {
                     <div ref={bottomRef} />
                   </div>
 
-                  {/* Reply input */}
                   <div className={`flex-shrink-0 border-t px-5 py-4 ${divider}`}>
                     {selected.status === 'closed' ? (
                       <p className={`text-xs italic text-center ${textSecondary}`}>Ce ticket est clôturé. Rouvrez-le pour répondre.</p>
@@ -602,7 +611,7 @@ export default function AdminSAV() {
 
         {/* ── CLOSER TAB ────────────────────────────────────────────────────── */}
         {tab === 'closer' && (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-auto">
             <CloserBoard isDark={isDark} user={user} />
           </div>
         )}

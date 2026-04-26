@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MessageSquare, X, Send, ChevronDown, ChevronUp, Zap, Bot, Check, CheckCheck } from 'lucide-react'
+import { MessageSquare, X, Send, Zap, Bot, Check, CheckCheck } from 'lucide-react'
 import { Store } from '../data/store'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -25,7 +25,6 @@ function BotText({ text }) {
   )
 }
 
-// WhatsApp-style read receipt ticks
 function ReadReceipt({ adminRead }) {
   if (adminRead) return <CheckCheck className="w-3 h-3 text-blue-400 flex-shrink-0" />
   return <Check className="w-3 h-3 text-zinc-500 flex-shrink-0" />
@@ -37,12 +36,39 @@ const WELCOME = {
   created_at: new Date().toISOString(),
 }
 
+function parseStoreMsg(raw = '') {
+  const action = (raw.match(/\[ACTION:\s*([^\]]+)\]/) || [])[1]?.trim() || null
+  const resId  = (raw.match(/\[RES:\s*([^\]]+)\]/)    || [])[1]?.trim() || null
+  const text   = raw.replace(/\[[^\]]+\]\s*/g, '').trim()
+  return { action, resId, text }
+}
+
+function buildVisibleBody(rawBody = '') {
+  const { action, resId, text } = parseStoreMsg(rawBody)
+  if (!action) return text || rawBody
+  const header = `**${action}**${resId ? ` — Résa ${resId}` : ''}`
+  return text ? `${header}\n${text}` : header
+}
+
+function buildMessagesFromConv(conv) {
+  const msgs = []
+  msgs.push({ from: 'client', body: buildVisibleBody(conv.body), created_at: conv.created_at, admin_read: !!conv.read })
+  for (const r of (conv.replies || [])) {
+    if (r.from === 'admin') {
+      msgs.push({ from: 'admin', body: r.body, created_at: r.created_at })
+    } else if (r.from === 'client') {
+      msgs.push({ from: 'client', body: buildVisibleBody(r.body), created_at: r.created_at, admin_read: false })
+    }
+  }
+  return msgs
+}
+
 export default function ClientChatBot() {
   const { user } = useAuth()
   const [open,          setOpen]         = useState(false)
+  const [convStatus,    setConvStatus]   = useState('idle') // 'idle' | 'open' | 'closed'
   const [messages,      setMessages]     = useState([WELCOME])
   const [input,         setInput]        = useState('')
-  const [showActions,   setShowActions]  = useState(true)
   const [selectedRes,   setSelectedRes]  = useState('')
   const [reservations,  setReservations] = useState([])
   const [pendingAction, setPendingAction] = useState(null)
@@ -51,8 +77,17 @@ export default function ClientChatBot() {
 
   useEffect(() => {
     if (user?.type === 'client') {
-      const all = Store.getReservations().filter(r => r.client_email === user.email)
-      setReservations(all)
+      setReservations(Store.getReservations().filter(r => r.client_email === user.email))
+    }
+  }, [user])
+
+  // Restore open conversation on mount
+  useEffect(() => {
+    if (!user) return
+    const existing = Store.getMessages().find(m => m.from_user_id === user.id && m.status === 'open')
+    if (existing) {
+      setConvStatus('open')
+      setMessages([WELCOME, ...buildMessagesFromConv(existing)])
     }
   }, [user])
 
@@ -64,69 +99,74 @@ export default function ClientChatBot() {
     if (open) setTimeout(() => inputRef.current?.focus(), 80)
   }, [open])
 
-  // Poll admin replies every 8s
   useEffect(() => {
     if (!open || !user) return
-    const interval = setInterval(syncReplies, 8000)
-    return () => clearInterval(interval)
-  }, [open, user, messages])
+    const id = setInterval(syncWithStore, 8000)
+    return () => clearInterval(id)
+  }, [open, user, convStatus, messages])
 
-  function syncReplies() {
-    // Find conversation linked to this user in store
-    const convs = Store.getMessages().filter(m => m.from_user_id === user?.id)
-    if (!convs.length) return
-    const latest = convs[0]
-    if (!latest.replies?.length) return
-    // Inject admin replies not yet shown
-    const adminReplies = latest.replies.filter(r => r.from === 'admin')
-    const current = messages.filter(m => m.from === 'admin').length
-    if (adminReplies.length > current) {
-      const newReplies = adminReplies.slice(current)
-      setMessages(prev => [...prev, ...newReplies.map(r => ({
-        from: 'admin',
-        body: r.body,
-        created_at: r.created_at,
-      }))])
+  function syncWithStore() {
+    const openConv = Store.getMessages().find(m => m.from_user_id === user?.id && m.status === 'open')
+    if (openConv) {
+      const adminReplies = (openConv.replies || []).filter(r => r.from === 'admin')
+      const current = messages.filter(m => m.from === 'admin').length
+      if (adminReplies.length > current) {
+        setMessages(prev => [...prev, ...adminReplies.slice(current).map(r => ({
+          from: 'admin', body: r.body, created_at: r.created_at,
+        }))])
+      }
+    } else if (convStatus === 'open') {
+      setConvStatus('closed')
+      setMessages(prev => [...prev, {
+        from: 'bot',
+        body: 'Notre équipe a clôturé ce sujet. ✅\n\nVous pouvez ouvrir une nouvelle demande en sélectionnant une action ci-dessous.',
+        created_at: new Date().toISOString(),
+      }])
     }
   }
 
   function buildPrefix(action, res) {
-    let prefix = `[USER_ID: ${user?.id || 'unknown'}]`
-    if (action) prefix += ` [ACTION: ${action}]`
-    if (res) prefix += ` [RES: ${res}]`
-    return prefix
+    let p = `[USER_ID: ${user?.id || 'unknown'}]`
+    if (action) p += ` [ACTION: ${action}]`
+    if (res)    p += ` [RES: ${res}]`
+    return p
   }
 
-  function sendMessage(body, action) {
+  function sendMessage(body) {
     const trimmed = body.trim()
-    if (!trimmed) return
-    const prefix = buildPrefix(action || pendingAction, selectedRes)
-    const fullBody = `${prefix} ${trimmed}`
-    const visibleBody = action ? `**${action}**${selectedRes ? ` — Résa ${selectedRes}` : ''}\n${trimmed !== action ? trimmed : ''}`.trim() : trimmed
+    const effectiveAction = pendingAction
+    if (!trimmed && !effectiveAction) return
 
-    const clientMsg = { from: 'client', body: visibleBody, raw: fullBody, created_at: new Date().toISOString(), admin_read: false }
-    setMessages(prev => [...prev, clientMsg])
+    const prefix = buildPrefix(effectiveAction, selectedRes)
+    const fullBody = `${prefix} ${trimmed || effectiveAction}`
+    const visibleBody = effectiveAction
+      ? `**${effectiveAction}**${selectedRes ? ` — Résa ${selectedRes}` : ''}${trimmed && trimmed !== effectiveAction ? `\n${trimmed}` : ''}`.trim()
+      : trimmed
+
+    setMessages(prev => [...prev, {
+      from: 'client', body: visibleBody, raw: fullBody,
+      created_at: new Date().toISOString(), admin_read: false,
+    }])
     setInput('')
     setPendingAction(null)
+    setConvStatus('open')
 
-    // Save to Store → visible in AdminSAV
     const existing = Store.getMessages().find(m => m.from_user_id === user?.id && m.status === 'open')
     if (existing) {
-      const newReply = { from: 'client', name: user?.name, body: fullBody, created_at: new Date().toISOString() }
       Store.updateMessage(existing.id, {
         ...existing,
-        replies: [...(existing.replies || []), newReply],
+        replies: [...(existing.replies || []), { from: 'client', name: user?.name, body: fullBody, created_at: new Date().toISOString() }],
         read: false,
       })
     } else {
       Store.addMessage({
-        from_email:   user?.email,
-        from_name:    user?.name,
-        from_user_id: user?.id,
-        client_id:    user?.id,
-        subject:      `${action || trimmed.slice(0, 60)}`,
-        body:         fullBody,
-        status:       'open',
+        from_email:     user?.email,
+        from_name:      user?.name,
+        from_user_id:   user?.id,
+        client_id:      user?.id,
+        subject:        effectiveAction || trimmed.slice(0, 60),
+        body:           fullBody,
+        status:         'open',
         is_client_chat: true,
       })
     }
@@ -142,7 +182,6 @@ export default function ClientChatBot() {
 
   function handleActionClick(action) {
     setPendingAction(action.label)
-    setShowActions(false)
     setMessages(prev => [...prev, {
       from: 'bot',
       body: `Vous avez sélectionné **${action.label}**. Précisez votre demande ci-dessous${reservations.length ? ' (sélectionnez une réservation si besoin)' : ''} puis envoyez.`,
@@ -151,11 +190,12 @@ export default function ClientChatBot() {
     setTimeout(() => inputRef.current?.focus(), 80)
   }
 
+  const showActions = convStatus !== 'open'
+
   if (user?.type !== 'client') return null
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3">
-
       {open && (
         <div className="w-80 rounded-2xl shadow-2xl overflow-hidden border border-zinc-700/60 flex flex-col"
           style={{ height: 520, background: '#18181b' }}>
@@ -171,9 +211,7 @@ export default function ClientChatBot() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white leading-none">Level Studios</p>
-              <p className="text-[10px] text-white/60 mt-0.5">
-                {user?.name} · {user?.id}
-              </p>
+              <p className="text-[10px] text-white/60 mt-0.5">{user?.name} · {user?.id}</p>
             </div>
             <button onClick={() => setOpen(false)}
               className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex-shrink-0">
@@ -200,9 +238,7 @@ export default function ClientChatBot() {
                     </div>
                   )}
                   <div className={`flex-1 ${isClient ? 'flex flex-col items-end' : ''}`}>
-                    {isAdmin && (
-                      <p className="text-[9px] text-violet-400 font-semibold mb-0.5 ml-1">Level Studios</p>
-                    )}
+                    {isAdmin && <p className="text-[9px] text-violet-400 font-semibold mb-0.5 ml-1">Level Studios</p>}
                     <div className={`rounded-xl px-3 py-2 max-w-[88%] inline-block ${
                       isClient ? 'bg-blue-600 rounded-tr-sm' : 'bg-zinc-800 rounded-tl-sm'
                     }`}>
@@ -223,24 +259,19 @@ export default function ClientChatBot() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Actions rapides */}
-          <div className="flex-shrink-0 border-t border-zinc-800">
-            <button onClick={() => setShowActions(v => !v)}
-              className="w-full flex items-center justify-between px-3 py-2 hover:bg-zinc-800/40 transition-colors text-zinc-400 hover:text-white">
-              <div className="flex items-center gap-1.5">
+          {/* Actions rapides — masquées pendant une conversation active */}
+          {showActions && (
+            <div className="flex-shrink-0 border-t border-zinc-800">
+              <div className="flex items-center gap-1.5 px-3 py-2">
                 <Zap className="w-3 h-3 text-amber-400" />
-                <span className="text-[11px] font-semibold">Actions rapides</span>
+                <span className="text-[11px] font-semibold text-zinc-400">Actions rapides</span>
                 {pendingAction && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600/20 text-blue-400 text-[9px] font-bold">
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600/20 text-blue-400 text-[9px] font-bold ml-auto">
                     {pendingAction}
                   </span>
                 )}
               </div>
-              {showActions ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-            </button>
-            {showActions && (
               <div className="px-3 pb-2 space-y-1.5 max-h-28 overflow-y-auto">
-                {/* Reservation selector */}
                 {reservations.length > 0 && (
                   <select
                     value={selectedRes}
@@ -249,9 +280,7 @@ export default function ClientChatBot() {
                   >
                     <option value="">— Réservation (optionnel) —</option>
                     {reservations.map(r => (
-                      <option key={r.id} value={r.id}>
-                        #{r.id} · {r.date} · {r.studio}
-                      </option>
+                      <option key={r.id} value={r.id}>#{r.id} · {r.date} · {r.studio}</option>
                     ))}
                   </select>
                 )}
@@ -268,8 +297,8 @@ export default function ClientChatBot() {
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Input */}
           <div className="flex-shrink-0 p-3 border-t border-zinc-800">
@@ -287,14 +316,12 @@ export default function ClientChatBot() {
                 ref={inputRef}
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) }
-                }}
-                placeholder={pendingAction ? `Précisez votre demande…` : 'Votre message… (Entrée pour envoyer)'}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input) } }}
+                placeholder={pendingAction ? 'Précisez votre demande…' : 'Votre message… (Entrée pour envoyer)'}
                 rows={2}
                 className="flex-1 bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:ring-1 focus:ring-blue-500 resize-none min-w-0"
               />
-              <button onClick={() => sendMessage(input)} disabled={!input.trim()}
+              <button onClick={() => sendMessage(input)} disabled={!input.trim() && !pendingAction}
                 className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:opacity-30 rounded-xl transition-colors flex-shrink-0 mb-0.5">
                 <Send className="w-3.5 h-3.5" />
               </button>
