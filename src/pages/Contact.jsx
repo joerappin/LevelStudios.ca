@@ -30,6 +30,16 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault()
     Store.addMessage({ from_email: form.email, from_name: form.name, subject: form.subject, body: form.message, type: 'contact' })
+    Store.addLead({
+      name:    form.name,
+      email:   form.email,
+      phone:   '',
+      formula: null,
+      subject: form.subject,
+      message: `[VISITOR_INFO: ${form.name}|${form.email}|page contact] ${form.subject} — ${form.message.slice(0, 120)}`,
+      source:  'contact',
+      column:  'Pool Leads',
+    })
     setSent(true)
   }
 

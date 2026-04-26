@@ -109,9 +109,17 @@ function LeadCard({ lead, onMove, isDark }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-xs font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{lead.name || 'Visiteur'}</p>
-            {lead.formula && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">{lead.formula}</span>
-            )}
+            <div className="flex items-center gap-1 flex-wrap mt-0.5">
+              {lead.formula && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400">{lead.formula}</span>
+              )}
+              {lead.source === 'contact' && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/15 text-pink-400">Page contact</span>
+              )}
+              {!lead.source && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400">Chatbot</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -131,6 +139,9 @@ function LeadCard({ lead, onMove, isDark }) {
           )}
         </div>
 
+        {lead.subject && (
+          <p className={`text-[10px] truncate italic ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>"{lead.subject}"</p>
+        )}
         <div className={`text-[10px] ${isDark ? 'text-zinc-600' : 'text-gray-400'}`}>{fmtDt(lead.created_at)}</div>
 
         {/* Actions */}
