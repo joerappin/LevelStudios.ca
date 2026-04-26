@@ -301,6 +301,15 @@ export default function AdminSAV() {
   const getName  = (m) => m.from_name  || m.client_name  || 'Client'
   const getEmail = (m) => m.from_email || m.client_email || ''
 
+  // Extrait ACTION et RES depuis le body préfixé par le chatbot client
+  const parseMsgPreview = (m) => {
+    const body = m.body || ''
+    const action = (body.match(/\[ACTION:\s*([^\]]+)\]/) || [])[1]?.trim()
+    const resId  = (body.match(/\[RES:\s*([^\]]+)\]/)    || [])[1]?.trim()
+    if (action || resId) return { action, resId }
+    return null
+  }
+
   const filtered = messages.filter(m => {
     const matchSearch = !search ||
       getName(m).toLowerCase().includes(search.toLowerCase()) ||
@@ -442,7 +451,17 @@ export default function AdminSAV() {
                             {isClosed ? 'Fermé' : isClientChat ? 'Chat' : 'Ouvert'}
                           </span>
                         </div>
-                        <div className={`text-xs truncate mt-0.5 ${textSecondary}`}>{m.subject}</div>
+                        {(() => {
+                          const p = parseMsgPreview(m)
+                          if (p) return (
+                            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                              {p.action && <span className={`text-xs truncate font-medium ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>{p.action}</span>}
+                              {p.action && p.resId && <span className={`text-xs flex-shrink-0 ${textSecondary}`}>·</span>}
+                              {p.resId && <span className={`text-[10px] font-mono flex-shrink-0 px-1.5 py-0.5 rounded ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-100 text-gray-500'}`}>{p.resId}</span>}
+                            </div>
+                          )
+                          return <div className={`text-xs truncate mt-0.5 ${textSecondary}`}>{m.subject}</div>
+                        })()}
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`text-xs ${isDark ? 'text-zinc-600' : 'text-gray-400'}`}>{formatDate(m.created_at)}</span>
                           {m.replies?.length > 0 && (
