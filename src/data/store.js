@@ -17,6 +17,7 @@ const KEYS = {
   alerts: 'ls_alerts',
   mails: 'ls_mails',
   mailLabels: 'ls_mail_labels',
+  leads: 'ls_leads',
 }
 
 function getAll(key) {
@@ -190,10 +191,16 @@ export const Store = {
     saveAll(KEYS.projects, items)
     return item
   },
-  updateProject: (id, data) => {
+  updateProject: (id, data, historyEntry) => {
     const items = getAll(KEYS.projects)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.projects, items) }
+    if (idx !== -1) {
+      const existing = items[idx]
+      const history = existing.history || []
+      if (historyEntry) history.push({ ...historyEntry, at: new Date().toISOString() })
+      items[idx] = { ...existing, ...data, history }
+      saveAll(KEYS.projects, items)
+    }
     return items[idx]
   },
 
@@ -360,6 +367,37 @@ export const Store = {
     const items = getAll(KEYS.checkIns)
     const idx = items.findIndex(i => i.id === id)
     if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.checkIns, items) }
+  },
+
+  // Leads (visiteurs chatbot)
+  getLeads: () => getAll(KEYS.leads),
+  addLead: (data) => {
+    const items = getAll(KEYS.leads)
+    const item = {
+      id: generateId('LEAD'),
+      created_at: new Date().toISOString(),
+      column: 'Pool Leads',
+      history: [{ action: 'Créé', from: null, to: 'Pool Leads', by: 'Système', at: new Date().toISOString() }],
+      ...data,
+    }
+    items.unshift(item)
+    saveAll(KEYS.leads, items)
+    return item
+  },
+  updateLead: (id, data, historyEntry) => {
+    const items = getAll(KEYS.leads)
+    const idx = items.findIndex(i => i.id === id)
+    if (idx !== -1) {
+      const existing = items[idx]
+      const history = existing.history || []
+      if (historyEntry) history.push({ ...historyEntry, at: new Date().toISOString() })
+      items[idx] = { ...existing, ...data, history }
+      saveAll(KEYS.leads, items)
+    }
+    return items[idx]
+  },
+  deleteLead: (id) => {
+    saveAll(KEYS.leads, getAll(KEYS.leads).filter(i => i.id !== id))
   },
 
   validatePromoCode: (code) => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { X, ArrowRightLeft, MessageCircle } from 'lucide-react'
+import { X, ArrowRightLeft, MessageCircle, History } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { EMPLOYEE_NAV } from './EmployeeDashboard'
 import { Store } from '../../data/store'
@@ -28,6 +28,52 @@ const STATUS_COLORS = {
   'Retour':             'bg-orange-500/20 text-orange-400',
 }
 
+function fmtDt(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function ProjectHistoryModal({ project, onClose }) {
+  const history = project.history || []
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-80 max-h-[70vh] flex flex-col shadow-2xl"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-bold text-white">Historique</span>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white"><X size={14} /></button>
+        </div>
+        <div className="text-xs text-zinc-500 px-4 pt-2 pb-1 font-medium truncate">{project.title}</div>
+        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+          {history.length === 0 ? (
+            <p className="text-xs text-zinc-600 text-center py-4">Aucun historique disponible</p>
+          ) : [...history].reverse().map((h, i) => (
+            <div key={i} className="border border-zinc-800 rounded-xl px-3 py-2">
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="text-[10px] font-semibold text-violet-300">{h.action}</span>
+                <span className="text-[10px] text-zinc-600">{fmtDt(h.at)}</span>
+              </div>
+              {h.from
+                ? <p className="text-[10px] text-zinc-500">{h.from} → <span className="text-zinc-300 font-medium">{h.to}</span></p>
+                : <p className="text-[10px] text-zinc-400">{h.to}</p>
+              }
+              <div className="flex items-center justify-between mt-0.5">
+                <p className="text-[10px] text-zinc-600">par <span className="text-zinc-400">{h.by}</span></p>
+                {h.forced && <span className="text-[9px] text-amber-400 font-semibold">⚡ Forcé</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function EmployeeProjects() {
   const { user } = useAuth()
   const { theme } = useApp()
@@ -36,7 +82,8 @@ export default function EmployeeProjects() {
   const [mode, setMode] = useState('PROD')
   const [projects, setProjects] = useState([])
   const [selectedCard, setSelectedCard] = useState(null)
-  const [chatProject, setChatProject] = useState(null)
+  const [chatProject,  setChatProject]  = useState(null)
+  const [historyCard,  setHistoryCard]  = useState(null)
   const [commentCounts, setCommentCounts] = useState({})
   const timerRef = useRef(null)
 
@@ -81,7 +128,13 @@ export default function EmployeeProjects() {
       updates.status = targetCol === 'Montage' ? 'En attente de brief' : 'Retour'
       updates.pipeline = 'POST'
     }
-    Store.updateProject(project.id, updates)
+    Store.updateProject(project.id, updates, {
+      action: 'Déplacé',
+      from: project.status,
+      to: updates.status,
+      by: user?.name || 'Employé',
+      role: user?.roleKey || 'worker',
+    })
     reload()
     if (selectedCard?.id === project.id) setSelectedCard({ ...project, ...updates })
     if (targetCol === 'Montage' || targetCol === 'Retour') setMode('POST')
@@ -147,18 +200,27 @@ export default function EmployeeProjects() {
                         >
                           <div className="flex items-start justify-between gap-1 mb-1">
                             <div className={cn('text-xs font-semibold truncate', textPrimary)}>{p.title}</div>
-                            <button
-                              onClick={e => { e.stopPropagation(); setChatProject(p) }}
-                              className="relative flex-shrink-0 p-0.5 rounded hover:opacity-80 transition-opacity"
-                              title={`${msgCount} message${msgCount !== 1 ? 's' : ''}`}
-                            >
-                              <MessageCircle size={13} className={msgCount > 0 ? 'text-violet-400' : (isDark ? 'text-zinc-600' : 'text-gray-300')} />
-                              {msgCount > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-violet-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5 leading-none">
-                                  {msgCount > 99 ? '99+' : msgCount}
-                                </span>
-                              )}
-                            </button>
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <button
+                                onClick={e => { e.stopPropagation(); setHistoryCard(p) }}
+                                className={cn('p-0.5 rounded hover:opacity-80 transition-opacity', isDark ? 'text-zinc-600 hover:text-violet-400' : 'text-gray-300 hover:text-violet-500')}
+                                title="Historique des actions"
+                              >
+                                <History size={12} />
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setChatProject(p) }}
+                                className="relative p-0.5 rounded hover:opacity-80 transition-opacity"
+                                title={`${msgCount} message${msgCount !== 1 ? 's' : ''}`}
+                              >
+                                <MessageCircle size={13} className={msgCount > 0 ? 'text-violet-400' : (isDark ? 'text-zinc-600' : 'text-gray-300')} />
+                                {msgCount > 0 && (
+                                  <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-violet-500 text-white text-[8px] font-bold flex items-center justify-center px-0.5 leading-none">
+                                    {msgCount > 99 ? '99+' : msgCount}
+                                  </span>
+                                )}
+                              </button>
+                            </div>
                           </div>
                           <div className={cn('text-[10px] mb-2', textSecondary)}>{p.client_name}</div>
                           {p.studio && (
@@ -203,6 +265,14 @@ export default function EmployeeProjects() {
           project={chatProject}
           onClose={() => setChatProject(null)}
           onCommentAdded={(id, count) => setCommentCounts(prev => ({ ...prev, [id]: count }))}
+        />
+      )}
+
+      {/* History modal */}
+      {historyCard && (
+        <ProjectHistoryModal
+          project={historyCard}
+          onClose={() => setHistoryCard(null)}
         />
       )}
 

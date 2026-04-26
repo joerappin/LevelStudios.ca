@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { createPageUrl } from '../utils'
 import { sendWelcomeEmail } from '../utils/emailService'
+import VisitorChatBot from '../components/VisitorChatBot'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -354,6 +355,9 @@ export default function Home() {
   return (
     <div className="min-h-screen text-white" style={{ background: '#080808' }}>
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+
+      {/* Chatbot visiteurs (non connectés uniquement) */}
+      {!user && <VisitorChatBot />}
 
       {/* ── NAV ─────────────────────────────────────────────── */}
       <div
