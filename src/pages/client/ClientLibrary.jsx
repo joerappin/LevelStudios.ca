@@ -4,6 +4,7 @@ import {
   X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight,
   Calendar, Clock, MapPin, Package, Info, FolderOpen,
   CheckCircle2, Layers, Archive, Clapperboard, Volume2, Frame, Music, Image,
+  Maximize2,
 } from 'lucide-react'
 import ClientLayout from '../../components/ClientLayout'
 import { Store } from '../../data/store'
@@ -425,23 +426,54 @@ export default function ClientLibrary() {
                           const tag = fSettings.tag || getFileTag(file.name)
                           const ti = tagInfo(tag)
                           const type = getFileType(file.name)
-                          const isVideo = type === 'video'
+                          const isVid = type === 'video'
                           const canDownload = fSettings.allowDownload !== false
                           return (
                             <div
                               key={i}
-                              className={`flex items-center gap-2 px-2 py-2 rounded-xl cursor-pointer transition-colors ${rowHover}`}
-                              onClick={() => isVideo ? setVideoReview(file) : setPreview({ file, url: fileUrl(selected, file.name) })}
+                              className={`flex items-center gap-2 px-2 py-2 rounded-xl transition-colors ${rowHover}`}
                             >
-                              <ExtBadge name={file.name} />
-                              <span className={`flex-1 text-xs font-medium truncate ${textPrimary}`}>{file.name}</span>
+                              <div
+                                className="cursor-pointer"
+                                onClick={() => isVid ? setPreview({ file, url: fileUrl(selected, file.name) }) : setPreview({ file, url: fileUrl(selected, file.name) })}
+                              >
+                                <ExtBadge name={file.name} />
+                              </div>
+                              <span
+                                className={`flex-1 text-xs font-medium truncate cursor-pointer ${textPrimary}`}
+                                onClick={() => isVid ? setPreview({ file, url: fileUrl(selected, file.name) }) : setPreview({ file, url: fileUrl(selected, file.name) })}
+                              >{file.name}</span>
                               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 ${ti.color}`}>{ti.label}</span>
+
+                              {/* Bouton Lire (lecture directe) — vidéos uniquement */}
+                              {isVid && (
+                                <button
+                                  onClick={() => setPreview({ file, url: fileUrl(selected, file.name) })}
+                                  className={`p-1 rounded-lg transition-colors flex-shrink-0 ${textSecondary} hover:text-green-400`}
+                                  title="Lire le fichier"
+                                >
+                                  <Play className="w-3 h-3" />
+                                </button>
+                              )}
+
+                              {/* Bouton Ouvrir dans le modal de revue — vidéos uniquement */}
+                              {isVid && (
+                                <button
+                                  onClick={() => setVideoReview(file)}
+                                  className={`p-1 rounded-lg transition-colors flex-shrink-0 ${textSecondary} hover:text-violet-400`}
+                                  title="Ouvrir dans le modal vidéo"
+                                >
+                                  <Maximize2 className="w-3 h-3" />
+                                </button>
+                              )}
+
                               {canDownload ? (
                                 <a
                                   href={fileUrl(selected, file.name)}
                                   download={file.name}
                                   onClick={e => e.stopPropagation()}
                                   className={`p-1 rounded-lg transition-colors flex-shrink-0 ${textSecondary} hover:text-white`}
+                                  title="Télécharger"
                                 >
                                   <Download className="w-3 h-3" />
                                 </a>

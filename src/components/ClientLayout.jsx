@@ -11,6 +11,7 @@ import { useApp } from '../contexts/AppContext'
 import { translations } from '../i18n/translations'
 import { createPageUrl } from '../utils'
 import { Store } from '../data/store'
+import ClientChatBot from './ClientChatBot'
 
 // ── Classic layout design tokens ─────────────────────────────────────────────
 const D = {
@@ -211,9 +212,8 @@ export default function ClientLayout({ children, transparent = false, title }) {
             {userMenu && (
               <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: '8px', borderRadius: '12px', overflow: 'hidden', background: isDark ? '#0a0a0a' : '#fff', boxShadow: isDark ? `0 -8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(136,235,255,0.1)` : '0 -8px 24px rgba(0,0,0,0.08)' }}>
                 {[
-                  { icon: User,       label: 'Informations personnelles', path: createPageUrl('ClientAccount') },
-                  { icon: KeyRound,   label: 'Mot de passe',              path: createPageUrl('ClientAccount') },
-                  { icon: Headphones, label: 'Contact SAV',               path: createPageUrl('ClientContact') },
+                  { icon: User,     label: 'Informations personnelles', path: createPageUrl('ClientAccount') },
+                  { icon: KeyRound, label: 'Mot de passe',              path: createPageUrl('ClientAccount') },
                 ].map(({ icon: Icon, label, path }) => (
                   <button key={label}
                     onClick={() => { navigate(path); setUserMenu(false); setSidebarOpen(false) }}
@@ -367,8 +367,7 @@ export default function ClientLayout({ children, transparent = false, title }) {
                 </div>
 
                 {[
-                  { icon: User,       label: 'Mon profil',  path: createPageUrl('ClientAccount') },
-                  { icon: Headphones, label: 'Contact SAV', path: createPageUrl('ClientContact') },
+                  { icon: User, label: 'Mon profil', path: createPageUrl('ClientAccount') },
                 ].map(({ icon: Icon, label, path }) => (
                   <button key={label} onClick={() => { navigate(path); setUserMenu(false) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', fontSize: 13, fontWeight: 400, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(255,255,255,0.75)', transition: 'background 0.15s', textAlign: 'left' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
@@ -417,6 +416,9 @@ export default function ClientLayout({ children, transparent = false, title }) {
       <main style={{ padding: transparent ? 0 : `${impersonatedBy ? 128 : 92}px 24px 32px` }}>
         {children}
       </main>
+
+      {/* Chatbot client */}
+      <ClientChatBot />
     </div>
   )
 }

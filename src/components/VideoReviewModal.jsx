@@ -1237,23 +1237,24 @@ export default function VideoReviewModal({ reservation, allFiles, initialFile, o
     >
       {/* ── Top bar ── */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800 flex-shrink-0" onClick={e => e.stopPropagation()}>
-        {/* Home button — client only */}
+        {/* Back button — always visible */}
+        <button onClick={onClose}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex-shrink-0">
+          <ArrowLeft className="w-3.5 h-3.5" />
+          {isClient ? 'Médiathèque' : 'Retour'}
+        </button>
+
+        {/* Dashboard button — client only */}
         {isClient && (
           <button
             onClick={() => { onClose(); navigate(createPageUrl('ClientDashboard')) }}
-            title="Accueil espace client"
+            title="Tableau de bord"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex-shrink-0"
           >
             <Home className="w-3.5 h-3.5" />
             Accueil
           </button>
         )}
-        {/* Back button — left */}
-        <button onClick={onClose}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex-shrink-0">
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Retour
-        </button>
 
         {/* Status */}
         <div className="relative">
@@ -1519,14 +1520,12 @@ export default function VideoReviewModal({ reservation, allFiles, initialFile, o
               </div>
             )}
 
-            {/* Fullscreen overlay controls (shown on mouse move, hidden on idle) */}
+            {/* Fullscreen overlay controls — timeline masquée, uniquement la barre de lecture */}
             {isFullscreen && (
               <div
                 className={`absolute bottom-0 left-0 right-0 z-10 transition-opacity duration-300 ${showOverlay ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }}
               >
-                {AnnotationBar()}
-                {Timeline()}
                 {ControlsBar({ compact: true })}
               </div>
             )}

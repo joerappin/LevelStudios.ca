@@ -3,9 +3,9 @@ import { MessageSquare, X, Send, ChevronDown, Bot, Phone, Mail, User } from 'luc
 import { Store } from '../data/store'
 
 const FORMULAS = [
-  { id: 'BRONZE', label: '🥉 BRONZE', desc: 'Enregistrement clé en main', price: '149 CAD/h' },
-  { id: 'ARGENT', label: '🎙️ ARGENT', desc: 'Bronze + post-production', price: '199 CAD/h' },
-  { id: 'GOLD',   label: '🥇 OR',     desc: 'Premium avec motion design', price: '499 CAD/h' },
+  { id: 'BRONZE', label: '🥉 BRONZE', desc: 'Enregistrement clé en main' },
+  { id: 'ARGENT', label: '🎙️ ARGENT', desc: 'Bronze + post-production incluse' },
+  { id: 'GOLD',   label: '🥇 OR',     desc: 'Premium — accompagnement renforcé' },
 ]
 
 const WELCOME_MSG = {
@@ -52,7 +52,7 @@ export default function VisitorChatBot() {
 
   function handleFormulaClick(f) {
     setFormula(f)
-    addMsg({ from: 'visitor', body: `Je suis intéressé par la formule ${f.label} — ${f.price}` })
+    addMsg({ from: 'visitor', body: `Je suis intéressé par la formule ${f.label}` })
     setTimeout(() => {
       addMsg({ from: 'bot', body: `Excellent choix ! 🎬 La formule **${f.label}** inclut : ${f.desc}.\n\nPour vous recontacter rapidement, j'ai besoin de quelques informations 👇` })
       setStep(1)
@@ -154,10 +154,7 @@ export default function VisitorChatBot() {
                 {FORMULAS.map(f => (
                   <button key={f.id} onClick={() => handleFormulaClick(f)}
                     className="w-full text-left px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/60 hover:border-blue-500/50 transition-colors group">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-white group-hover:text-blue-300">{f.label}</span>
-                      <span className="text-[10px] font-bold text-blue-400">{f.price}</span>
-                    </div>
+                    <span className="text-xs font-semibold text-white group-hover:text-blue-300">{f.label}</span>
                     <p className="text-[10px] text-zinc-500 mt-0.5">{f.desc}</p>
                   </button>
                 ))}
