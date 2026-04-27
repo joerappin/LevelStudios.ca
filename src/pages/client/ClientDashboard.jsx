@@ -273,7 +273,7 @@ export default function ClientDashboard() {
               <Bell size={18} className="text-violet-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className={`font-semibold text-sm ${textPrimary}`}>{popup.title || 'Level Studio'}</p>
-                <p className={`text-xs mt-1 ${textSecondary}`}>{popup.body}</p>
+                <p className={`text-xs mt-1 ${textSecondary}`}>{popup.message || popup.body}</p>
               </div>
               <button onClick={() => { Store.deletePopupMessage(popup.id); setPopup(null) }} className={textSecondary}>
                 <X size={16} />

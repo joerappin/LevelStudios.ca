@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
 import MaintenancePage, { useMaintenanceBypass } from './pages/MaintenancePage'
-import { ArrowLeftCircle, LayoutDashboard } from 'lucide-react'
+import { ArrowLeftCircle, LayoutDashboard, Film } from 'lucide-react'
 
 // Public pages
 import Home from './pages/Home'
@@ -93,7 +93,7 @@ function ImpersonationBanner() {
   const navigate = useNavigate()
   const location = useLocation()
   if (!impersonatedBy) return null
-  const isClientTest = location.pathname.startsWith('/clienttest')
+  const isNeoView = location.pathname.startsWith('/clienttest')
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, height: '36px',
@@ -109,13 +109,21 @@ function ImpersonationBanner() {
         <span style={{ opacity: 0.5 }}>— {impersonatedBy.name}</span>
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        {isClientTest && (
+        {isNeoView ? (
           <button onClick={() => navigate('/client/dashboard')} style={{
             display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600,
             padding: '3px 10px', borderRadius: '6px', cursor: 'pointer', border: '1px solid rgba(139,92,246,0.35)',
             background: 'rgba(139,92,246,0.15)', color: '#a78bfa', transition: 'all 0.15s',
           }}>
-            <LayoutDashboard size={11} /> Vue classique
+            <LayoutDashboard size={11} /> Vue Classique
+          </button>
+        ) : (
+          <button onClick={() => navigate('/clienttest/dashboard')} style={{
+            display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600,
+            padding: '3px 10px', borderRadius: '6px', cursor: 'pointer', border: '1px solid rgba(0,188,212,0.35)',
+            background: 'rgba(0,188,212,0.12)', color: '#00bcd4', transition: 'all 0.15s',
+          }}>
+            <Film size={11} /> Vue Neo
           </button>
         )}
         <button onClick={() => { stopImpersonating(); navigate('/admin/accounts') }} style={{

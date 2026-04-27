@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Bell, ChevronDown, ChevronUp, LogOut, User,
-  Sun, Moon, Headphones,
-  Home, CalendarDays, FolderOpen, CreditCard,
-  KeyRound, Menu, Film, LayoutDashboard, Star,
+  Sun, Moon,
+  Home, CalendarDays, FolderOpen,
+  KeyRound, Menu, Star, Megaphone, X as XIcon,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useApp } from '../contexts/AppContext'
@@ -80,19 +80,15 @@ export default function ClientLayout({ children, transparent = false, title }) {
   const navigate  = useNavigate()
   const location  = useLocation()
 
-  // viewMode: 'netflix' for real clients, 'classic' when impersonating (unless ?netflix=1)
-  const startNetflix = new URLSearchParams(location.search).get('netflix') === '1'
-  const [viewMode, setViewMode] = useState(() =>
-    impersonatedBy && !startNetflix ? 'classic' : 'netflix'
-  )
-  useEffect(() => {
-    if (impersonatedBy) setViewMode(startNetflix ? 'netflix' : 'classic')
-  }, [!!impersonatedBy])  // eslint-disable-line react-hooks/exhaustive-deps
+  // classic view when impersonating, netflix otherwise
+  const viewMode = impersonatedBy ? 'classic' : 'netflix'
 
   const [scrolled,    setScrolled]    = useState(false)
   const [userMenu,    setUserMenu]    = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [ratingMsg,   setRatingMsg]   = useState(null)
+  const [activeComms, setActiveComms] = useState([])
+  const [showTicker,  setShowTicker]  = useState(false)
   const userRef = useRef(null)
 
   useEffect(() => {
@@ -104,6 +100,20 @@ export default function ClientLayout({ children, transparent = false, title }) {
       !m.rating
     )
     setRatingMsg(pending || null)
+
+    // Load active communications for this user
+    const now = Date.now()
+    const comms = Store.getPopupMessages().filter(p => {
+      if (p.duration_days) {
+        const expires = new Date(p.created_at).getTime() + p.duration_days * 86400000
+        if (expires < now) return false
+      }
+      if (p.target === 'all') return true
+      if (p.target === 'clients') return true
+      if (p.target === `client:${user.email}`) return true
+      return false
+    })
+    setActiveComms(comms)
   }, [user])
 
   const t      = (k) => translations[lang]?.[k] || k
@@ -116,18 +126,16 @@ export default function ClientLayout({ children, transparent = false, title }) {
   const flags = Store.getFeatureFlags()
 
   const navItems = [
-    { key: 'nav_dashboard',    path: createPageUrl('ClientDashboard'),    icon: Home       },
-    { key: 'nav_reservations', path: '/clienttest/invoices',                  icon: CalendarDays },
-    flags.library_tab      && { key: 'nav_library',      path: createPageUrl('ClientLibrary'),      icon: FolderOpen },
-    flags.subscription_tab && { key: 'nav_subscription', path: createPageUrl('ClientSubscription'), icon: CreditCard },
-  ].filter(Boolean)
+    { key: 'nav_dashboard',    path: createPageUrl('ClientDashboard'),      icon: Home       },
+    { key: 'nav_reservations', path: createPageUrl('ClientReservations'),   icon: CalendarDays },
+    { key: 'nav_library',      path: createPageUrl('ClientLibrary'),        icon: FolderOpen },
+  ]
 
   const NAV_NF = [
-    { label: t('nav_dashboard') || 'Accueil',        path: createPageUrl('ClientDashboard')    },
-    { label: 'Réservations',                          path: '/clienttest/invoices'                  },
-    flags.library_tab      && { label: t('nav_library')      || 'Médiathèque',    path: createPageUrl('ClientLibrary')      },
-    flags.subscription_tab && { label: t('nav_subscription') || "Packs d'heures", path: createPageUrl('ClientSubscription') },
-  ].filter(Boolean)
+    { label: t('nav_dashboard') || 'Accueil',      path: createPageUrl('ClientDashboard')    },
+    { label: 'Réservations',                        path: '/clienttest/reservations'          },
+    { label: t('nav_library') || 'Médiathèque',    path: createPageUrl('ClientLibrary')      },
+  ]
 
   const textPrimary  = isDark ? '#ffffff' : '#0d0d1a'
   const textMuted    = isDark ? D.muted   : '#888'
@@ -151,26 +159,9 @@ export default function ClientLayout({ children, transparent = false, title }) {
   const handleStopImpersonating = () => { stopImpersonating(); navigate('/admin/accounts') }
   const handleLogout             = () => { logout(); navigate('/') }
 
-  // ── Toggle button (only visible when impersonating) ───────────────────────
-  const ModeToggle = () => (
-    <button
-      onClick={() => setViewMode(m => m === 'netflix' ? 'classic' : 'netflix')}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700,
-        padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-        background: viewMode === 'netflix'
-          ? 'rgba(0,188,212,0.15)' : 'rgba(139,92,246,0.15)',
-        color: viewMode === 'netflix' ? ACCENT : '#a78bfa',
-        border: viewMode === 'netflix'
-          ? `1px solid rgba(0,188,212,0.3)` : '1px solid rgba(139,92,246,0.3)',
-        transition: 'all 0.2s',
-      }}
-    >
-      {viewMode === 'netflix'
-        ? <><LayoutDashboard size={13} /> Vue classique</>
-        : <><Film size={13} /> Vue Netflix</>}
-    </button>
-  )
+  // ── Communication ticker injected once ───────────────────────────────────
+  const tickerText = activeComms.map(c => `📣 ${c.title} — ${c.message || c.body}`).join('     ·     ')
+  const tickerDuration = Math.max(20, activeComms.length * 12)
 
   // ════════════════════════════════════════════════════════════════════════════
   // CLASSIC SIDEBAR LAYOUT
@@ -294,13 +285,14 @@ export default function ClientLayout({ children, transparent = false, title }) {
     )
 
     return (
-      <div style={{ minHeight: '100vh', minWidth: 'fit-content', display: 'flex', background: S.page }}>
+      <div style={{ minHeight: '100vh', display: 'flex', background: S.page }}>
+        <style>{`@keyframes commTicker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}} @keyframes commPulse{0%,100%{opacity:1}50%{opacity:0.75;box-shadow:0 0 10px rgba(251,191,36,0.5)}}`}</style>
         {sidebarOpen && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 40, backdropFilter: 'blur(4px)' }}
             className="lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
 
-        <aside style={{ position: 'fixed', top: 0, left: 0, height: '100%', width: '256px', zIndex: 50, transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)', boxShadow: isDark ? `4px 0 32px rgba(0,0,0,0.6)` : '4px 0 24px rgba(0,0,0,0.08)' }}
+        <aside style={{ position: 'fixed', top: impersonatedBy ? '36px' : '0', left: 0, height: impersonatedBy ? 'calc(100% - 36px)' : '100%', width: '256px', zIndex: 50, transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)', boxShadow: isDark ? `4px 0 32px rgba(0,0,0,0.6)` : '4px 0 24px rgba(0,0,0,0.08)' }}
           className={sidebarOpen ? '' : '-translate-x-full lg:translate-x-0'}
         >
           <SidebarContent />
@@ -314,8 +306,32 @@ export default function ClientLayout({ children, transparent = false, title }) {
               </button>
               <h1 style={{ fontWeight: 800, fontSize: '17px', margin: 0, color: textPrimary, fontFamily: 'Montserrat, sans-serif', letterSpacing: '-0.01em' }}>{title}</h1>
             </div>
-            {impersonatedBy && <ModeToggle />}
+            {activeComms.length > 0 && (
+              <button onClick={() => setShowTicker(o => !o)} style={{
+                display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700,
+                padding: '5px 11px', borderRadius: '8px', cursor: 'pointer',
+                background: showTicker ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.09)',
+                border: '1px solid rgba(251,191,36,0.4)', color: '#fbbf24',
+                animation: showTicker ? 'none' : 'commPulse 2.2s ease-in-out infinite',
+              }}>
+                <Megaphone size={12} />
+                <span>{activeComms.length} communication{activeComms.length > 1 ? 's' : ''}</span>
+              </button>
+            )}
           </header>
+
+          {showTicker && activeComms.length > 0 && (
+            <>
+              <div style={{ position: 'sticky', top: impersonatedBy ? 'calc(36px + 64px)' : '64px', zIndex: 29, height: '32px', background: 'rgba(251,191,36,0.07)', borderBottom: '1px solid rgba(251,191,36,0.2)', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                <div style={{ whiteSpace: 'nowrap', fontSize: '12px', fontWeight: 500, color: '#fbbf24', animation: `commTicker ${tickerDuration}s linear infinite` }}>
+                  {tickerText}
+                </div>
+                <button onClick={() => setShowTicker(false)} style={{ position: 'absolute', right: 8, background: 'transparent', border: 'none', color: 'rgba(251,191,36,0.6)', cursor: 'pointer', padding: 2 }}>
+                  <XIcon size={13} />
+                </button>
+              </div>
+            </>
+          )}
 
           <main style={{ flex: 1, padding: '24px', color: textPrimary }}>
             {children}
@@ -334,6 +350,7 @@ export default function ClientLayout({ children, transparent = false, title }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#141414', color: '#e5e5e5' }}>
+      <style>{`@keyframes commTicker{from{transform:translateX(100vw)}to{transform:translateX(-100%)}} @keyframes commPulse{0%,100%{opacity:1}50%{opacity:0.75;box-shadow:0 0 10px rgba(251,191,36,0.5)}}`}</style>
 
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <nav style={{
@@ -373,9 +390,20 @@ export default function ClientLayout({ children, transparent = false, title }) {
         <div style={{ flex: 1 }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {impersonatedBy && <ModeToggle />}
+          {activeComms.length > 0 && (
+            <button onClick={() => setShowTicker(o => !o)} style={{
+              display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 700,
+              padding: '5px 10px', borderRadius: '7px', cursor: 'pointer',
+              background: showTicker ? 'rgba(251,191,36,0.18)' : 'rgba(251,191,36,0.09)',
+              border: '1px solid rgba(251,191,36,0.4)', color: '#fbbf24',
+              animation: showTicker ? 'none' : 'commPulse 2.2s ease-in-out infinite',
+            }}>
+              <Megaphone size={12} />
+              <span>{activeComms.length}</span>
+            </button>
+          )}
 
-          <button onClick={() => navigate('/clienttest/invoices')} style={{
+          <button onClick={() => navigate('/clienttest/reservations')} style={{
             position: 'relative', width: 36, height: 36, borderRadius: 6,
             border: 'none', cursor: 'pointer', background: 'transparent',
             color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -458,8 +486,22 @@ export default function ClientLayout({ children, transparent = false, title }) {
       </nav>
 
 
+      {/* ── TICKER (neo) ─────────────────────────────────────────────────── */}
+      {showTicker && activeComms.length > 0 && (
+        <>
+          <div style={{ position: 'fixed', top: impersonatedBy ? '104px' : '68px', left: 0, right: 0, zIndex: 98, height: '32px', background: 'rgba(251,191,36,0.08)', borderBottom: '1px solid rgba(251,191,36,0.2)', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+            <div style={{ whiteSpace: 'nowrap', fontSize: '12px', fontWeight: 500, color: '#fbbf24', animation: `commTicker ${tickerDuration}s linear infinite` }}>
+              {tickerText}
+            </div>
+            <button onClick={() => setShowTicker(false)} style={{ position: 'absolute', right: 8, background: 'transparent', border: 'none', color: 'rgba(251,191,36,0.6)', cursor: 'pointer', padding: 2 }}>
+              <XIcon size={13} />
+            </button>
+          </div>
+        </>
+      )}
+
       {/* ── CONTENT ──────────────────────────────────────────────────────── */}
-      <main style={{ padding: transparent ? 0 : `${impersonatedBy ? 128 : 92}px 24px 32px` }}>
+      <main style={{ padding: transparent ? (showTicker ? `${impersonatedBy ? 140 : 100}px 0 0` : 0) : `${(impersonatedBy ? 128 : 96) + (showTicker ? 32 : 0)}px 24px 32px` }}>
         {children}
       </main>
 
