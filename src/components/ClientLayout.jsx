@@ -123,14 +123,14 @@ export default function ClientLayout({ children, transparent = false, title }) {
     ? Store.getReservations().filter(r => r.client_email === user.email && r.status === 'a_payer').length
     : 0
 
-  // Classic (admin view) shows ALL client tabs
+  // Classic (admin view) shows ALL client tabs — hardcoded /client/* paths, never neo
   const navItems = [
-    { label: t('nav_dashboard') || 'Accueil',        path: createPageUrl('ClientDashboard'),      icon: Home,         badge: null },
-    { label: 'Réservations',                          path: createPageUrl('ClientReservations'),   icon: CalendarDays, badge: pendingCount > 0 ? pendingCount : null },
-    { label: t('nav_library') || 'Médiathèque',      path: createPageUrl('ClientLibrary'),        icon: FolderOpen,   badge: null },
-    { label: "Packs d'heures",                        path: createPageUrl('ClientSubscription'),   icon: CreditCard,   badge: null },
-    { label: 'Mon compte',                            path: createPageUrl('ClientAccount'),        icon: User,         badge: null },
-    { label: 'Support',                               path: createPageUrl('ClientContact'),        icon: Headphones,   badge: null },
+    { label: t('nav_dashboard') || 'Accueil',        path: '/client/dashboard',      icon: Home,         badge: null },
+    { label: 'Réservations',                          path: '/client/reservations',   icon: CalendarDays, badge: pendingCount > 0 ? pendingCount : null },
+    { label: t('nav_library') || 'Médiathèque',      path: '/client/library',        icon: FolderOpen,   badge: null },
+    { label: "Packs d'heures",                        path: '/client/subscription',   icon: CreditCard,   badge: null },
+    { label: 'Mon compte',                            path: '/client/account',        icon: User,         badge: null },
+    { label: 'Support',                               path: '/client/contact',        icon: Headphones,   badge: null },
   ]
 
   const NAV_NF = [
