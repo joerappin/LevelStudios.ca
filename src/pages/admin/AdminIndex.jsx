@@ -4,10 +4,11 @@ import {
   Home, Mail, CalendarDays, User, Users, BarChart2,
   Layers, MessageSquare, Megaphone, Package, ShoppingBag,
   ClipboardList, BookOpen, Wrench, Tag, Clock,
-  Plane, DollarSign, Edit3, LogIn, Star
+  Plane, DollarSign, Edit3, LogIn, Star, FileText, GitBranch, ScanLine, Loader2
 } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
+import { generateSiteDoc, generateConnectionSchema, generateAnnotatedGuide } from '../../utils/pdfGenerators'
 
 const LS_KEY = 'ls_page_visibility'
 
@@ -89,6 +90,12 @@ const PAGE_GROUPS = [
 export default function AdminIndex() {
   const navigate = useNavigate()
   const [disabled, setDisabledState] = useState(() => getDisabled())
+  const [pdfLoading, setPdfLoading] = useState({ site: false, schema: false, guide: false })
+
+  const handlePdf = async (key, fn) => {
+    setPdfLoading(s => ({ ...s, [key]: true }))
+    try { await fn() } finally { setPdfLoading(s => ({ ...s, [key]: false })) }
+  }
 
   const toggle = (e, path) => {
     e.stopPropagation()
@@ -103,8 +110,44 @@ export default function AdminIndex() {
 
         <div style={{ marginBottom: '40px' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', marginBottom: '8px' }}>Index des pages</h1>
-          <p style={{ color: '#666', fontSize: '14px' }}>Sélectionnez une page pour l'ouvrir dans l'éditeur visuel.</p>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '28px' }}>Sélectionnez une page pour l'ouvrir dans l'éditeur visuel.</p>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {[
+              { key: 'site', label: 'Documentation site', sub: 'Toutes les pages, page par page', icon: FileText, fn: generateSiteDoc, color: '#88ebff' },
+              { key: 'schema', label: 'Schéma de connexion', sub: 'Interactivité inter-comptes', icon: GitBranch, fn: generateConnectionSchema, color: '#ea73fb' },
+              { key: 'guide', label: 'Guide fonctionnalités', sub: 'Pages annotées avec flèches', icon: ScanLine, fn: generateAnnotatedGuide, color: '#ff89ac' },
+            ].map(({ key, label, sub, icon: Icon, fn, color }) => (
+              <button key={key}
+                disabled={pdfLoading[key]}
+                onClick={() => handlePdf(key, fn)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  padding: '14px 20px', borderRadius: '14px', cursor: pdfLoading[key] ? 'not-allowed' : 'pointer',
+                  background: '#0e0e0e', border: `1px solid ${color}30`,
+                  opacity: pdfLoading[key] ? 0.7 : 1, transition: 'all 0.18s',
+                  boxShadow: `0 0 0 0 ${color}00`,
+                  minWidth: '260px',
+                }}
+                onMouseEnter={e => { if (!pdfLoading[key]) { e.currentTarget.style.border = `1px solid ${color}60`; e.currentTarget.style.background = `${color}08`; e.currentTarget.style.boxShadow = `0 4px 20px ${color}15` } }}
+                onMouseLeave={e => { e.currentTarget.style.border = `1px solid ${color}30`; e.currentTarget.style.background = '#0e0e0e'; e.currentTarget.style.boxShadow = `0 0 0 0 ${color}00` }}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: `${color}15`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {pdfLoading[key]
+                    ? <Loader2 size={17} style={{ color, animation: 'spin 1s linear infinite' }} />
+                    : <Icon size={17} style={{ color }} />
+                  }
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#ddd', marginBottom: '2px' }}>{label}</div>
+                  <div style={{ fontSize: '11px', color: '#555' }}>{pdfLoading[key] ? 'Génération en cours…' : sub}</div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
+
+        <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
 
         {PAGE_GROUPS.map(group => (
           <div key={group.group} style={{ marginBottom: '48px' }}>
