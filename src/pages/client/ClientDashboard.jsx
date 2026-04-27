@@ -67,8 +67,19 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!user) return
     setPacks(Store.getHourPacks().filter(p => p.client_email === user.email && p.hours_used < p.hours_total))
-    const popups = Store.getPopupMessages()
-    if (popups.length > 0) setPopup(popups[0])
+    const now = Date.now()
+    const seen = JSON.parse(sessionStorage.getItem('ls_seen_popups') || '[]')
+    const relevant = Store.getPopupMessages().filter(p => {
+      if (p.duration_days) {
+        const expires = new Date(p.created_at).getTime() + p.duration_days * 86400000
+        if (expires < now) return false
+      }
+      if (seen.includes(p.id)) return false
+      if (p.target === 'all' || p.target === 'clients') return true
+      if (p.target === `client:${user.email}`) return true
+      return false
+    })
+    if (relevant.length > 0) setPopup(relevant[0])
   }, [user])
 
   useEffect(() => {
@@ -275,7 +286,11 @@ export default function ClientDashboard() {
                 <p className={`font-semibold text-sm ${textPrimary}`}>{popup.title || 'Level Studio'}</p>
                 <p className={`text-xs mt-1 ${textSecondary}`}>{popup.message || popup.body}</p>
               </div>
-              <button onClick={() => { Store.deletePopupMessage(popup.id); setPopup(null) }} className={textSecondary}>
+              <button onClick={() => {
+                const seen = JSON.parse(sessionStorage.getItem('ls_seen_popups') || '[]')
+                sessionStorage.setItem('ls_seen_popups', JSON.stringify([...seen, popup.id]))
+                setPopup(null)
+              }} className={textSecondary}>
                 <X size={16} />
               </button>
             </div>

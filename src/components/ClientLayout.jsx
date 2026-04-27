@@ -101,19 +101,19 @@ export default function ClientLayout({ children, transparent = false, title }) {
     )
     setRatingMsg(pending || null)
 
-    // Load active communications for this user
     const now = Date.now()
     const comms = Store.getPopupMessages().filter(p => {
       if (p.duration_days) {
         const expires = new Date(p.created_at).getTime() + p.duration_days * 86400000
         if (expires < now) return false
       }
-      if (p.target === 'all') return true
-      if (p.target === 'clients') return true
+      if (p.target === 'all' || p.target === 'clients') return true
       if (p.target === `client:${user.email}`) return true
       return false
     })
     setActiveComms(comms)
+    // Auto-afficher le ticker s'il y a des communications actives
+    if (comms.length > 0) setShowTicker(true)
   }, [user])
 
   const t      = (k) => translations[lang]?.[k] || k
