@@ -8,6 +8,7 @@ import { cn } from '../utils'
 import { Store } from '../data/store'
 import AdminChatBot from './AdminChatBot'
 import ClientChatBot from './ClientChatBot'
+import Dock from './Dock'
 
 // ── DESIGN.md tokens ──────────────────────────────────────────────────────────
 const D = {
@@ -383,11 +384,12 @@ export default function Layout({ children, navItems, title }) {
         </header>
 
 
-        <main style={{ flex: 1, padding: '24px', color: textPrimary }}>
+        <main style={{ flex: 1, padding: '24px', paddingBottom: '96px', color: textPrimary }}>
           {children}
         </main>
       </div>
 
+      <Dock navItems={navItems} isDark={isDark} />
       {user?.type === 'admin' && <AdminChatBot open={adminChatOpen} onClose={() => setAdminChatOpen(false)} onUnreadChange={setAdminChatUnread} />}
       {user?.type === 'client' && <ClientChatBot />}
     </div>
