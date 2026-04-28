@@ -68,6 +68,17 @@ import ChefRH from './pages/chef/ChefRH'
 // Rushes pages
 import EmployeeRushes from './pages/employee/EmployeeRushes'
 
+// Pathé-inspired pages
+import HomeNeo               from './pages/HomeNeo'
+import ClientNeoLogin        from './pages/clientneo/ClientNeoLogin'
+import ClientNeoDashboard    from './pages/clientneo/ClientNeoDashboard'
+import ClientNeoReservations from './pages/clientneo/ClientNeoReservations'
+import ClientNeoLibrary      from './pages/clientneo/ClientNeoLibrary'
+import ClientNeoSubscription from './pages/clientneo/ClientNeoSubscription'
+import ClientNeoInvoices     from './pages/clientneo/ClientNeoInvoices'
+import ClientNeoContact      from './pages/clientneo/ClientNeoContact'
+import ClientNeoAccount      from './pages/clientneo/ClientNeoAccount'
+
 // Client Test pages (Netflix-style UI)
 import ClientTestLogin        from './pages/clienttest/ClientTestLogin'
 import ClientTestDashboard    from './pages/clienttest/ClientTestDashboard'
@@ -168,6 +179,17 @@ function AppRoutes() {
       <ImpersonationBanner />
       <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/neo" element={<HomeNeo />} />
+
+      {/* Pathé-inspired client portal */}
+      <Route path="/pathe"                  element={<ClientNeoLogin />} />
+      <Route path="/pathe/dashboard"        element={<ClientTestRoute><ClientNeoDashboard /></ClientTestRoute>} />
+      <Route path="/pathe/reservations"     element={<ClientTestRoute><ClientNeoReservations /></ClientTestRoute>} />
+      <Route path="/pathe/library"          element={<ClientTestRoute><ClientNeoLibrary /></ClientTestRoute>} />
+      <Route path="/pathe/subscription"     element={<ClientTestRoute><ClientNeoSubscription /></ClientTestRoute>} />
+      <Route path="/pathe/invoices"         element={<ClientTestRoute><ClientNeoInvoices /></ClientTestRoute>} />
+      <Route path="/pathe/contact"          element={<ClientTestRoute><ClientNeoContact /></ClientTestRoute>} />
+      <Route path="/pathe/account"          element={<ClientTestRoute><ClientNeoAccount /></ClientTestRoute>} />
       <Route path="/loginteamlevelprivate" element={<Login />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/reservation" element={<NewReservation />} />
