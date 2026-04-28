@@ -607,23 +607,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* ── COMMAND CENTER ────────────────────────────────────────────── */}
-        <div style={card()}>
-          {sectionLabel('COMMANDES', 'ACCÈS RAPIDE')}
-          <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
-            {CMDS.map((cmd, i) => (
-              <button key={i} onClick={cmd.action}
-                style={{ display:'flex', alignItems:'center', gap:'6px', padding:'7px 12px', borderRadius:'9px', cursor:'pointer', fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', border:`1px solid ${DS.cmdBdr}`, background:DS.cmdBg, color:DS.txt2 }}
-                onMouseEnter={e => { e.currentTarget.style.background=`${cmd.clr}12`; e.currentTarget.style.borderColor=`${cmd.clr}40`; e.currentTarget.style.color=cmd.clr }}
-                onMouseLeave={e => { e.currentTarget.style.background=DS.cmdBg; e.currentTarget.style.borderColor=DS.cmdBdr; e.currentTarget.style.color=DS.txt2 }}
-              >
-                <span style={{ color:cmd.clr }}>{cmd.icon}</span>
-                {cmd.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
       </div>
     </Layout>
   )
