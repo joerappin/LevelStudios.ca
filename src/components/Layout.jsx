@@ -389,7 +389,7 @@ export default function Layout({ children, navItems, title }) {
         </main>
       </div>
 
-      <Dock navItems={navItems} isDark={isDark} />
+      <Dock isDark={isDark} />
       {user?.type === 'admin' && <AdminChatBot open={adminChatOpen} onClose={() => setAdminChatOpen(false)} onUnreadChange={setAdminChatUnread} />}
       {user?.type === 'client' && <ClientChatBot />}
     </div>
