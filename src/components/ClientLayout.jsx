@@ -83,13 +83,30 @@ export default function ClientLayout({ children, transparent = false, title }) {
   // classic view when impersonating, netflix otherwise
   const viewMode = impersonatedBy ? 'classic' : 'netflix'
 
-  const [scrolled,    setScrolled]    = useState(false)
-  const [userMenu,    setUserMenu]    = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [ratingMsg,   setRatingMsg]   = useState(null)
-  const [activeComms, setActiveComms] = useState([])
-  const [showTicker,  setShowTicker]  = useState(false)
+  const [scrolled,       setScrolled]       = useState(false)
+  const [userMenu,       setUserMenu]       = useState(false)
+  const [sidebarOpen,    setSidebarOpen]    = useState(false)
+  const [ratingMsg,      setRatingMsg]      = useState(null)
+  const [activeComms,    setActiveComms]    = useState([])
+  const [showTicker,     setShowTicker]     = useState(false)
+  const [blockingQueue,  setBlockingQueue]  = useState([]) // comms to show as blocking popup
   const userRef = useRef(null)
+
+  function getDismissed() {
+    try { return JSON.parse(sessionStorage.getItem('level_dismissed_comms') || '[]') } catch { return [] }
+  }
+  function addDismissed(id) {
+    const existing = getDismissed()
+    if (!existing.includes(id)) sessionStorage.setItem('level_dismissed_comms', JSON.stringify([...existing, id]))
+  }
+
+  function dismissBlockingPopup() {
+    setBlockingQueue(q => {
+      if (q.length === 0) return q
+      addDismissed(q[0].id)
+      return q.slice(1)
+    })
+  }
 
   useEffect(() => {
     if (!user) return
@@ -102,6 +119,7 @@ export default function ClientLayout({ children, transparent = false, title }) {
     setRatingMsg(pending || null)
 
     const now = Date.now()
+    const dismissed = getDismissed()
     const comms = Store.getPopupMessages().filter(p => {
       if (p.duration_days) {
         const expires = new Date(p.created_at).getTime() + p.duration_days * 86400000
@@ -112,8 +130,10 @@ export default function ClientLayout({ children, transparent = false, title }) {
       return false
     })
     setActiveComms(comms)
-    // Auto-afficher le ticker s'il y a des communications actives
     if (comms.length > 0) setShowTicker(true)
+    // Queue blocking popups not yet dismissed this session
+    const toBlock = comms.filter(c => !dismissed.includes(c.id))
+    if (toBlock.length > 0) setBlockingQueue(toBlock)
   }, [user])
 
   const t      = (k) => translations[lang]?.[k] || k
@@ -311,6 +331,36 @@ export default function ClientLayout({ children, transparent = false, title }) {
             {children}
           </main>
         </div>
+
+        {/* Blocking communication popup (classic view) */}
+        {blockingQueue.length > 0 && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'rgba(0,0,0,0.80)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: isDark ? '#18181b' : '#fff', border: `1px solid ${isDark ? 'rgba(251,191,36,0.3)' : 'rgba(251,191,36,0.5)'}`, borderRadius: '20px', width: '100%', maxWidth: '480px', boxShadow: '0 32px 80px rgba(0,0,0,0.5)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Megaphone size={16} style={{ color: '#fbbf24' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: isDark ? '#fff' : '#111' }}>Communication</span>
+                </div>
+                <button onClick={dismissBlockingPopup} style={{ padding: '6px', borderRadius: '8px', background: 'transparent', border: 'none', cursor: 'pointer', color: textMuted }}>
+                  <XIcon size={18} />
+                </button>
+              </div>
+              <div style={{ padding: '24px 20px' }}>
+                {blockingQueue[0].title && (
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: isDark ? '#fff' : '#111', marginBottom: '12px' }}>{blockingQueue[0].title}</h3>
+                )}
+                <p style={{ fontSize: '14px', color: isDark ? 'rgba(255,255,255,0.75)' : '#444', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {blockingQueue[0].message || blockingQueue[0].body}
+                </p>
+              </div>
+              <div style={{ padding: '0 20px 20px' }}>
+                <button onClick={dismissBlockingPopup} style={{ width: '100%', padding: '13px', borderRadius: '12px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.35)', color: '#fbbf24', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
+                  J'ai lu, fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -478,6 +528,52 @@ export default function ClientLayout({ children, transparent = false, title }) {
       <main style={{ padding: transparent ? (showTicker ? `${impersonatedBy ? 140 : 100}px 0 0` : 0) : `${(impersonatedBy ? 128 : 96) + (showTicker ? 32 : 0)}px 24px 32px` }}>
         {children}
       </main>
+
+      {/* Blocking communication popup */}
+      {blockingQueue.length > 0 && !ratingMsg && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#18181b', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '20px', width: '100%', maxWidth: '480px', maxHeight: '80vh', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Megaphone size={16} style={{ color: '#fbbf24' }} />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>Communication</span>
+                {blockingQueue.length > 1 && (
+                  <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '999px', background: 'rgba(251,191,36,0.2)', color: '#fbbf24', fontWeight: 700 }}>
+                    {blockingQueue.length}
+                  </span>
+                )}
+              </div>
+              <button onClick={dismissBlockingPopup} style={{ padding: '6px', borderRadius: '8px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', transition: 'color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+              >
+                <XIcon size={18} />
+              </button>
+            </div>
+            <div style={{ padding: '24px 20px', overflowY: 'auto' }}>
+              {blockingQueue[0].title && (
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', marginBottom: '12px', letterSpacing: '-0.02em' }}>{blockingQueue[0].title}</h3>
+              )}
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                {blockingQueue[0].message || blockingQueue[0].body}
+              </p>
+              {blockingQueue[0].created_at && (
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '16px' }}>
+                  {new Date(blockingQueue[0].created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+            <div style={{ padding: '0 20px 20px' }}>
+              <button onClick={dismissBlockingPopup} style={{ width: '100%', padding: '13px', borderRadius: '12px', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.35)', color: '#fbbf24', fontSize: '14px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,191,36,0.25)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(251,191,36,0.15)'}
+              >
+                J'ai lu, fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Popup notation SAV — non fermable */}
       {ratingMsg && (

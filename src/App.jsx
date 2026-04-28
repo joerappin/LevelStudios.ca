@@ -162,6 +162,17 @@ function ProtectedRoute({ children, requiredType }) {
   return children
 }
 
+function PageGateRoute({ children, path }) {
+  const { user } = useAuth()
+  // Admins bypass all gates
+  if (user?.type === 'admin') return children
+  try {
+    const disabled = JSON.parse(localStorage.getItem('ls_page_visibility') || '{}')
+    if (disabled[path]) return <Navigate to="/" replace />
+  } catch {}
+  return children
+}
+
 function ClientTestRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return (
@@ -178,7 +189,7 @@ function AppRoutes() {
     <>
       <ImpersonationBanner />
       <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<PageGateRoute path="/"><Home /></PageGateRoute>} />
       <Route path="/neo" element={<HomeNeo />} />
 
       {/* Pathé-inspired client portal */}
@@ -190,9 +201,9 @@ function AppRoutes() {
       <Route path="/pathe/invoices"         element={<ClientTestRoute><ClientNeoInvoices /></ClientTestRoute>} />
       <Route path="/pathe/contact"          element={<ClientTestRoute><ClientNeoContact /></ClientTestRoute>} />
       <Route path="/pathe/account"          element={<ClientTestRoute><ClientNeoAccount /></ClientTestRoute>} />
-      <Route path="/loginteamlevelprivate" element={<Login />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/reservation" element={<NewReservation />} />
+      <Route path="/loginteamlevelprivate" element={<PageGateRoute path="/loginteamlevelprivate"><Login /></PageGateRoute>} />
+      <Route path="/contact" element={<PageGateRoute path="/contact"><Contact /></PageGateRoute>} />
+      <Route path="/reservation" element={<PageGateRoute path="/reservation"><NewReservation /></PageGateRoute>} />
       <Route path="/set-password" element={<SetPassword />} />
 
       <Route path="/admin/dashboard" element={<ProtectedRoute requiredType="admin"><AdminDashboard /></ProtectedRoute>} />

@@ -2,14 +2,23 @@ import React, { useState } from 'react'
 import { Search, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import ClientLayout from '../../components/ClientLayout'
 import { Store } from '../../data/store'
-import { formatDate, STATUS_CONFIG, getTierConfig } from '../../utils'
+import { formatDate, getTierConfig } from '../../utils'
 import { useAuth } from '../../contexts/AuthContext'
 import { useApp } from '../../contexts/AppContext'
 import { translations } from '../../i18n/translations'
 import { useReservations } from '../../hooks/useReservations'
 
-
 const STUDIOS = ['Cambridge', 'Nook', 'Loft', 'Rooftop']
+
+const STUDIO_IMG = {
+  'studio a': '/studios/studio-a.jpg',
+  'studio b': '/studios/studio-b.jpg',
+  'studio c': '/studios/studio-c.png',
+}
+
+function studioImg(name) {
+  return STUDIO_IMG[(name || '').toLowerCase().trim()] || '/studios/studio-a.jpg'
+}
 
 export default function ClientReservations() {
   const { user } = useAuth()
@@ -31,16 +40,10 @@ export default function ClientReservations() {
     setCancelModal(null)
   }
 
-  // Annulation autorisée uniquement si la réservation est à plus de 48h
   const canCancel = (r) => {
     if (!r.date) return false
     const resaDate = new Date(`${r.date}T${r.start_time ? r.start_time + ':00' : '00:00:00'}`)
     return (resaDate - new Date()) / (1000 * 60 * 60) >= 48
-  }
-
-  const handlePay = (resa) => {
-    Store.updateReservation(resa.id, { status: 'validee', paid_at: new Date().toISOString() })
-    reload()
   }
 
   const filtered = reservations.filter(r => {
@@ -73,12 +76,12 @@ export default function ClientReservations() {
   return (
     <ClientLayout title={t('my_reservations')}>
       <div className="space-y-5">
-        <div id="__section-header" className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <h2 className={`text-2xl font-bold ${textPrimary} flex-1`}>{t('my_reservations')}</h2>
         </div>
 
         {/* Filters */}
-        <div id="__section-filters" className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
           <div className="relative">
             <Search size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${textSecondary}`} />
             <input
@@ -113,102 +116,91 @@ export default function ClientReservations() {
         </div>
 
         {/* Table */}
-        <div id="__section-table" className={`${card} overflow-hidden`}>
+        <div className={`${card} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className={`text-xs font-semibold uppercase tracking-wide border-b ${tableHead}`}>
-                  <th className="text-left px-4 py-3">{t('studio_col')}</th>
-                  <th className="text-left px-4 py-3">{t('date_time')}</th>
-                  <th className="text-left px-4 py-3 hidden sm:table-cell">{t('time_slot')}</th>
-                  <th className="text-left px-4 py-3">{t('status')}</th>
-                  <th className="text-left px-4 py-3 hidden md:table-cell">{t('duration')}</th>
+                  <th className="text-left px-4 py-3">Studio</th>
+                  <th className="text-left px-4 py-3">Date</th>
+                  <th className="text-left px-4 py-3 hidden sm:table-cell">Horaire</th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">Personnes</th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell">Format</th>
+                  <th className="text-left px-4 py-3">ID</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className={`text-center py-16 ${textSecondary}`}>
+                    <td colSpan={7} className={`text-center py-16 ${textSecondary}`}>
                       <div className="flex flex-col items-center gap-2">
                         <span className="text-3xl">📅</span>
                         <p className="font-medium">{t('no_data')}</p>
                       </div>
                     </td>
                   </tr>
-                ) : paginated.map(r => {
-                  const st = STATUS_CONFIG[r.status] || STATUS_CONFIG.validee
-                  return (
-                    <tr key={r.id} className={`border-b ${tableRow}`}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                            <img
-                              src={{ 'studio a': '/studios/studio-a.jpg', 'studio b': '/studios/studio-b.jpg', 'studio c': '/studios/studio-c.png' }[(r.studio || '').toLowerCase().trim()] || '/studios/studio-a.jpg'}
-                              alt={r.studio || ''}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <p className={`font-medium ${textPrimary}`}>{r.studio}</p>
-                            {r.service && <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${getTierConfig(r.service).cls}`}>{getTierConfig(r.service).label}</span>}
-                          </div>
+                ) : paginated.map(r => (
+                  <tr key={r.id} className={`border-b ${tableRow}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                          <img src={studioImg(r.studio)} alt={r.studio || ''} className="w-full h-full object-cover" />
                         </div>
-                      </td>
-                      <td className={`px-4 py-3 ${textSecondary}`}>{formatDate(r.date)}</td>
-                      <td className={`px-4 py-3 hidden sm:table-cell ${textSecondary}`}>
-                        {r.start_time} – {r.end_time}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${st.cls}`}>
-                            {lang === 'fr' ? st.label_fr : st.label_en}
-                          </span>
-                          {r.modified_by && r.modified_by !== user?.email && (
-                            <span className="text-[10px] text-orange-400 font-medium">Modifiée par l'équipe</span>
+                        <div>
+                          <p className={`font-medium ${textPrimary}`}>{r.studio}</p>
+                          {r.service && (
+                            <span className={`inline-block mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${getTierConfig(r.service).cls}`}>
+                              {getTierConfig(r.service).label}
+                            </span>
                           )}
                         </div>
-                      </td>
-                      <td className={`px-4 py-3 hidden md:table-cell ${textSecondary}`}>{r.duration}h</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 justify-end">
-                          {r.status === 'a_payer' && (
+                      </div>
+                    </td>
+                    <td className={`px-4 py-3 ${textSecondary}`}>{formatDate(r.date)}</td>
+                    <td className={`px-4 py-3 hidden sm:table-cell ${textSecondary}`}>
+                      {r.start_time} – {r.end_time}
+                    </td>
+                    <td className={`px-4 py-3 hidden md:table-cell ${textSecondary}`}>
+                      {r.persons ? `${r.persons} pers.` : '—'}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {r.format === 'vertical'
+                        ? <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${isDark ? 'bg-pink-900/30 text-pink-300' : 'bg-pink-50 text-pink-600'}`}>↕ Vertical</span>
+                        : <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>↔ Horizontal</span>
+                      }
+                    </td>
+                    <td className={`px-4 py-3 font-mono text-xs ${textSecondary}`}>{r.id}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 justify-end">
+                        {['validee', 'a_payer'].includes(r.status) && (
+                          canCancel(r) ? (
                             <button
-                              onClick={() => handlePay(r)}
-                              className="bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                              onClick={() => setCancelModal(r)}
+                              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                                isDark
+                                  ? 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
+                                  : 'border-gray-200 text-gray-500 hover:text-gray-700'
+                              }`}
                             >
-                              {t('pay')}
+                              {t('cancel')}
                             </button>
-                          )}
-                          {['validee', 'a_payer'].includes(r.status) && (
-                            canCancel(r) ? (
-                              <button
-                                onClick={() => setCancelModal(r)}
-                                className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
-                                  isDark
-                                    ? 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'
-                                    : 'border-gray-200 text-gray-500 hover:text-gray-700'
-                                }`}
-                              >
-                                {t('cancel')}
-                              </button>
-                            ) : (
-                              <span className={`text-[10px] font-medium px-2 py-1 rounded-lg ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-gray-100 text-gray-400'}`} title="Annulation impossible moins de 48h avant la session">
-                                Non annulable
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                          ) : (
+                            <span className={`text-[10px] font-medium px-2 py-1 rounded-lg ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-gray-100 text-gray-400'}`} title="Annulation impossible moins de 48h avant la session">
+                              Non annulable
+                            </span>
+                          )
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
           {totalPages > 1 && (
-            <div id="__section-pagination" className={`flex items-center justify-between px-4 py-3 border-t text-sm ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
+            <div className={`flex items-center justify-between px-4 py-3 border-t text-sm ${isDark ? 'border-zinc-800' : 'border-gray-100'}`}>
               <span className={textSecondary}>Page {page} / {totalPages}</span>
               <div className="flex items-center gap-1">
                 <button

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, Star, KeyRound } from 'lucide-react'
+import { Search, Plus, Mail, X, Eye, Ban, Trash2, UserCircle2, Briefcase, ChevronRight, Check, Copy, CheckCheck, RotateCcw, AlertTriangle, Star, KeyRound, Clock } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -58,6 +58,7 @@ export default function AdminAccounts() {
   const [rateModal, setRateModal] = useState(null) // null | client object
   const [localRatings, setLocalRatings] = useState({}) // { resId: star }
   const [rateComments, setRateComments] = useState({}) // { resId: comment }
+  const [historyModal, setHistoryModal] = useState(null) // account object
   const [tab, setTab] = useState('clients')
   const [search, setSearch] = useState('')
   const [clients, setClients] = useState([])
@@ -389,6 +390,7 @@ export default function AdminAccounts() {
                         <button onClick={() => { setRateModal(c); setLocalRatings({}); setRateComments({}) }} title="Forcer la notation" className="p-1.5 rounded-lg transition-colors text-amber-400 hover:bg-amber-500/10"><Star size={15} /></button>
                         <button onClick={() => handleImpersonate(c, '/client/dashboard')} title="Visualiser le compte client" className="p-1.5 rounded-lg transition-colors text-emerald-400 hover:bg-emerald-500/10"><Eye size={15} /></button>
                         <button onClick={() => toggleSuspend(c.id, false)} title={c.suspended ? 'Réactiver' : 'Suspendre'} className={`p-1.5 rounded-lg transition-colors ${c.suspended ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
+                        <button onClick={() => setHistoryModal(c)} title="Historique des connexions" className="p-1.5 rounded-lg transition-colors text-sky-400 hover:bg-sky-500/10"><Clock size={15} /></button>
                         <button onClick={() => handleTrash(c.id, false)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>
                     </td>
@@ -506,6 +508,7 @@ export default function AdminAccounts() {
                         <button onClick={() => handleImpersonate(e)} title="Voir en tant que" className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-500/10"><Eye size={15} /></button>
                         <button onClick={() => resetEmployeePassword(e.id)} title="Réinitialiser le mot de passe (Levelstudios123!)" className="p-1.5 rounded-lg transition-colors text-yellow-400 hover:bg-yellow-500/10"><KeyRound size={15} /></button>
                         <button onClick={() => toggleSuspend(e.id, true)} title={e.active ? 'Suspendre' : 'Réactiver'} className={`p-1.5 rounded-lg transition-colors ${!e.active ? 'text-green-400 hover:bg-green-500/10' : 'text-orange-400 hover:bg-orange-500/10'}`}><Ban size={15} /></button>
+                        <button onClick={() => setHistoryModal(e)} title="Historique des connexions" className="p-1.5 rounded-lg transition-colors text-sky-400 hover:bg-sky-500/10"><Clock size={15} /></button>
                         <button onClick={() => handleTrash(e.id, true)} title="Mettre à la corbeille" className="p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10"><Trash2 size={15} /></button>
                       </div>
                     </td>
@@ -824,6 +827,51 @@ export default function AdminAccounts() {
           </div>
         </div>
       )}
+      {/* ── Login history modal ── */}
+      {historyModal && (() => {
+        const history = Store.getLoginHistory(historyModal.id)
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setHistoryModal(null)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className={`relative w-full max-w-md rounded-2xl border shadow-2xl ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: isDark ? '#27272a' : '#f3f4f6' }}>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-sky-400" />
+                  <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Historique des connexions</span>
+                </div>
+                <button onClick={() => setHistoryModal(null)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-zinc-500 hover:text-white hover:bg-zinc-800' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="px-5 py-3 border-b" style={{ borderColor: isDark ? '#27272a' : '#f3f4f6' }}>
+                <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{historyModal.name}</p>
+                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>{historyModal.email} · {historyModal.id}</p>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {history.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <Clock className={`w-8 h-8 ${isDark ? 'text-zinc-700' : 'text-gray-300'}`} />
+                    <p className={`text-sm ${isDark ? 'text-zinc-500' : 'text-gray-400'}`}>Aucune connexion enregistrée</p>
+                  </div>
+                ) : history.map((entry, i) => (
+                  <div key={i} className={`px-5 py-3 border-b flex items-start gap-3 ${isDark ? 'border-zinc-800 hover:bg-zinc-800/40' : 'border-gray-100 hover:bg-gray-50'}`}>
+                    <div className="w-2 h-2 rounded-full bg-sky-400 mt-1.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {entry.at ? new Date(entry.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </p>
+                      <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-zinc-500' : 'text-gray-400'}`} title={entry.userAgent}>{entry.userAgent || '—'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3">
+                <p className={`text-xs ${isDark ? 'text-zinc-600' : 'text-gray-400'}`}>{history.length} connexion{history.length > 1 ? 's' : ''} enregistrée{history.length > 1 ? 's' : ''}</p>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </Layout>
   )
 }

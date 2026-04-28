@@ -24,6 +24,12 @@ const GOOGLE_ICON = (
 function LoginModal({ onClose, initialTab = 'login' }) {
   const { login, register, logout } = useAuth()
   const navigate = useNavigate()
+  const [brandColor, setBrandColorState] = useState(() => getBrandColor())
+  useEffect(() => {
+    const handler = (e) => setBrandColorState(e.detail || getBrandColor())
+    window.addEventListener('ls:brandcolor', handler)
+    return () => window.removeEventListener('ls:brandcolor', handler)
+  }, [])
 
   const [tab, setTab] = useState(initialTab)
   // Login
@@ -133,7 +139,7 @@ function LoginModal({ onClose, initialTab = 'login' }) {
 
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="border rounded-2xl w-full max-w-md relative shadow-2xl overflow-y-auto" style={{ background: '#111', borderColor: 'rgba(232,23,93,0.2)', maxHeight: '90vh' }}>
+      <div className="border rounded-2xl w-full max-w-md relative shadow-2xl overflow-y-auto" style={{ background: '#111', borderColor: hexToRgba(brandColor, 0.2), maxHeight: '90vh' }}>
         <div className="p-8">
           <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-white">
             <X className="w-5 h-5" />
@@ -150,7 +156,7 @@ function LoginModal({ onClose, initialTab = 'login' }) {
             {[['login', 'Se connecter'], ['register', 'Créer un compte']].map(([key, label]) => (
               <button key={key} onClick={() => setTab(key)}
                 className="flex-1 py-2.5 text-sm font-semibold transition-all"
-                style={{ background: tab === key ? '#e8175d' : 'transparent', color: tab === key ? '#fff' : '#555' }}>
+                style={{ background: tab === key ? brandColor : 'transparent', color: tab === key ? '#fff' : '#555' }}>
                 {label}
               </button>
             ))}
@@ -173,7 +179,7 @@ function LoginModal({ onClose, initialTab = 'login' }) {
               </div>
               {loginError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg px-4 py-3">{loginError}</div>}
               <button type="submit" className="w-full text-white font-bold rounded-xl py-3 transition-all hover:opacity-85"
-                style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', boxShadow: '0 4px 20px rgba(232,23,93,0.35)' }}>
+                style={{ background: `linear-gradient(135deg,${brandColor},#ff4d8d)`, boxShadow: `0 4px 20px ${hexToRgba(brandColor, 0.35)}` }}>
                 Se connecter
               </button>
             </form>
@@ -219,7 +225,7 @@ function LoginModal({ onClose, initialTab = 'login' }) {
               </label>
               {regError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg px-4 py-3">{regError}</div>}
               <button onClick={handleRegister} className="w-full text-white font-bold rounded-xl py-3 transition-all hover:opacity-85"
-                style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', boxShadow: '0 4px 20px rgba(232,23,93,0.35)' }}>
+                style={{ background: `linear-gradient(135deg,${brandColor},#ff4d8d)`, boxShadow: `0 4px 20px ${hexToRgba(brandColor, 0.35)}` }}>
                 Créer mon compte
               </button>
             </div>
@@ -233,16 +239,33 @@ function LoginModal({ onClose, initialTab = 'login' }) {
 /* ─── FAQ ITEM ─────────────────────────────────────────────── */
 function FAQItem({ q, a }) {
   const [open, setOpen] = useState(false)
+  const [brandColor, setBrandColorState] = useState(() => getBrandColor())
+  useEffect(() => {
+    const handler = (e) => setBrandColorState(e.detail || getBrandColor())
+    window.addEventListener('ls:brandcolor', handler)
+    return () => window.removeEventListener('ls:brandcolor', handler)
+  }, [])
   return (
-    <div style={{ borderRadius: '14px', overflow: 'hidden', border: `1px solid ${open ? 'rgba(232,23,93,0.25)' : '#1e1e1e'}`, background: '#111', transition: 'border-color 0.2s' }}>
+    <div style={{ borderRadius: '14px', overflow: 'hidden', border: `1px solid ${open ? hexToRgba(brandColor, 0.25) : '#1e1e1e'}`, background: '#111', transition: 'border-color 0.2s' }}>
       <button onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-white/3">
         <span className="text-white font-semibold text-sm">{q}</span>
-        <ChevronDown size={16} style={{ color: open ? '#e8175d' : '#555', flexShrink: 0, marginLeft: '16px', transition: 'transform 0.3s, color 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+        <ChevronDown size={16} style={{ color: open ? brandColor : '#555', flexShrink: 0, marginLeft: '16px', transition: 'transform 0.3s, color 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
       </button>
       {open && <div className="px-5 pb-5" style={{ color: '#666', fontSize: '13px', lineHeight: 1.7 }}>{a}</div>}
     </div>
   )
+}
+
+function getBrandColor() { return localStorage.getItem('ls_brand_color') || '#e8175d' }
+function hexToRgba(hex, alpha) {
+  try {
+    const h = hex.replace('#', '')
+    const r = parseInt(h.slice(0, 2), 16)
+    const g = parseInt(h.slice(2, 4), 16)
+    const b = parseInt(h.slice(4, 6), 16)
+    return `rgba(${r},${g},${b},${alpha})`
+  } catch { return `rgba(232,23,93,${alpha})` }
 }
 
 /* ─── MAIN COMPONENT ──────────────────────────────────────── */
@@ -254,6 +277,13 @@ export default function Home() {
   const { user, logout } = useAuth()
 
   const [slideIndex, setSlideIndex] = useState(0)
+  const [brandColor, setBrandColorState] = useState(() => getBrandColor())
+
+  useEffect(() => {
+    const handler = (e) => setBrandColorState(e.detail || getBrandColor())
+    window.addEventListener('ls:brandcolor', handler)
+    return () => window.removeEventListener('ls:brandcolor', handler)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -339,7 +369,7 @@ export default function Home() {
   // Dégradé signature : orange → rose → violet → cyan (comme la ref)
   // display:inline-block + padding évite le clipping des lettres par WebkitBackgroundClip
   const G = {
-    backgroundImage: 'linear-gradient(90deg, #ff9a3c, #e8175d, #c879ff, #38d9f5)',
+    backgroundImage: `linear-gradient(90deg, #ff9a3c, ${brandColor}, #c879ff, #38d9f5)`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
@@ -374,7 +404,7 @@ export default function Home() {
           style={{
             background:   scrolled ? 'rgba(8,8,8,0.97)' : 'rgba(8,8,8,0.6)',
             borderBottom: scrolled ? 'none' : '1px solid rgba(255,255,255,0.06)',
-            border:       scrolled ? '1px solid rgba(232,23,93,0.25)' : undefined,
+            border:       scrolled ? `1px solid ${hexToRgba(brandColor, 0.25)}` : undefined,
             borderRadius: scrolled ? '999px' : '0px',
             boxShadow:    scrolled ? '0 8px 40px rgba(0,0,0,0.8)' : 'none',
             transition: 'all 0.45s cubic-bezier(0.4,0,0.2,1)',
@@ -433,10 +463,10 @@ export default function Home() {
                 onClick={user ? handleDashboard : () => navigate(createPageUrl('Reservation'))}
                 className="font-semibold text-white text-sm transition-all hover:opacity-85"
                 style={{
-                  background: 'linear-gradient(135deg, #e8175d, #ff4d8d)',
+                  background: `linear-gradient(135deg, ${brandColor}, #ff4d8d)`,
                   borderRadius: '999px',
                   padding: '10px 28px',
-                  boxShadow: '0 4px 20px rgba(232,23,93,0.4)',
+                  boxShadow: `0 4px 20px ${hexToRgba(brandColor, 0.4)}`,
                 }}
               >
                 {user ? 'Mon espace' : 'Réserver'}
@@ -462,7 +492,7 @@ export default function Home() {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden mt-2 border px-5 py-5 space-y-3 rounded-2xl"
-            style={{ background: '#111', borderColor: 'rgba(232,23,93,0.2)' }}>
+            style={{ background: '#111', borderColor: hexToRgba(brandColor, 0.2) }}>
             {[['#studios','Studios'],['#tarifs','Services'],['#materiel','Matériel'],['#avis','Avis']].map(([href, label]) => (
               <a key={href} href={href} className="block text-zinc-300 py-2 text-sm font-medium" onClick={() => setMenuOpen(false)}>{label}</a>
             ))}
@@ -470,7 +500,7 @@ export default function Home() {
             <button
               onClick={() => { setMenuOpen(false); navigate(createPageUrl('Reservation')) }}
               className="block w-full text-white font-bold rounded-xl py-3 text-center text-sm"
-              style={{ background: 'linear-gradient(135deg, #e8175d, #ff4d8d)' }}
+              style={{ background: `linear-gradient(135deg, ${brandColor}, #ff4d8d)` }}
             >
               Réserver
             </button>
@@ -531,15 +561,15 @@ export default function Home() {
       <section style={{ background: '#080808', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
 
         {/* Glow de fond */}
-        <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '400px', background: 'radial-gradient(ellipse, rgba(232,23,93,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '400px', background: `radial-gradient(ellipse, ${hexToRgba(brandColor, 0.12)} 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
         {/* Contenu centré */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '120px 24px 60px', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
 
           {/* Badge */}
           <div className="fade-up-1 inline-flex items-center gap-2 rounded-full mb-8"
-            style={{ background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.3)', color: '#e8175d', padding: '8px 18px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#e8175d', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+            style={{ background: hexToRgba(brandColor, 0.1), border: `1px solid ${hexToRgba(brandColor, 0.3)}`, color: brandColor, padding: '8px 18px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: brandColor, display: 'inline-block', animation: 'pulse 2s infinite' }} />
             3 Studios disponibles maintenant
           </div>
 
@@ -600,7 +630,7 @@ export default function Home() {
           <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '8px', zIndex: 10 }}>
             {slideImages.map((_, i) => (
               <button key={i} onClick={() => setSlideIndex(i)}
-                style={{ borderRadius: '999px', border: 'none', cursor: 'pointer', transition: 'all 0.3s', width: i === slideIndex ? '24px' : '6px', height: '6px', background: i === slideIndex ? '#e8175d' : 'rgba(255,255,255,0.3)' }}
+                style={{ borderRadius: '999px', border: 'none', cursor: 'pointer', transition: 'all 0.3s', width: i === slideIndex ? '24px' : '6px', height: '6px', background: i === slideIndex ? brandColor : 'rgba(255,255,255,0.3)' }}
               />
             ))}
           </div>
@@ -633,7 +663,7 @@ export default function Home() {
 
           {/* Header */}
           <div className="reveal" style={{ marginBottom: '40px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Nos Studios</p>
+            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: brandColor, marginBottom: '16px' }}>Nos Studios</p>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
               <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em', margin: 0 }}>
                 Vos studios.<br />
@@ -671,7 +701,7 @@ export default function Home() {
                 {/* Gradient overlay */}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 55%, transparent 100%)' }} />
                 {/* Hover rose tint */}
-                <div className="studio-overlay" style={{ position: 'absolute', inset: 0, background: 'rgba(232,23,93,0.07)', opacity: 0, transition: 'opacity 0.3s' }} />
+                <div className="studio-overlay" style={{ position: 'absolute', inset: 0, background: hexToRgba(brandColor, 0.07), opacity: 0, transition: 'opacity 0.3s' }} />
 
                 {/* Top badge */}
                 {s.badge && (
@@ -703,7 +733,7 @@ export default function Home() {
         <div style={{ maxWidth: '1160px', margin: '0 auto' }}>
 
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '64px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Nos Services</p>
+            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: brandColor, marginBottom: '16px' }}>Nos Services</p>
             <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em', marginBottom: '16px' }}>
               Le point commun entre<br />
               <span style={G}>Joe Rogan</span>{' '}
@@ -726,9 +756,9 @@ export default function Home() {
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
-                style={{ width: '100%', border: '1.5px solid rgba(232,23,93,0.35)', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#e8175d', background: 'rgba(232,23,93,0.04)', cursor: 'pointer', marginBottom: '28px', transition: 'all 0.2s', textAlign: 'left' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.09)'; e.currentTarget.style.borderColor = '#e8175d' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.04)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.35)' }}
+                style={{ width: '100%', border: `1.5px solid ${hexToRgba(brandColor, 0.35)}`, borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: brandColor, background: hexToRgba(brandColor, 0.04), cursor: 'pointer', marginBottom: '28px', transition: 'all 0.2s', textAlign: 'left' }}
+                onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(brandColor, 0.09); e.currentTarget.style.borderColor = brandColor }}
+                onMouseLeave={e => { e.currentTarget.style.background = hexToRgba(brandColor, 0.04); e.currentTarget.style.borderColor = hexToRgba(brandColor, 0.35) }}
               >
                 Réserver mon studio →
               </button>
@@ -762,8 +792,8 @@ export default function Home() {
                     {group.items.map(item => (
                       <div key={item.text} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', marginBottom: '8px' }}>
                         {item.ok
-                          ? <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                              <Check size={9} style={{ color: '#e8175d' }} />
+                          ? <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: hexToRgba(brandColor, 0.1), border: `1px solid ${hexToRgba(brandColor, 0.2)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                              <Check size={9} style={{ color: brandColor }} />
                             </span>
                           : <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#f4f4f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
                               <X size={8} style={{ color: '#ccc' }} />
@@ -778,9 +808,9 @@ export default function Home() {
             </div>
 
             {/* ── ARGENT (featured) ── */}
-            <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 60px rgba(232,23,93,0.18)', border: '1.5px solid rgba(232,23,93,0.25)', transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 20px 80px rgba(232,23,93,0.38)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.6)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 8px 60px rgba(232,23,93,0.18)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.25)' }}
+            <div className="reveal reveal-d2" style={{ background: '#fff', borderRadius: '24px', padding: '36px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: `0 8px 60px ${hexToRgba(brandColor, 0.18)}`, border: `1.5px solid ${hexToRgba(brandColor, 0.25)}`, transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = `0 20px 80px ${hexToRgba(brandColor, 0.38)}`; e.currentTarget.style.borderColor = hexToRgba(brandColor, 0.6) }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 8px 60px ${hexToRgba(brandColor, 0.18)}`; e.currentTarget.style.borderColor = hexToRgba(brandColor, 0.25) }}
             >
               {/* Rainbow badge */}
               <div style={{ position: 'absolute', top: '14px', left: '50%', transform: 'translateX(-50%)', borderRadius: '999px', padding: '6px 20px', fontSize: '10px', fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap',
@@ -790,12 +820,12 @@ export default function Home() {
               </div>
 
               <div style={{ marginBottom: '24px', marginTop: '20px', textAlign: 'center' }}>
-                <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-0.02em', color: '#e8175d', marginBottom: '8px', fontFamily: 'Georgia, serif' }}>Argent</span>
+                <span style={{ display: 'block', fontSize: '2rem', fontWeight: 900, fontStyle: 'italic', letterSpacing: '-0.02em', color: brandColor, marginBottom: '8px', fontFamily: 'Georgia, serif' }}>Argent</span>
                 <p style={{ fontSize: '12px', color: '#aaa' }}>La référence pour vos productions.</p>
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
-                style={{ width: '100%', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', border: 'none', cursor: 'pointer', marginBottom: '28px', transition: 'opacity 0.2s', textAlign: 'left', boxShadow: '0 4px 20px rgba(232,23,93,0.3)' }}
+                style={{ width: '100%', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg,${brandColor},#ff4d8d)`, border: 'none', cursor: 'pointer', marginBottom: '28px', transition: 'opacity 0.2s', textAlign: 'left', boxShadow: `0 4px 20px ${hexToRgba(brandColor, 0.3)}` }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '1'}
               >
@@ -827,15 +857,15 @@ export default function Home() {
                   ]},
                 ].map(group => (
                   <div key={group.label}>
-                    <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(232,23,93,0.4)', marginBottom: '10px' }}>{group.label}</p>
+                    <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: hexToRgba(brandColor, 0.5), marginBottom: '10px' }}>{group.label}</p>
                     {group.items.map(item => (
                       <div key={item.text} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', marginBottom: '8px' }}>
                         {item.ok === false
                           ? <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#f4f4f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
                               <X size={8} style={{ color: '#ccc' }} />
                             </span>
-                          : <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                              <Check size={9} style={{ color: '#e8175d' }} />
+                          : <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: hexToRgba(brandColor, 0.1), border: `1px solid ${hexToRgba(brandColor, 0.25)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                              <Check size={9} style={{ color: brandColor }} />
                             </span>
                         }
                         <span style={{ fontSize: '12.5px', color: item.ok === false ? '#ccc' : '#222', lineHeight: 1.5, textDecoration: item.ok === false ? 'line-through' : 'none' }}>{item.text}</span>
@@ -857,9 +887,9 @@ export default function Home() {
               </div>
 
               <button onClick={() => navigate(createPageUrl('Reservation'))}
-                style={{ width: '100%', border: '1.5px solid rgba(232,23,93,0.35)', borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: '#e8175d', background: 'rgba(232,23,93,0.04)', cursor: 'pointer', marginBottom: '28px', transition: 'all 0.2s', textAlign: 'left' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.09)'; e.currentTarget.style.borderColor = '#e8175d' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,23,93,0.04)'; e.currentTarget.style.borderColor = 'rgba(232,23,93,0.35)' }}
+                style={{ width: '100%', border: `1.5px solid ${hexToRgba(brandColor, 0.35)}`, borderRadius: '12px', padding: '13px 16px', fontSize: '13px', fontWeight: 700, color: brandColor, background: hexToRgba(brandColor, 0.04), cursor: 'pointer', marginBottom: '28px', transition: 'all 0.2s', textAlign: 'left' }}
+                onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(brandColor, 0.09); e.currentTarget.style.borderColor = brandColor }}
+                onMouseLeave={e => { e.currentTarget.style.background = hexToRgba(brandColor, 0.04); e.currentTarget.style.borderColor = hexToRgba(brandColor, 0.35) }}
               >
                 Je veux mon épisode prêt à publier →
               </button>
@@ -892,8 +922,8 @@ export default function Home() {
                     <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#ccc', marginBottom: '10px' }}>{group.label}</p>
                     {group.items.map(item => (
                       <div key={item.text} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', marginBottom: '8px' }}>
-                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                          <Check size={9} style={{ color: '#e8175d' }} />
+                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: hexToRgba(brandColor, 0.1), border: `1px solid ${hexToRgba(brandColor, 0.2)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+                          <Check size={9} style={{ color: brandColor }} />
                         </span>
                         <span style={{ fontSize: '12.5px', color: '#333', lineHeight: 1.5 }}>{item.text}</span>
                       </div>
@@ -908,7 +938,7 @@ export default function Home() {
           {/* Options strip */}
           <div className="reveal" style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: '16px', padding: '28px 32px', marginTop: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-              <Zap size={15} style={{ color: '#e8175d' }} />
+              <Zap size={15} style={{ color: brandColor }} />
               <span style={{ color: '#fff', fontWeight: 700, fontSize: '14px' }}>Options supplémentaires</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '24px' }}>
@@ -921,12 +951,12 @@ export default function Home() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#444', margin: 0 }}>{g.label}</p>
                     {(g.label === 'Accompagnement' || g.label === 'Live') && (
-                      <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'rgba(232,23,93,0.12)', color: '#e8175d', border: '1px solid rgba(232,23,93,0.3)', borderRadius: '999px', padding: '2px 8px' }}>Bientôt</span>
+                      <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', background: hexToRgba(brandColor, 0.12), color: brandColor, border: `1px solid ${hexToRgba(brandColor, 0.3)}`, borderRadius: '999px', padding: '2px 8px' }}>Bientôt</span>
                     )}
                   </div>
                   {g.items.map(item => (
                     <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px' }}>
-                      <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#e8175d', flexShrink: 0 }} />
+                      <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: brandColor, flexShrink: 0 }} />
                       <span style={{ color: '#666', fontSize: '12px' }}>{item}</span>
                     </div>
                   ))}
@@ -941,7 +971,7 @@ export default function Home() {
       <section id="materiel" style={{ padding: '100px 24px', background: '#080808' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div className="reveal" style={{ marginBottom: '56px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Équipement</p>
+            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: brandColor, marginBottom: '16px' }}>Équipement</p>
             <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
               Entrez dans un{' '}
               <span style={G}>studio</span>{' '}
@@ -952,11 +982,11 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px', marginBottom: '24px' }}>
             {equipment.map((item, i) => (
               <div key={i} className={`reveal reveal-d${i + 1}`} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(232,23,93,0.3)'}
+                onMouseEnter={e => e.currentTarget.style.borderColor = hexToRgba(brandColor, 0.3)}
                 onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
               >
                 <div style={{ aspectRatio: '16/7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', background: '#0d0d0d' }}>
-                  <item.icon size={36} style={{ color: '#e8175d', opacity: 0.5 }} />
+                  <item.icon size={36} style={{ color: brandColor, opacity: 0.5 }} />
                   <span style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '0.15em', color: '#fff', opacity: 0.1 }}>{item.brand}</span>
                 </div>
                 <div style={{ padding: '20px' }}>
@@ -974,8 +1004,8 @@ export default function Home() {
               { icon: Award, title: 'Opérateur dédié', desc: 'Un expert présent à chaque session.' },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(232,23,93,0.1)', border: '1px solid rgba(232,23,93,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={16} style={{ color: '#e8175d' }} />
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: hexToRgba(brandColor, 0.1), border: `1px solid ${hexToRgba(brandColor, 0.2)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={16} style={{ color: brandColor }} />
                 </div>
                 <div>
                   <h4 style={{ color: '#fff', fontWeight: 700, fontSize: '13px', marginBottom: '4px' }}>{title}</h4>
@@ -991,7 +1021,7 @@ export default function Home() {
       <section id="avis" style={{ padding: '100px 24px', background: '#0d0d0d' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div className="reveal" style={{ marginBottom: '60px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>Témoignages clients</p>
+            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: brandColor, marginBottom: '16px' }}>Témoignages clients</p>
             <h2 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
               Ils ont <span style={G}>choisi</span>{' '}
               <span style={{ fontStyle: 'italic', color: '#fff' }}>Level Studios.</span>
@@ -1001,17 +1031,17 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
             {reviews.map((r, i) => (
               <div key={i} className={`reveal reveal-d${i + 1}`} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'border-color 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(232,23,93,0.25)'}
+                onMouseEnter={e => e.currentTarget.style.borderColor = hexToRgba(brandColor, 0.25)}
                 onMouseLeave={e => e.currentTarget.style.borderColor = '#1a1a1a'}
               >
                 <div style={{ display: 'flex', gap: '3px' }}>
                   {Array.from({ length: r.stars }).map((_, j) => (
-                    <Star key={j} size={14} style={{ fill: '#e8175d', color: '#e8175d' }} />
+                    <Star key={j} size={14} style={{ fill: brandColor, color: brandColor }} />
                   ))}
                 </div>
                 <p style={{ color: '#888', fontSize: '14px', lineHeight: 1.7, flex: 1 }}>"{r.text}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `linear-gradient(135deg,${brandColor},#ff4d8d)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <span style={{ color: '#fff', fontSize: '13px', fontWeight: 800 }}>{r.name[0]}</span>
                   </div>
                   <div>
@@ -1029,7 +1059,7 @@ export default function Home() {
       <section style={{ padding: '100px 24px', background: '#080808' }}>
         <div style={{ maxWidth: '720px', margin: '0 auto' }}>
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '16px' }}>FAQ</p>
+            <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: brandColor, marginBottom: '16px' }}>FAQ</p>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>Vos questions.</h2>
           </div>
           <div className="reveal" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1041,10 +1071,10 @@ export default function Home() {
       {/* ── CTA ─────────────────────────────────────────────── */}
       <section style={{ padding: '80px 24px 100px', background: '#0d0d0d' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div className="reveal" style={{ position: 'relative', borderRadius: '24px', padding: 'clamp(48px,6vw,80px) 40px', textAlign: 'center', overflow: 'hidden', border: '1px solid rgba(232,23,93,0.2)', background: 'linear-gradient(135deg, rgba(232,23,93,0.08) 0%, rgba(8,8,8,0.95) 60%)' }}>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '500px', height: '300px', background: 'radial-gradient(ellipse, rgba(232,23,93,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div className="reveal" style={{ position: 'relative', borderRadius: '24px', padding: 'clamp(48px,6vw,80px) 40px', textAlign: 'center', overflow: 'hidden', border: `1px solid ${hexToRgba(brandColor, 0.2)}`, background: `linear-gradient(135deg, ${hexToRgba(brandColor, 0.08)} 0%, rgba(8,8,8,0.95) 60%)` }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '500px', height: '300px', background: `radial-gradient(ellipse, ${hexToRgba(brandColor, 0.12)} 0%, transparent 70%)`, pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e8175d', marginBottom: '20px' }}>Prêt à tourner ?</p>
+              <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: brandColor, marginBottom: '20px' }}>Prêt à tourner ?</p>
               <h2 style={{ fontSize: 'clamp(2.4rem, 5vw, 4rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1.05, marginBottom: '20px' }}>
                 Réservez votre<br />
                 <span style={G}>studio maintenant.</span>
@@ -1055,7 +1085,7 @@ export default function Home() {
               <button
                 onClick={() => navigate(createPageUrl('Reservation'))}
                 className="group inline-flex items-center gap-2 font-bold text-white transition-all hover:opacity-85"
-                style={{ background: 'linear-gradient(135deg,#e8175d,#ff4d8d)', borderRadius: '999px', padding: '18px 48px', fontSize: '16px', boxShadow: '0 10px 40px rgba(232,23,93,0.4)', border: 'none', cursor: 'pointer' }}
+                style={{ background: `linear-gradient(135deg,${brandColor},#ff4d8d)`, borderRadius: '999px', padding: '18px 48px', fontSize: '16px', boxShadow: `0 10px 40px ${hexToRgba(brandColor, 0.4)}`, border: 'none', cursor: 'pointer' }}
               >
                 Réserver maintenant
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

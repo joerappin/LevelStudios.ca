@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Bell, Send, Check, Clock, Film, AlertTriangle, AlertCircle, RotateCcw, CheckCircle2, FolderOpen } from 'lucide-react'
+import { Bell, Send, Check, Clock, Film, AlertTriangle, AlertCircle, RotateCcw, CheckCircle2, FolderOpen, Trash2, CheckSquare } from 'lucide-react'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
 import { Store } from '../../data/store'
@@ -60,6 +60,29 @@ export default function AdminAlerts() {
     setSelectedRecipients(prev =>
       prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
     )
+  }
+
+  function handleAcquitter(alert) {
+    Store.updateAlert(alert.id, { status: 'acquitté' })
+    if (alert.type === 'Retour' && alert.reservation_id) {
+      const projects = Store.getProjects()
+      const project = projects.find(p => p.reservation_id === alert.reservation_id)
+      if (project) {
+        Store.updateProject(project.id, { status: 'Retour de livraison' }, {
+          from: project.status,
+          to: 'Retour de livraison',
+          by: user?.name || 'Admin',
+          note: `Retour acquitté via alerte`,
+        })
+      }
+    }
+    setAlerts(Store.getAlerts())
+  }
+
+  function handleDeleteAlert(id, e) {
+    e.stopPropagation()
+    Store.deleteAlert(id)
+    setAlerts(Store.getAlerts())
   }
 
   function handleSend(e) {
@@ -232,13 +255,16 @@ export default function AdminAlerts() {
                   const typeInfo = ALERT_TYPES.find(t => t.key === alert.type)
                   const Icon = typeInfo?.icon || AlertCircle
                   const isRead = alert.status === 'read' || alert.status === 'lu' || alert.status === 'done'
+                  const isAcquitted = alert.status === 'acquitté'
                   const isDone = alert.type === 'tache_accomplie'
                   const typeLabel = typeInfo?.label || alert.type
+                  const canAcquitter = ['admin', 'chef_projet'].includes(user?.type) || user?.role === 'admin' || user?.role === 'chef_projet'
                   return (
                     <div
                       key={alert.id}
                       className={cn(
                         'px-5 py-4 flex items-start gap-4 transition-colors cursor-pointer',
+                        isAcquitted ? (isDark ? 'bg-green-500/5' : 'bg-green-50/60') :
                         isDone ? (isDark ? 'bg-green-500/5' : 'bg-green-50/60') : (!isRead && (isDark ? 'bg-zinc-800/30' : 'bg-violet-50/40')),
                         isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-gray-50'
                       )}
@@ -249,7 +275,6 @@ export default function AdminAlerts() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          {/* For tache_accomplie: show FROM (employee) prominently */}
                           {isDone ? (
                             <>
                               <span className={cn('text-sm font-semibold', textPrimary)}>{alert.from_name || alert.from_email}</span>
@@ -263,7 +288,8 @@ export default function AdminAlerts() {
                               <span className={cn('flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full border font-semibold', typeInfo?.cls || 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30')}>
                                 {typeLabel}
                               </span>
-                              {!isRead && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-violet-500" />}
+                              {!isRead && !isAcquitted && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-violet-500" />}
+                              {isAcquitted && <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 font-semibold">Acquitté</span>}
                             </>
                           )}
                         </div>
@@ -284,13 +310,32 @@ export default function AdminAlerts() {
                           <span className={cn('text-xs', textSecondary)}>
                             {new Date(alert.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <span className={cn('flex items-center gap-1 text-xs', isRead ? 'text-green-400' : textSecondary)}>
-                            {isRead ? <><Check size={10} /> Lu</> : <><Clock size={10} /> Non lu</>}
+                          <span className={cn('flex items-center gap-1 text-xs', isRead || isAcquitted ? 'text-green-400' : textSecondary)}>
+                            {isAcquitted ? <><CheckSquare size={10} /> Acquitté</> : isRead ? <><Check size={10} /> Lu</> : <><Clock size={10} /> Non lu</>}
                           </span>
                           {!isDone && alert.from_name && (
                             <span className={cn('text-xs', textSecondary)}>· de {alert.from_name}</span>
                           )}
                         </div>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex flex-col gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        {canAcquitter && !isAcquitted && (
+                          <button
+                            onClick={() => handleAcquitter(alert)}
+                            title="Acquitter"
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20 transition-colors"
+                          >
+                            <CheckSquare size={11} /> Acquitter
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => handleDeleteAlert(alert.id, e)}
+                          title="Supprimer l'alerte"
+                          className={cn('p-1.5 rounded-lg transition-colors text-red-400 hover:bg-red-500/10')}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </div>
                   )

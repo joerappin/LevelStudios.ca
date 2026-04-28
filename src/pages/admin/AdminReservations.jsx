@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX, RotateCcw, Pencil } from 'lucide-react'
+import { Search, Check, X, Eye, Plus, CheckCircle, CreditCard, User, Calendar, Settings, Star, Trash2, UserX, RotateCcw, Pencil, Filter, ChevronDown, ChevronUp, History } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import { ADMIN_NAV } from './Dashboard'
@@ -46,7 +46,7 @@ const TIMES = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','
 const emptyForm = {
   firstName: '', lastName: '', email: '', phone: '', company: '',
   studio: 'Studio A', date: '', startTime: '10:00', duration: 2,
-  service: 'ARGENT', options: [],
+  service: 'ARGENT', options: [], format: 'horizontal',
   cardNumber: '', cardExpiry: '', cardCvv: '', cardHolder: '',
   sendEmail: true,
 }
@@ -110,6 +110,12 @@ export default function AdminReservations() {
   const [clientSearch, setClientSearch] = useState('')
   const [emailQuery, setEmailQuery] = useState('')
   const [showEmailDrop, setShowEmailDrop] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [periodFilter, setPeriodFilter] = useState('all')
+  const [formulaFilter, setFormulaFilter] = useState('')
+  const [ratingFilter, setRatingFilter] = useState('')
+  const [formatFilter, setFormatFilter] = useState('')
+  const [showProjectHistory, setShowProjectHistory] = useState(false)
 
   useEffect(() => {
     setClients(Store.getAccounts().filter(a => a.type === 'client' && !a.trashed))
@@ -187,13 +193,33 @@ export default function AdminReservations() {
   const trashedReservations = reservations.filter(r => r.trashed)
   const activeReservations  = reservations.filter(r => !r.trashed)
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const now = new Date()
   const filtered = (view === 'corbeille' ? trashedReservations : activeReservations).filter(r => {
     const q = search.toLowerCase()
     const matchSearch = (r.client_name || '').toLowerCase().includes(q) ||
       (r.studio || '').toLowerCase().includes(q) ||
       (r.id || '').toLowerCase().includes(q)
     const matchStatus = view === 'corbeille' || statusFilter === 'Tous' || r.status === statusFilter
-    return matchSearch && matchStatus
+    const matchFormula = !formulaFilter || r.service === formulaFilter
+    const matchRating = !ratingFilter || String(r.rating) === ratingFilter
+    const matchFormat = !formatFilter || (r.format || 'horizontal') === formatFilter
+    let matchPeriod = true
+    if (periodFilter !== 'all' && r.date) {
+      const d = new Date(r.date + 'T12:00:00')
+      if (periodFilter === 'today') matchPeriod = r.date === todayStr
+      else if (periodFilter === 'week') {
+        const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay())
+        startOfWeek.setHours(0,0,0,0)
+        const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate() + 6)
+        matchPeriod = d >= startOfWeek && d <= endOfWeek
+      } else if (periodFilter === 'month') {
+        matchPeriod = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+      } else if (periodFilter === 'year') {
+        matchPeriod = d.getFullYear() === now.getFullYear()
+      }
+    }
+    return matchSearch && matchStatus && matchFormula && matchRating && matchFormat && matchPeriod
   })
 
   const updateStatus = (id, status) => {
@@ -273,6 +299,7 @@ export default function AdminReservations() {
       price_ht: total,
       status: 'validee',
       additional_services: form.options,
+      format: form.format || 'horizontal',
       promo_code: null,
       manual: true,
     })
@@ -318,6 +345,20 @@ export default function AdminReservations() {
             </div>
           )}
 
+          {view === 'list' && (
+            <button
+              onClick={() => setShowFilters(f => !f)}
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${showFilters ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >
+              <Filter size={13} />
+              Filtres
+              {(periodFilter !== 'all' || formulaFilter || ratingFilter || formatFilter) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-300" />
+              )}
+              {showFilters ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={() => setView(v => v === 'corbeille' ? 'list' : 'corbeille')}
@@ -340,6 +381,82 @@ export default function AdminReservations() {
             )}
           </div>
         </div>
+
+        {/* Expanded filters panel */}
+        {showFilters && view === 'list' && (
+          <div className={`border rounded-2xl p-4 ${card}`}>
+            <div className="flex flex-wrap gap-4">
+              {/* Period */}
+              <div>
+                <p className={`text-xs font-medium mb-2 ${textSecondary}`}>Période</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {[['all','Tout'],['today','Aujourd\'hui'],['week','Semaine'],['month','Mois'],['year','Année']].map(([v, l]) => (
+                    <button key={v} onClick={() => setPeriodFilter(v)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${periodFilter === v ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Formula */}
+              <div>
+                <p className={`text-xs font-medium mb-2 ${textSecondary}`}>Formule</p>
+                <div className="flex gap-1.5">
+                  {[['','Toutes'],['BRONZE','BRONZE'],['ARGENT','ARGENT'],['GOLD','OR']].map(([v, l]) => (
+                    <button key={v} onClick={() => setFormulaFilter(v)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${formulaFilter === v ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Format */}
+              <div>
+                <p className={`text-xs font-medium mb-2 ${textSecondary}`}>Format</p>
+                <div className="flex gap-1.5">
+                  {[['','Tous'],['horizontal','Horizontal'],['vertical','Vertical']].map(([v, l]) => (
+                    <button key={v} onClick={() => setFormatFilter(v)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${formatFilter === v ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Note */}
+              <div>
+                <p className={`text-xs font-medium mb-2 ${textSecondary}`}>Note</p>
+                <div className="flex gap-1.5">
+                  <button onClick={() => setRatingFilter('')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${ratingFilter === '' ? 'bg-violet-600 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    Toutes
+                  </button>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => setRatingFilter(String(n))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${ratingFilter === String(n) ? 'bg-amber-500 text-white' : isDark ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      {'★'.repeat(n)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {(periodFilter !== 'all' || formulaFilter || ratingFilter || formatFilter) && (
+              <button onClick={() => { setPeriodFilter('all'); setFormulaFilter(''); setRatingFilter(''); setFormatFilter('') }}
+                className="mt-3 flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors">
+                <X size={12} /> Réinitialiser les filtres
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Result count + total */}
+        {view === 'list' && (
+          <div className="flex items-center gap-4 text-xs">
+            <span className={textSecondary}>{filtered.length} résultat{filtered.length > 1 ? 's' : ''}</span>
+            <span className={`font-semibold ${textPrimary}`}>
+              Total : {formatPrice(filtered.reduce((sum, r) => sum + (r.price || 0), 0))}
+            </span>
+          </div>
+        )}
 
         <div className={`border rounded-2xl overflow-hidden ${card}`}>
           <div className="overflow-x-auto">
@@ -440,7 +557,7 @@ export default function AdminReservations() {
 
       {/* Detail modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => { setSelected(null); setShowProjectHistory(false) }}>
           <div className={`border rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto ${modalBg}`} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h3 className={`font-bold ${textPrimary}`}>Détail réservation</h3>
@@ -537,12 +654,58 @@ export default function AdminReservations() {
                   <span className={`font-medium ${textPrimary}`}>{v}</span>
                 </div>
               ))}
+              {/* Format */}
+              <div className={`flex justify-between border-b pb-2 ${divider}`}>
+                <span className={textSecondary}>Format</span>
+                <span className={`font-medium ${textPrimary}`}>
+                  {selected.format === 'vertical' ? '↕ Vertical (9:16)' : '↔ Horizontal (16:9)'}
+                </span>
+              </div>
               {selected.additional_services?.length > 0 && (
-                <div className="flex justify-between">
+                <div className={`flex justify-between border-b pb-2 ${divider}`}>
                   <span className={textSecondary}>Options</span>
                   <span className={textPrimary}>{selected.additional_services.join(', ')}</span>
                 </div>
               )}
+              {/* Project status */}
+              {(() => {
+                const project = Store.getProjects().find(p => p.reservation_id === selected.id)
+                if (!project) return null
+                return (
+                  <div className={`border-t pt-3 mt-1 space-y-2 ${divider}`}>
+                    <p className={`text-xs font-semibold ${textSecondary}`}>Projet Kanban</p>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-violet-500/15 text-violet-300' : 'bg-violet-50 text-violet-700'}`}>
+                        {project.status}
+                      </span>
+                      <button
+                        onClick={() => setShowProjectHistory(h => !h)}
+                        className={`flex items-center gap-1 text-xs ${textSecondary} hover:text-violet-400 transition-colors`}
+                      >
+                        <History size={12} /> Historique
+                        {showProjectHistory ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                      </button>
+                    </div>
+                    {showProjectHistory && (project.history || []).length > 0 && (
+                      <div className={`rounded-xl p-3 space-y-2 text-xs ${isDark ? 'bg-zinc-800' : 'bg-gray-50'}`}>
+                        {[...(project.history || [])].reverse().map((h, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <span className={`mt-0.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0`} />
+                            <div>
+                              <span className={textPrimary}>{h.from} → {h.to}</span>
+                              {h.by && <span className={`ml-1 ${textSecondary}`}>· {h.by}</span>}
+                              {h.at && <div className={textSecondary}>{new Date(h.at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>}
+                            </div>
+                          </div>
+                        ))}
+                        {(project.history || []).length === 0 && (
+                          <p className={textSecondary}>Aucun mouvement enregistré</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
               {selected.rating && (
                 <div className={`border-t pt-3 mt-1 ${divider}`}>
                   <p className={`text-xs font-semibold mb-2 ${textSecondary}`}>Évaluation client</p>
@@ -699,6 +862,26 @@ export default function AdminReservations() {
                                       : isDark ? 'border-zinc-700 text-zinc-300 hover:border-violet-500' : 'border-gray-300 text-gray-700 hover:border-violet-500'
                                   )}>
                                   {s.label}
+                                </button>
+                              ))}
+                            </div>
+                          </Field>
+                        </div>
+                        <div className="col-span-2">
+                          <Field label="Format de tournage" textPrimary={textPrimary}>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { value: 'horizontal', label: '↔ Horizontal (16:9)', sub: 'YouTube · Podcasts' },
+                                { value: 'vertical', label: '↕ Vertical (9:16)', sub: 'Instagram · TikTok' },
+                              ].map(opt => (
+                                <button key={opt.value} type="button" onClick={() => set('format', opt.value)}
+                                  className={cn('px-3 py-2.5 rounded-xl text-left text-sm border transition-all',
+                                    form.format === opt.value
+                                      ? 'bg-violet-600 border-violet-600 text-white'
+                                      : isDark ? 'border-zinc-700 text-zinc-300 hover:border-violet-500' : 'border-gray-300 text-gray-700 hover:border-violet-500'
+                                  )}>
+                                  <div className="font-semibold">{opt.label}</div>
+                                  <div className={cn('text-xs mt-0.5', form.format === opt.value ? 'text-violet-200' : textSecondary)}>{opt.sub}</div>
                                 </button>
                               ))}
                             </div>

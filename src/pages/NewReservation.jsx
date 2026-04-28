@@ -8,7 +8,7 @@ import { formatPrice, cn } from '../utils'
 import { translations } from '../i18n/translations'
 import { sendWelcomeEmail } from '../utils/emailService'
 
-const STEPS = ['Studio', 'Choix', 'Service', 'Date & Heure', 'Options', 'Confirmation']
+const STEPS = ['Studio', 'Choix', 'Service', 'Date & Heure', 'Options', 'Format', 'Confirmation']
 
 const DURATIONS = [
   { value: 1, label: '1h' },
@@ -168,7 +168,7 @@ export default function NewReservation() {
     const n = new Date()
     return { year: n.getFullYear(), month: n.getMonth() }
   })
-  const INITIAL_FORM = { persons: 1, duration: 1, service: '', date: '', start_time: '', studio: '', additional_services: [], promo_code: '', name: user?.name || '', email: user?.email || '', phone: '' }
+  const INITIAL_FORM = { persons: 1, duration: 1, service: '', date: '', start_time: '', studio: '', additional_services: [], promo_code: '', name: user?.name || '', email: user?.email || '', phone: '', format: 'horizontal' }
   const [form, setForm] = useState(INITIAL_FORM)
 
   const studio  = STUDIOS.find(s => s.id === form.studio)
@@ -203,7 +203,8 @@ export default function NewReservation() {
     if (step === 3) return !!form.service
     if (step === 4) return !!(form.date && form.start_time)
     if (step === 5) return true
-    if (step === 6) return !!user
+    if (step === 6) return true
+    if (step === 7) return !!user
     return false
   }
 
@@ -215,6 +216,7 @@ export default function NewReservation() {
       price: Math.round(totalPrice * 100) / 100,
       date: form.date, start_time: form.start_time, end_time: endTime(),
       duration: form.duration, persons: form.persons,
+      format: form.format || 'horizontal',
       status: 'a_payer',
       additional_services: form.additional_services,
       promo_code: promoResult ? form.promo_code : null,
@@ -780,8 +782,61 @@ export default function NewReservation() {
             </div>
           )}
 
-          {/* Step 6 — Confirmation */}
+          {/* Step 6 — Format */}
           {step === 6 && (
+            <div>
+              <p className={cn('text-sm mb-8', isDark ? 'text-zinc-400' : 'text-gray-500')}>
+                Sélectionnez le format de tournage pour votre session.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    id: 'horizontal',
+                    label: 'Horizontal',
+                    sub: 'YouTube · Podcasts · Interviews',
+                    ratio: '16:9',
+                    icon: (
+                      <div className="w-24 h-14 rounded-lg border-2 flex items-center justify-center" style={{ borderColor: form.format === 'horizontal' ? '#7c3aed' : isDark ? '#3f3f46' : '#e5e7eb', background: form.format === 'horizontal' ? 'rgba(124,58,237,0.1)' : 'transparent' }}>
+                        <div className="w-16 h-9 rounded border-2 flex items-center justify-center text-xs font-bold" style={{ borderColor: form.format === 'horizontal' ? '#7c3aed' : isDark ? '#52525b' : '#d1d5db', color: form.format === 'horizontal' ? '#7c3aed' : isDark ? '#71717a' : '#9ca3af' }}>16:9</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: 'vertical',
+                    label: 'Vertical',
+                    sub: 'Instagram · TikTok · Reels',
+                    ratio: '9:16',
+                    icon: (
+                      <div className="w-24 h-14 rounded-lg border-2 flex items-center justify-center" style={{ borderColor: form.format === 'vertical' ? '#7c3aed' : isDark ? '#3f3f46' : '#e5e7eb', background: form.format === 'vertical' ? 'rgba(124,58,237,0.1)' : 'transparent' }}>
+                        <div className="w-8 h-11 rounded border-2 flex items-center justify-center text-xs font-bold" style={{ borderColor: form.format === 'vertical' ? '#7c3aed' : isDark ? '#52525b' : '#d1d5db', color: form.format === 'vertical' ? '#7c3aed' : isDark ? '#71717a' : '#9ca3af' }}>9:16</div>
+                      </div>
+                    ),
+                  },
+                ].map(opt => (
+                  <button key={opt.id} onClick={() => setForm(f => ({ ...f, format: opt.id }))}
+                    className={cn('w-full text-left rounded-2xl border-2 p-6 flex flex-col items-center gap-4 transition-all',
+                      form.format === opt.id
+                        ? 'border-violet-600 shadow-lg shadow-violet-900/20 bg-violet-600/5'
+                        : isDark ? 'border-zinc-800 hover:border-zinc-600' : 'border-gray-200 hover:border-violet-300'
+                    )}>
+                    {opt.icon}
+                    <div className="text-center">
+                      <div className={cn('font-black text-lg', isDark ? 'text-white' : 'text-gray-900')}>{opt.label}</div>
+                      <div className={cn('text-xs mt-1', isDark ? 'text-zinc-400' : 'text-gray-500')}>{opt.sub}</div>
+                    </div>
+                    {form.format === opt.id && (
+                      <div className="w-6 h-6 bg-violet-600 rounded-full flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 7 — Confirmation */}
+          {step === 7 && (
             <div>
               {/* Grand récapitulatif */}
               <div className={cn('rounded-2xl border mb-6 overflow-hidden', isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200')}>
@@ -809,6 +864,7 @@ export default function NewReservation() {
                     ['Horaire', form.start_time ? `${form.start_time} – ${endTime()}` : ''],
                     ['Durée', `${form.duration}h`],
                     ['Personnes', `${form.persons} face caméra${form.persons > 1 ? 's' : ''}`],
+                    ['Format', form.format === 'vertical' ? 'Vertical (9:16)' : 'Horizontal (16:9)'],
                     form.additional_services.length > 0 ? ['Options', `${form.additional_services.length} service(s)`] : null,
                     promoResult ? ['Réduction', promoResult.type === 'percentage' ? `-${promoResult.value}%` : `-${promoResult.value} CAD`] : null,
                   ].filter(Boolean).map(([k, v]) => v && (
@@ -904,7 +960,7 @@ export default function NewReservation() {
         </div>
 
         {/* Right: summary card + nav (desktop only) */}
-        <div className={cn('w-72 flex-shrink-0 sticky top-8', step === 6 ? 'hidden' : 'hidden lg:block')}>
+        <div className={cn('w-72 flex-shrink-0 sticky top-8', step === 7 ? 'hidden' : 'hidden lg:block')}>
           {/* Nav CTA desktop */}
           <div className="mb-3 flex gap-2">
             {step > 1 && (
@@ -916,7 +972,7 @@ export default function NewReservation() {
               </button>
             )}
             {step !== 1 && step !== 3 && step !== 4 && (
-              step < 6 ? (
+              step < 7 ? (
                 <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
                   className={cn('flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-md shadow-violet-900/20 bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white', step === 1 ? 'w-full' : '')}>
                   Go →

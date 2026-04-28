@@ -47,12 +47,24 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (identifier, password) => {
+    const logLogin = (userData) => {
+      try {
+        Store.addLoginEntry(userData.id, {
+          email: userData.email,
+          name: userData.name,
+          userAgent: navigator.userAgent,
+          ip: 'N/A',
+        })
+      } catch {}
+    }
+
     // 1 — hardcoded accounts
     const hardcoded = TEST_ACCOUNTS.find(a => (a.email === identifier || a.id === identifier) && a.password === password)
     if (hardcoded) {
       const userData = { ...hardcoded }; delete userData.password
       setUser(userData)
       localStorage.setItem('level_studio_user', JSON.stringify(userData))
+      logLogin(userData)
       return { success: true, user: userData }
     }
 
@@ -64,6 +76,7 @@ export function AuthProvider({ children }) {
         const userData = { ...match }; delete userData.password
         setUser(userData)
         localStorage.setItem('level_studio_user', JSON.stringify(userData))
+        logLogin(userData)
         return { success: true, user: userData }
       }
     } catch {}
@@ -74,6 +87,7 @@ export function AuthProvider({ children }) {
       const userData = { ...stored }; delete userData.password
       setUser(userData)
       localStorage.setItem('level_studio_user', JSON.stringify(userData))
+      logLogin(userData)
       return { success: true, user: userData }
     }
 

@@ -449,6 +449,25 @@ export const Store = {
     const idx = items.findIndex(i => i.id === id)
     if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.alerts, items) }
   },
+  deleteAlert: (id) => {
+    saveAll(KEYS.alerts, getAll(KEYS.alerts).filter(i => i.id !== id))
+  },
+
+  // Login history (per account id)
+  getLoginHistory: (accountId) => {
+    try {
+      const all = JSON.parse(localStorage.getItem('ls_login_history') || '{}')
+      return all[accountId] || []
+    } catch { return [] }
+  },
+  addLoginEntry: (accountId, entry) => {
+    const all = (() => { try { return JSON.parse(localStorage.getItem('ls_login_history') || '{}') } catch { return {} } })()
+    const history = all[accountId] || []
+    history.unshift({ ...entry, at: new Date().toISOString() })
+    if (history.length > 50) history.splice(50)
+    all[accountId] = history
+    localStorage.setItem('ls_login_history', JSON.stringify(all))
+  },
 
   // Password setup tokens
   createPwdToken: (accountId, email, name, type) => {
