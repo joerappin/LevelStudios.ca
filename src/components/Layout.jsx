@@ -120,7 +120,7 @@ export default function Layout({ children, navItems, title }) {
   const navInactive  = isDark ? 'rgba(173,170,170,0.65)' : '#888'
   const navHoverText = isDark ? '#ffffff'  : D.tertiary
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: S.sidebar }}>
 
       {/* Logo row */}
@@ -330,7 +330,7 @@ export default function Layout({ children, navItems, title }) {
         transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
         boxShadow: isDark ? `4px 0 32px rgba(0,0,0,0.6)` : '4px 0 24px rgba(0,0,0,0.08)',
       }} className={sidebarOpen ? '' : '-translate-x-full lg:translate-x-0'}>
-        <SidebarContent />
+        {sidebarContent}
       </aside>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }} className="lg:ml-64">
