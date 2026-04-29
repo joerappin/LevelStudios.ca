@@ -186,7 +186,10 @@ function ClientTestRoute({ children }) {
 }
 
 function AppRoutes() {
-  useEffect(() => { syncAll().catch(() => {}) }, [])
+  const { user } = useAuth()
+  useEffect(() => {
+    if (user) syncAll().catch(() => {})
+  }, [user?.id])
   return (
     <>
       <ImpersonationBanner />
