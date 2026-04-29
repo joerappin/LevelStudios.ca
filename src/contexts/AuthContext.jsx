@@ -1,90 +1,128 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import { Store } from '../data/store'
-
-// Hardcoded admin account (never stored in files — always available)
-const TEST_ACCOUNTS = [
-  { email: 'joe.rappin@gmail.com', password: 'Mandrier88', type: 'admin',      name: 'Joe Rappin',   id: 'LVL10001' },
-  { email: 'clienttest@gmail.com',  password: 'Mandrier88', type: 'clienttest', name: 'Client Test',  id: 'LVL4TEST'  },
-]
 
 const AuthContext = createContext(null)
 
-// ─── Fetch helpers ─────────────────────────────────────────────────────────────
-async function apiGetAccounts() {
-  const res = await fetch('/api/accounts.php')
-  if (!res.ok) throw new Error('fetch failed')
-  return res.json()
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function logLogin(userData) {
+  try {
+    Store.addLoginEntry(userData.id, {
+      email: userData.email,
+      name: userData.name,
+      userAgent: navigator.userAgent,
+      ip: 'N/A',
+    })
+  } catch {}
 }
 
-async function apiSaveAccount(account) {
-  await fetch('/api/accounts.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(account),
-  })
+async function fetchAccountByAuthId(authId) {
+  const { data, error } = await supabase
+    .from('accounts')
+    .select('*')
+    .eq('auth_id', authId)
+    .single()
+  if (error || !data) return null
+  return data
 }
 
-async function apiPatchAccount(id, fields) {
-  await fetch('/api/accounts.php', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, ...fields }),
-  })
+// Map Supabase account row → app user shape
+function toUserShape(account) {
+  return {
+    id: account.id,
+    email: account.email,
+    name: account.name,
+    type: account.type,
+    clientType: account.client_type,
+    company: account.company,
+    tps: account.tps,
+    tvq: account.tvq,
+    googleAuth: account.google_auth,
+    pending: account.pending,
+    created_at: account.created_at,
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]               = useState(null)
+  const [loading, setLoading]         = useState(true)
   const [impersonatedBy, setImpersonatedBy] = useState(null)
 
+  // Restore session on mount
   useEffect(() => {
-    const stored = localStorage.getItem('level_studio_user')
-    if (stored) { try { setUser(JSON.parse(stored)) } catch {} }
+    // Restore impersonation backup
     const backup = localStorage.getItem('level_studio_admin_backup')
     if (backup) { try { setImpersonatedBy(JSON.parse(backup)) } catch {} }
-    setLoading(false)
+
+    // Listen for Supabase auth changes (handles refresh + initial session)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        // During impersonation, don't overwrite the impersonated user
+        const isImpersonating = !!localStorage.getItem('level_studio_admin_backup')
+        if (isImpersonating) { setLoading(false); return }
+
+        const account = await fetchAccountByAuthId(session.user.id)
+        if (account) {
+          const userData = toUserShape(account)
+          setUser(userData)
+          localStorage.setItem('level_studio_user', JSON.stringify(userData))
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // Only clear if not impersonating
+        if (!localStorage.getItem('level_studio_admin_backup')) {
+          setUser(null)
+          localStorage.removeItem('level_studio_user')
+        }
+      }
+      setLoading(false)
+    })
+
+    // Fallback: restore from localStorage if Supabase session is absent
+    // (handles impersonated users and legacy accounts not yet in Supabase)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        const stored = localStorage.getItem('level_studio_user')
+        if (stored) { try { setUser(JSON.parse(stored)) } catch {} }
+        setLoading(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
+  // ─── Login ────────────────────────────────────────────────────────────────
   const login = async (identifier, password) => {
-    const logLogin = (userData) => {
-      try {
-        Store.addLoginEntry(userData.id, {
-          email: userData.email,
-          name: userData.name,
-          userAgent: navigator.userAgent,
-          ip: 'N/A',
-        })
-      } catch {}
-    }
-
-    // 1 — hardcoded accounts
-    const hardcoded = TEST_ACCOUNTS.find(a => (a.email === identifier || a.id === identifier) && a.password === password)
-    if (hardcoded) {
-      const userData = { ...hardcoded }; delete userData.password
-      setUser(userData)
-      localStorage.setItem('level_studio_user', JSON.stringify(userData))
-      logLogin(userData)
-      return { success: true, user: userData }
-    }
-
-    // 2 — JSON files (via Vite plugin locally / PHP on Hostinger)
+    // 1 — Supabase Auth (primary)
     try {
-      const accounts = await apiGetAccounts()
-      const match = accounts.find(a => (a.email === identifier || a.id === identifier) && a.password === password && !a.pending)
-      if (match) {
-        const userData = { ...match }; delete userData.password
-        setUser(userData)
-        localStorage.setItem('level_studio_user', JSON.stringify(userData))
-        logLogin(userData)
-        return { success: true, user: userData }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: identifier,
+        password,
+      })
+
+      if (!error && data?.user) {
+        const account = await fetchAccountByAuthId(data.user.id)
+        if (account) {
+          if (account.pending) {
+            await supabase.auth.signOut()
+            return { success: false, error: 'Compte en attente de validation.' }
+          }
+          const userData = toUserShape(account)
+          setUser(userData)
+          localStorage.setItem('level_studio_user', JSON.stringify(userData))
+          logLogin(userData)
+          return { success: true, user: userData }
+        }
       }
     } catch {}
 
-    // 3 — localStorage fallback (legacy data)
+    // 2 — localStorage fallback (legacy accounts not yet migrated to Supabase)
     const stored = Store.findAccountByEmailAndPassword(identifier, password)
     if (stored) {
-      const userData = { ...stored }; delete userData.password
+      const userData = { ...stored }
+      delete userData.password
       setUser(userData)
       localStorage.setItem('level_studio_user', JSON.stringify(userData))
       logLogin(userData)
@@ -94,62 +132,86 @@ export function AuthProvider({ children }) {
     return { success: false, error: 'Identifiant ou mot de passe incorrect' }
   }
 
-  // ─── register — creates a client account, logs in immediately ────────────
-  const register = ({ firstName, lastName, email, password, company, tps, tvq, clientType, googleAuth }) => {
-    // Check duplicate in localStorage cache
-    const existing = Store.getAccounts().find(a => a.email?.toLowerCase() === email?.toLowerCase())
+  // ─── Register ─────────────────────────────────────────────────────────────
+  const register = async ({ firstName, lastName, email, password, company, tps, tvq, clientType, googleAuth }) => {
+    const name = `${firstName || ''} ${lastName || ''}`.trim()
+
+    // Check duplicate in Supabase
+    const { data: existing } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .maybeSingle()
     if (existing) return { success: false, error: 'Un compte avec cet email existe déjà.' }
 
-    const id = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
-    const name = `${firstName || ''} ${lastName || ''}`.trim()
-    const account = {
-      id,
+    const appId = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
+
+    // Create in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
+      password: googleAuth ? Math.random().toString(36) : password,
+      options: { data: { name, type: 'client', app_id: appId } },
+    })
+
+    if (authError) return { success: false, error: authError.message }
+
+    const authId = authData.user?.id
+
+    // Insert into accounts table
+    const accountRow = {
+      id: appId,
+      email: email.toLowerCase(),
       name,
       type: 'client',
-      clientType: clientType || 'particulier',
+      client_type: clientType || 'particulier',
       company: company || null,
       tps: tps || null,
       tvq: tvq || null,
-      password: googleAuth ? undefined : password,
-      googleAuth: !!googleAuth,
+      google_auth: !!googleAuth,
       pending: false,
-      created_at: new Date().toISOString(),
+      active: true,
+      auth_id: authId,
     }
 
-    // Save to localStorage immediately (synchronous)
-    Store.addAccount(account)
+    const { error: insertError } = await supabase.from('accounts').insert(accountRow)
+    if (insertError) return { success: false, error: insertError.message }
 
-    // Persist to file (Mac → git → Hostinger) — fire and forget
-    apiSaveAccount(account).catch(() => {})
+    // Also write to localStorage for backward compat during progressive migration
+    Store.addAccount({ ...accountRow, clientType: accountRow.client_type, googleAuth: accountRow.google_auth, created_at: new Date().toISOString() })
 
-    // Log in right away
-    const userData = { ...account }
-    delete userData.password
+    const userData = toUserShape(accountRow)
     setUser(userData)
     localStorage.setItem('level_studio_user', JSON.stringify(userData))
 
     return { success: true, user: userData }
   }
 
+  // ─── Set password (from token link) ───────────────────────────────────────
   const setAccountPassword = async (token, password) => {
     const data = Store.validatePwdToken(token)
     if (!data) return { success: false, error: 'Lien invalide ou expiré.' }
     Store.consumePwdToken(token)
-    // Update in JSON file
-    try { await apiPatchAccount(data.accountId, { password, pending: false }) } catch {}
-    // Also update localStorage fallback
     Store.updateAccount(data.accountId, { password, pending: false })
+
+    // Also update in Supabase accounts table
+    await supabase
+      .from('accounts')
+      .update({ pending: false })
+      .eq('id', data.accountId)
+
     return { success: true, accountType: data.type }
   }
 
-  const logout = () => {
+  // ─── Logout ───────────────────────────────────────────────────────────────
+  const logout = async () => {
+    await supabase.auth.signOut()
     setUser(null)
     setImpersonatedBy(null)
     localStorage.removeItem('level_studio_user')
     localStorage.removeItem('level_studio_admin_backup')
   }
 
+  // ─── Impersonation (admin only — localStorage-based) ──────────────────────
   const impersonate = (account) => {
     const currentUser = JSON.parse(localStorage.getItem('level_studio_user'))
     localStorage.setItem('level_studio_admin_backup', JSON.stringify(currentUser))
@@ -160,7 +222,10 @@ export function AuthProvider({ children }) {
 
   const stopImpersonating = () => {
     const admin = JSON.parse(localStorage.getItem('level_studio_admin_backup'))
-    if (admin) { setUser(admin); localStorage.setItem('level_studio_user', JSON.stringify(admin)) }
+    if (admin) {
+      setUser(admin)
+      localStorage.setItem('level_studio_user', JSON.stringify(admin))
+    }
     setImpersonatedBy(null)
     localStorage.removeItem('level_studio_admin_backup')
   }
