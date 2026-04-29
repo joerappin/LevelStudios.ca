@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
 import { syncAll } from './lib/db'
+import { useRealtimeSync } from './lib/realtime'
 import MaintenancePage, { useMaintenanceBypass } from './pages/MaintenancePage'
 import { ArrowLeftCircle, LayoutDashboard, Film } from 'lucide-react'
 
@@ -187,9 +188,8 @@ function ClientTestRoute({ children }) {
 
 function AppRoutes() {
   const { user } = useAuth()
-  useEffect(() => {
-    if (user) syncAll().catch(() => {})
-  }, [user?.id])
+  useRealtimeSync(!!user)
+  useEffect(() => { if (user) syncAll().catch(() => {}) }, [user?.id])
   return (
     <>
       <ImpersonationBanner />
