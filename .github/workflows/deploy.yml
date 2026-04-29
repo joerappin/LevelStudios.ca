@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy-public:
-    name: levelstudios.ca (vitrine + portail Pathé)
+    name: levelstudios.ca (vitrine + espace client)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
