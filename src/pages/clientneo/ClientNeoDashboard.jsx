@@ -91,12 +91,12 @@ export default function ClientNeoDashboard() {
   const userId = user?.id || '—'
 
   const QUICK = [
-    { icon: CalendarDays, label: 'Réservations',   path: '/pathe/reservations' },
-    { icon: Film,         label: 'Médiathèque',    path: '/pathe/library'      },
-    { icon: Package,      label: 'Packs d\'heures', path: '/pathe/subscription' },
-    { icon: FileText,     label: 'Factures',        path: '/pathe/invoices'     },
-    { icon: Headphones,   label: 'Contact',         path: '/pathe/contact'      },
-    { icon: User,         label: 'Mon profil',      path: '/pathe/account'      },
+    { icon: CalendarDays, label: 'Réservations',   path: '/espace-client/reservations' },
+    { icon: Film,         label: 'Médiathèque',    path: '/espace-client/library'      },
+    { icon: Package,      label: 'Packs d\'heures', path: '/espace-client/subscription' },
+    { icon: FileText,     label: 'Factures',        path: '/espace-client/invoices'     },
+    { icon: Headphones,   label: 'Contact',         path: '/espace-client/contact'      },
+    { icon: User,         label: 'Mon profil',      path: '/espace-client/account'      },
   ]
 
   return (
@@ -120,7 +120,7 @@ export default function ClientNeoDashboard() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>Paiement en attente</div>
               <div style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
                 Vous avez {pendingCount} réservation{pendingCount > 1 ? 's' : ''} en attente de paiement.{' '}
-                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate('/pathe/reservations')}>
+                <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate('/espace-client/reservations')}>
                   Voir →
                 </span>
               </div>
@@ -165,13 +165,13 @@ export default function ClientNeoDashboard() {
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => navigate('/pathe/subscription')} style={{
+              <button onClick={() => navigate('/espace-client/subscription')} style={{
                 padding: '9px 18px', borderRadius: 7, fontSize: 13, fontWeight: 700,
                 background: GOLD, color: '#000', border: 'none', cursor: 'pointer',
               }}>
                 Mes packs
               </button>
-              <button onClick={() => navigate('/pathe/account')} style={{
+              <button onClick={() => navigate('/espace-client/account')} style={{
                 padding: '9px 18px', borderRadius: 7, fontSize: 13, fontWeight: 600,
                 background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer',
               }}>
@@ -214,7 +214,7 @@ export default function ClientNeoDashboard() {
         <section style={{ marginBottom: 36 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>Mes dernières sessions</div>
-            <button onClick={() => navigate('/pathe/reservations')} style={{
+            <button onClick={() => navigate('/espace-client/reservations')} style={{
               display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700,
               color: GOLD, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             }}>
@@ -249,7 +249,7 @@ export default function ClientNeoDashboard() {
                 }}
                   onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  onClick={() => navigate('/pathe/reservations')}
+                  onClick={() => navigate('/espace-client/reservations')}
                 >
                   <div style={{
                     width: 42, height: 42, borderRadius: 8, flexShrink: 0,

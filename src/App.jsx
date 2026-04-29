@@ -70,7 +70,7 @@ import ChefRH from './pages/chef/ChefRH'
 // Rushes pages
 import EmployeeRushes from './pages/employee/EmployeeRushes'
 
-// Pathé-inspired pages
+// Pages espace client
 import HomeNeo               from './pages/HomeNeo'
 import ClientNeoLogin        from './pages/clientneo/ClientNeoLogin'
 import ClientNeoDashboard    from './pages/clientneo/ClientNeoDashboard'
@@ -197,15 +197,15 @@ function AppRoutes() {
       <Route path="/" element={<PageGateRoute path="/"><Home /></PageGateRoute>} />
       <Route path="/neo" element={<HomeNeo />} />
 
-      {/* Pathé-inspired client portal */}
-      <Route path="/pathe"                  element={<ClientNeoLogin />} />
-      <Route path="/pathe/dashboard"        element={<ClientTestRoute><ClientNeoDashboard /></ClientTestRoute>} />
-      <Route path="/pathe/reservations"     element={<ClientTestRoute><ClientNeoReservations /></ClientTestRoute>} />
-      <Route path="/pathe/library"          element={<ClientTestRoute><ClientNeoLibrary /></ClientTestRoute>} />
-      <Route path="/pathe/subscription"     element={<ClientTestRoute><ClientNeoSubscription /></ClientTestRoute>} />
-      <Route path="/pathe/invoices"         element={<ClientTestRoute><ClientNeoInvoices /></ClientTestRoute>} />
-      <Route path="/pathe/contact"          element={<ClientTestRoute><ClientNeoContact /></ClientTestRoute>} />
-      <Route path="/pathe/account"          element={<ClientTestRoute><ClientNeoAccount /></ClientTestRoute>} />
+      {/* Espace client */}
+      <Route path="/espace-client"                  element={<ClientNeoLogin />} />
+      <Route path="/espace-client/dashboard"        element={<ClientTestRoute><ClientNeoDashboard /></ClientTestRoute>} />
+      <Route path="/espace-client/reservations"     element={<ClientTestRoute><ClientNeoReservations /></ClientTestRoute>} />
+      <Route path="/espace-client/library"          element={<ClientTestRoute><ClientNeoLibrary /></ClientTestRoute>} />
+      <Route path="/espace-client/subscription"     element={<ClientTestRoute><ClientNeoSubscription /></ClientTestRoute>} />
+      <Route path="/espace-client/invoices"         element={<ClientTestRoute><ClientNeoInvoices /></ClientTestRoute>} />
+      <Route path="/espace-client/contact"          element={<ClientTestRoute><ClientNeoContact /></ClientTestRoute>} />
+      <Route path="/espace-client/account"          element={<ClientTestRoute><ClientNeoAccount /></ClientTestRoute>} />
       <Route path="/loginteamlevelprivate" element={<PageGateRoute path="/loginteamlevelprivate"><Login /></PageGateRoute>} />
       <Route path="/contact" element={<PageGateRoute path="/contact"><Contact /></PageGateRoute>} />
       <Route path="/reservation" element={<PageGateRoute path="/reservation"><NewReservation /></PageGateRoute>} />

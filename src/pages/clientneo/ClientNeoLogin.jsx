@@ -23,7 +23,7 @@ export default function ClientNeoLogin() {
     const result = login(loginForm.email, loginForm.password)
     setLoading(false)
     if (result.success) {
-      navigate('/pathe/dashboard')
+      navigate('/espace-client/dashboard')
     } else {
       setError(result.error || 'Email ou mot de passe incorrect.')
     }
@@ -37,7 +37,7 @@ export default function ClientNeoLogin() {
     const result = register({ ...regForm, clientType: 'particulier' })
     setLoading(false)
     if (result.success) {
-      navigate('/pathe/dashboard')
+      navigate('/espace-client/dashboard')
     } else {
       setError(result.error || 'Erreur lors de la création du compte.')
     }

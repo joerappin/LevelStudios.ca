@@ -169,7 +169,7 @@ export default function ClientNeoSubscription() {
             <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Besoin d'un devis personnalisé ?</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Notre équipe est disponible pour adapter une offre à vos besoins.</div>
           </div>
-          <button onClick={() => navigate('/pathe/contact')} style={{
+          <button onClick={() => navigate('/espace-client/contact')} style={{
             padding: '11px 22px', borderRadius: 8, fontSize: 13, fontWeight: 800,
             background: GOLD, color: '#000', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,

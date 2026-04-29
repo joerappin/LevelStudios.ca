@@ -1,5 +1,5 @@
 // Build public — levelstudios.ca
-// Routes : landing page, contact, réservation, portail Pathé (neo)
+// Routes : landing page, contact, réservation, espace client
 
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -16,7 +16,7 @@ import Contact       from './pages/Contact'
 import NewReservation from './pages/NewReservation'
 import SetPassword   from './pages/SetPassword'
 
-// Portail Pathé (neo) — reste sur levelstudios.ca
+// Espace client — reste sur levelstudios.ca
 import ClientNeoLogin        from './pages/clientneo/ClientNeoLogin'
 import ClientNeoDashboard    from './pages/clientneo/ClientNeoDashboard'
 import ClientNeoReservations from './pages/clientneo/ClientNeoReservations'
@@ -33,7 +33,7 @@ function ClientNeoRoute({ children }) {
       <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#00bcd4', borderTopColor: 'transparent' }} />
     </div>
   )
-  if (!user || (user.type !== 'clienttest' && user.type !== 'client')) return <Navigate to="/pathe" replace />
+  if (!user || (user.type !== 'clienttest' && user.type !== 'client')) return <Navigate to="/espace-client" replace />
   return children
 }
 
@@ -61,15 +61,15 @@ function PublicRoutes() {
       <Route path="/reservation" element={<PageGateRoute path="/reservation"><NewReservation /></PageGateRoute>} />
       <Route path="/set-password" element={<SetPassword />} />
 
-      {/* Portail Pathé (neo) */}
-      <Route path="/pathe"                  element={<ClientNeoLogin />} />
-      <Route path="/pathe/dashboard"        element={<ClientNeoRoute><ClientNeoDashboard /></ClientNeoRoute>} />
-      <Route path="/pathe/reservations"     element={<ClientNeoRoute><ClientNeoReservations /></ClientNeoRoute>} />
-      <Route path="/pathe/library"          element={<ClientNeoRoute><ClientNeoLibrary /></ClientNeoRoute>} />
-      <Route path="/pathe/subscription"     element={<ClientNeoRoute><ClientNeoSubscription /></ClientNeoRoute>} />
-      <Route path="/pathe/invoices"         element={<ClientNeoRoute><ClientNeoInvoices /></ClientNeoRoute>} />
-      <Route path="/pathe/contact"          element={<ClientNeoRoute><ClientNeoContact /></ClientNeoRoute>} />
-      <Route path="/pathe/account"          element={<ClientNeoRoute><ClientNeoAccount /></ClientNeoRoute>} />
+      {/* Espace client */}
+      <Route path="/espace-client"                  element={<ClientNeoLogin />} />
+      <Route path="/espace-client/dashboard"        element={<ClientNeoRoute><ClientNeoDashboard /></ClientNeoRoute>} />
+      <Route path="/espace-client/reservations"     element={<ClientNeoRoute><ClientNeoReservations /></ClientNeoRoute>} />
+      <Route path="/espace-client/library"          element={<ClientNeoRoute><ClientNeoLibrary /></ClientNeoRoute>} />
+      <Route path="/espace-client/subscription"     element={<ClientNeoRoute><ClientNeoSubscription /></ClientNeoRoute>} />
+      <Route path="/espace-client/invoices"         element={<ClientNeoRoute><ClientNeoInvoices /></ClientNeoRoute>} />
+      <Route path="/espace-client/contact"          element={<ClientNeoRoute><ClientNeoContact /></ClientNeoRoute>} />
+      <Route path="/espace-client/account"          element={<ClientNeoRoute><ClientNeoAccount /></ClientNeoRoute>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -7,12 +7,12 @@ import { Store } from '../data/store'
 const GOLD = '#F5C518'
 
 const NAV = [
-  { label: 'Accueil',        path: '/pathe/dashboard'    },
-  { label: 'Réservations',   path: '/pathe/reservations' },
-  { label: 'Médiathèque',    path: '/pathe/library'      },
-  { label: 'Packs d\'heures', path: '/pathe/subscription' },
-  { label: 'Factures',       path: '/pathe/invoices'     },
-  { label: 'Contact',        path: '/pathe/contact'      },
+  { label: 'Accueil',        path: '/espace-client/dashboard'    },
+  { label: 'Réservations',   path: '/espace-client/reservations' },
+  { label: 'Médiathèque',    path: '/espace-client/library'      },
+  { label: 'Packs d\'heures', path: '/espace-client/subscription' },
+  { label: 'Factures',       path: '/espace-client/invoices'     },
+  { label: 'Contact',        path: '/espace-client/contact'      },
 ]
 
 export default function ClientNeoLayout({ children }) {
@@ -51,7 +51,7 @@ export default function ClientNeoLayout({ children }) {
         boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
       }}>
         {/* Logo */}
-        <div onClick={() => navigate('/pathe/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0 }}>
+        <div onClick={() => navigate('/espace-client/dashboard')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0 }}>
           <img src="/logo.png" alt="Level" style={{ height: 30, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           <span style={{ fontWeight: 900, fontSize: 14, color: '#fff', letterSpacing: '-0.01em' }}>Level Studios</span>
         </div>
@@ -81,7 +81,7 @@ export default function ClientNeoLayout({ children }) {
         {/* Right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {/* Bell */}
-          <button onClick={() => navigate('/pathe/reservations')} style={{
+          <button onClick={() => navigate('/espace-client/reservations')} style={{
             position: 'relative', width: 34, height: 34, borderRadius: 6,
             border: 'none', cursor: 'pointer', background: 'transparent',
             color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -136,8 +136,8 @@ export default function ClientNeoLayout({ children }) {
                   <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.4)' }}>{user?.email}</div>
                 </div>
                 {[
-                  { icon: User,       label: 'Mon profil',  path: '/pathe/account'  },
-                  { icon: Headphones, label: 'Contact SAV', path: '/pathe/contact'  },
+                  { icon: User,       label: 'Mon profil',  path: '/espace-client/account'  },
+                  { icon: Headphones, label: 'Contact SAV', path: '/espace-client/contact'  },
                 ].map(({ icon: Icon, label, path }) => (
                   <button key={label} onClick={() => { navigate(path); setUserMenu(false) }} style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 10,
