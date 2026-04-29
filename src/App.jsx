@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
+import { syncAll } from './lib/db'
 import MaintenancePage, { useMaintenanceBypass } from './pages/MaintenancePage'
 import { ArrowLeftCircle, LayoutDashboard, Film } from 'lucide-react'
 
@@ -185,6 +186,7 @@ function ClientTestRoute({ children }) {
 }
 
 function AppRoutes() {
+  useEffect(() => { syncAll().catch(() => {}) }, [])
   return (
     <>
       <ImpersonationBanner />

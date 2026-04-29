@@ -1,4 +1,5 @@
-// LocalStorage-based data store simulating backend entities
+// LocalStorage-based data store — reads from localStorage (sync), writes to localStorage + Supabase (dual-write)
+import * as db from '../lib/db'
 
 const KEYS = {
   reservations: 'ls_reservations',
@@ -93,6 +94,7 @@ export const Store = {
     const item = { id: generateResId(), created_at: new Date().toISOString(), ...data }
     items.unshift(item)
     saveAll(KEYS.reservations, items)
+    db.upsertReservation(item).catch(() => {})
 
     // Auto-create project card in Kanban — always starts in Booking
     // (auto-promoted to Todo on the day by AdminProjects/ChefProjects useEffect)
@@ -116,6 +118,7 @@ export const Store = {
     }
     projects.unshift(project)
     saveAll(KEYS.projects, projects)
+    db.upsertProject(project).catch(() => {})
 
     // Persist reservation to file (Mac → git → Hostinger) — fire and forget
     fetch('/api/reservations.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) }).catch(() => {})
@@ -131,6 +134,7 @@ export const Store = {
       saveAll(KEYS.reservations, items)
     }
     const updated = items[idx]
+    if (updated) db.upsertReservation(updated).catch(() => {})
     if (updated) {
       fetch('/api/reservations.php', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
         .then(r => {
@@ -171,6 +175,7 @@ export const Store = {
           status: newStatus,
         }
         saveAll(KEYS.projects, projects)
+        db.upsertProject(projects[pIdx]).catch(() => {})
       }
     }
 
@@ -179,6 +184,7 @@ export const Store = {
   deleteReservation: (id) => {
     const items = getAll(KEYS.reservations).filter(i => i.id !== id)
     saveAll(KEYS.reservations, items)
+    db.deleteReservation(id).catch(() => {})
     fetch('/api/reservations.php', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {})
   },
 
@@ -189,6 +195,7 @@ export const Store = {
     const item = { id: generateId('PROJ'), created_at: new Date().toISOString(), files: [], ...data }
     items.unshift(item)
     saveAll(KEYS.projects, items)
+    db.upsertProject(item).catch(() => {})
     return item
   },
   updateProject: (id, data, historyEntry) => {
@@ -200,6 +207,7 @@ export const Store = {
       if (historyEntry) history.push({ ...historyEntry, at: new Date().toISOString() })
       items[idx] = { ...existing, ...data, history }
       saveAll(KEYS.projects, items)
+      db.upsertProject(items[idx]).catch(() => {})
     }
     return items[idx]
   },
@@ -211,15 +219,17 @@ export const Store = {
     const item = { id: generateId('MSG'), created_at: new Date().toISOString(), read: false, replies: [], ...data }
     items.unshift(item)
     saveAll(KEYS.messages, items)
+    db.upsertMessage(item).catch(() => {})
     return item
   },
   updateMessage: (id, data) => {
     const items = getAll(KEYS.messages)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.messages, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.messages, items); db.upsertMessage(items[idx]).catch(() => {}) }
   },
   deleteMessage: (id) => {
     saveAll(KEYS.messages, getAll(KEYS.messages).filter(i => i.id !== id))
+    db.deleteMessage(id).catch(() => {})
   },
   purgeOldMessages: () => {
     const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
@@ -233,12 +243,13 @@ export const Store = {
     const item = { id: generateId('IMSG'), created_at: new Date().toISOString(), read: false, ...data }
     items.unshift(item)
     saveAll(KEYS.internalMessages, items)
+    db.upsertInternalMessage(item).catch(() => {})
     return item
   },
   updateInternalMessage: (id, data) => {
     const items = getAll(KEYS.internalMessages)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.internalMessages, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.internalMessages, items); db.upsertInternalMessage(items[idx]).catch(() => {}) }
   },
 
   // Mails (boîte mail interne)
@@ -248,15 +259,17 @@ export const Store = {
     const item = { id: generateId('MAIL'), created_at: new Date().toISOString(), read: false, trashed_by: [], labels: [], to: [], cc: [], attachments: [], ...data }
     items.unshift(item)
     saveAll(KEYS.mails, items)
+    db.upsertMail(item).catch(() => {})
     return item
   },
   updateMail: (id, data) => {
     const items = getAll(KEYS.mails)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.mails, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.mails, items); db.upsertMail(items[idx]).catch(() => {}) }
   },
   deleteMail: (id) => {
     saveAll(KEYS.mails, getAll(KEYS.mails).filter(i => i.id !== id))
+    db.deleteMail(id).catch(() => {})
   },
 
   // Mail labels
@@ -266,15 +279,17 @@ export const Store = {
     const item = { id: generateId('LBL'), ...data }
     items.push(item)
     saveAll(KEYS.mailLabels, items)
+    db.upsertMailLabel(item).catch(() => {})
     return item
   },
   updateMailLabel: (id, data) => {
     const items = getAll(KEYS.mailLabels)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.mailLabels, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.mailLabels, items); db.upsertMailLabel(items[idx]).catch(() => {}) }
   },
   deleteMailLabel: (id) => {
     saveAll(KEYS.mailLabels, getAll(KEYS.mailLabels).filter(i => i.id !== id))
+    db.deleteMailLabel(id).catch(() => {})
   },
 
   // Employees
@@ -285,12 +300,13 @@ export const Store = {
     const item = { id: generateLvlId(lvl), ...data }
     items.push(item)
     saveAll(KEYS.employees, items)
+    db.upsertEmployee(item).catch(() => {})
     return item
   },
   updateEmployee: (id, data) => {
     const items = getAll(KEYS.employees)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.employees, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.employees, items); db.upsertEmployee(items[idx]).catch(() => {}) }
   },
 
   // Leave Requests
@@ -300,12 +316,13 @@ export const Store = {
     const item = { id: generateId('LEAVE'), created_at: new Date().toISOString(), status: 'pending', ...data }
     items.unshift(item)
     saveAll(KEYS.leaveRequests, items)
+    db.upsertLeaveRequest(item).catch(() => {})
     return item
   },
   updateLeaveRequest: (id, data) => {
     const items = getAll(KEYS.leaveRequests)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.leaveRequests, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.leaveRequests, items); db.upsertLeaveRequest(items[idx]).catch(() => {}) }
   },
 
   // Hour Packs
@@ -315,12 +332,13 @@ export const Store = {
     const item = { id: generateId('PACK'), created_at: new Date().toISOString(), hours_used: 0, ...data }
     items.unshift(item)
     saveAll(KEYS.hourPacks, items)
+    db.upsertHourPack(item).catch(() => {})
     return item
   },
   updateHourPack: (id, data) => {
     const items = getAll(KEYS.hourPacks)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.hourPacks, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.hourPacks, items); db.upsertHourPack(items[idx]).catch(() => {}) }
   },
 
   // Promo Codes
@@ -330,15 +348,17 @@ export const Store = {
     const item = { id: generateId('PROMO'), created_at: new Date().toISOString(), uses: 0, ...data }
     items.unshift(item)
     saveAll(KEYS.promoCodes, items)
+    db.upsertPromoCode(item).catch(() => {})
     return item
   },
   updatePromoCode: (id, data) => {
     const items = getAll(KEYS.promoCodes)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.promoCodes, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.promoCodes, items); db.upsertPromoCode(items[idx]).catch(() => {}) }
   },
   deletePromoCode: (id) => {
     saveAll(KEYS.promoCodes, getAll(KEYS.promoCodes).filter(i => i.id !== id))
+    db.deletePromoCode(id).catch(() => {})
   },
 
   // Popup Messages
@@ -348,10 +368,12 @@ export const Store = {
     const item = { id: generateId('POP'), created_at: new Date().toISOString(), ...data }
     items.unshift(item)
     saveAll(KEYS.popupMessages, items)
+    db.upsertPopupMessage(item).catch(() => {})
     return item
   },
   deletePopupMessage: (id) => {
     saveAll(KEYS.popupMessages, getAll(KEYS.popupMessages).filter(i => i.id !== id))
+    db.deletePopupMessage(id).catch(() => {})
   },
 
   // Check-ins
@@ -361,12 +383,13 @@ export const Store = {
     const item = { id: generateId('CHK'), created_at: new Date().toISOString(), ...data }
     items.unshift(item)
     saveAll(KEYS.checkIns, items)
+    db.upsertCheckIn(item).catch(() => {})
     return item
   },
   updateCheckIn: (id, data) => {
     const items = getAll(KEYS.checkIns)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.checkIns, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.checkIns, items); db.upsertCheckIn(items[idx]).catch(() => {}) }
   },
 
   // Leads (visiteurs chatbot)
@@ -382,6 +405,7 @@ export const Store = {
     }
     items.unshift(item)
     saveAll(KEYS.leads, items)
+    db.upsertLead(item).catch(() => {})
     return item
   },
   updateLead: (id, data, historyEntry) => {
@@ -393,11 +417,13 @@ export const Store = {
       if (historyEntry) history.push({ ...historyEntry, at: new Date().toISOString() })
       items[idx] = { ...existing, ...data, history }
       saveAll(KEYS.leads, items)
+      db.upsertLead(items[idx]).catch(() => {})
     }
     return items[idx]
   },
   deleteLead: (id) => {
     saveAll(KEYS.leads, getAll(KEYS.leads).filter(i => i.id !== id))
+    db.deleteLead(id).catch(() => {})
   },
 
   validatePromoCode: (code) => {
@@ -417,12 +443,13 @@ export const Store = {
     const item = { id, created_at: new Date().toISOString(), pending: true, ...data }
     items.push(item)
     saveAll(KEYS.accounts, items)
+    db.upsertAccount(item).catch(() => {})
     return item
   },
   updateAccount: (id, data) => {
     const items = getAll(KEYS.accounts)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.accounts, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.accounts, items); db.upsertAccount(items[idx]).catch(() => {}) }
     return items[idx]
   },
   findAccountByEmail: (email) => {
@@ -433,6 +460,7 @@ export const Store = {
   },
   deleteAccount: (id) => {
     saveAll(KEYS.accounts, getAll(KEYS.accounts).filter(a => a.id !== id))
+    db.deleteAccount(id).catch(() => {})
   },
 
   // Alerts
@@ -442,15 +470,17 @@ export const Store = {
     const item = { id: generateId('ALT'), created_at: new Date().toISOString(), status: 'sent', ...data }
     items.unshift(item)
     saveAll(KEYS.alerts, items)
+    db.upsertAlert(item).catch(() => {})
     return item
   },
   updateAlert: (id, data) => {
     const items = getAll(KEYS.alerts)
     const idx = items.findIndex(i => i.id === id)
-    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.alerts, items) }
+    if (idx !== -1) { items[idx] = { ...items[idx], ...data }; saveAll(KEYS.alerts, items); db.upsertAlert(items[idx]).catch(() => {}) }
   },
   deleteAlert: (id) => {
     saveAll(KEYS.alerts, getAll(KEYS.alerts).filter(i => i.id !== id))
+    db.deleteAlert(id).catch(() => {})
   },
 
   // Login history (per account id)
@@ -467,6 +497,7 @@ export const Store = {
     if (history.length > 50) history.splice(50)
     all[accountId] = history
     localStorage.setItem('ls_login_history', JSON.stringify(all))
+    db.insertLoginHistory(accountId, entry).catch(() => {})
   },
 
   // Password setup tokens
@@ -499,6 +530,7 @@ export const Store = {
     const all = (() => { try { return JSON.parse(localStorage.getItem('ls_emp_profiles') || '{}') } catch { return {} } })()
     all[id] = { ...(all[id] || {}), ...data }
     localStorage.setItem('ls_emp_profiles', JSON.stringify(all))
+    db.upsertEmployeeProfile(id, all[id]).catch(() => {})
   },
 
   // Freelance missions — keyed by empId
@@ -509,11 +541,13 @@ export const Store = {
     const all = (() => { try { return JSON.parse(localStorage.getItem('ls_freelance_missions') || '{}') } catch { return {} } })()
     all[empId] = { ...(all[empId] || {}), ...data }
     localStorage.setItem('ls_freelance_missions', JSON.stringify(all))
+    db.upsertFreelanceMission(empId, all[empId]).catch(() => {})
   },
   deleteFreelanceMission: (empId) => {
     const all = (() => { try { return JSON.parse(localStorage.getItem('ls_freelance_missions') || '{}') } catch { return {} } })()
     delete all[empId]
     localStorage.setItem('ls_freelance_missions', JSON.stringify(all))
+    db.deleteFreelanceMission(empId).catch(() => {})
   },
 
   // Employee software/tools licenses
@@ -524,6 +558,7 @@ export const Store = {
     const all = (() => { try { return JSON.parse(localStorage.getItem('ls_emp_software') || '{}') } catch { return {} } })()
     all[id] = entries
     localStorage.setItem('ls_emp_software', JSON.stringify(all))
+    db.upsertEmployeeSoftware(id, entries).catch(() => {})
   },
 
   // Pricing — persists independently of seed version
@@ -538,7 +573,7 @@ export const Store = {
       return { services, options }
     } catch { return DEFAULT_PRICES }
   },
-  setPrices: (data) => localStorage.setItem(PRICE_KEY, JSON.stringify(data)),
+  setPrices: (data) => { localStorage.setItem(PRICE_KEY, JSON.stringify(data)); db.upsertPrices(data).catch(() => {}) },
   resetPrices: () => localStorage.removeItem(PRICE_KEY),
   getDefaultPrices: () => DEFAULT_PRICES,
 
@@ -608,6 +643,7 @@ export const Store = {
       const key = `${resId}__${fileName}`
       data[key] = { ...(data[key] || {}), status, retourCount }
       localStorage.setItem('ls_video_statuses', JSON.stringify(data))
+      db.upsertVideoMetadata(resId, fileName, data[key]).catch(() => {})
     } catch {}
   },
 
@@ -623,6 +659,7 @@ export const Store = {
       const key = `${resId}__${fileName}`
       data[key] = { ...(data[key] || {}), retourPhase: phase }
       localStorage.setItem('ls_video_statuses', JSON.stringify(data))
+      db.upsertVideoMetadata(resId, fileName, data[key]).catch(() => {})
     } catch {}
   },
 
@@ -648,6 +685,7 @@ export const Store = {
       const data = JSON.parse(localStorage.getItem('ls_feature_flags') || '{}')
       data[key] = value
       localStorage.setItem('ls_feature_flags', JSON.stringify(data))
+      db.upsertFeatureFlag(key, value).catch(() => {})
     } catch {}
   },
 
@@ -663,6 +701,7 @@ export const Store = {
       const data = JSON.parse(localStorage.getItem('ls_video_versions') || '{}')
       data[`${resId}__${fileName}`] = version
       localStorage.setItem('ls_video_versions', JSON.stringify(data))
+      db.upsertVideoMetadata(resId, fileName, { version }).catch(() => {})
     } catch {}
   },
 
@@ -678,6 +717,7 @@ export const Store = {
       const data = JSON.parse(localStorage.getItem('ls_video_settings') || '{}')
       data[`${resId}__${fileName}`] = settings
       localStorage.setItem('ls_video_settings', JSON.stringify(data))
+      db.upsertVideoMetadata(resId, fileName, settings).catch(() => {})
     } catch {}
   },
 
@@ -692,16 +732,18 @@ export const Store = {
     const item = { id, created_at: new Date().toISOString(), ...data }
     list.unshift(item)
     localStorage.setItem('ls_invoices', JSON.stringify(list))
+    db.upsertInvoice(item).catch(() => {})
     return item
   },
   updateInvoice: (id, data) => {
     const list = (() => { try { return JSON.parse(localStorage.getItem('ls_invoices') || '[]') } catch { return [] } })()
     const idx = list.findIndex(i => i.id === id)
-    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; localStorage.setItem('ls_invoices', JSON.stringify(list)) }
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; localStorage.setItem('ls_invoices', JSON.stringify(list)); db.upsertInvoice(list[idx]).catch(() => {}) }
   },
   deleteInvoice: (id) => {
     const list = (() => { try { return JSON.parse(localStorage.getItem('ls_invoices') || '[]') } catch { return [] } })()
     localStorage.setItem('ls_invoices', JSON.stringify(list.filter(i => i.id !== id)))
+    db.deleteInvoice(id).catch(() => {})
   },
   getInvoiceTemplate: () => {
     try {
@@ -712,6 +754,7 @@ export const Store = {
   },
   saveInvoiceTemplate: (data) => {
     localStorage.setItem('ls_invoice_template', JSON.stringify(data))
+    db.upsertInvoiceTemplate(data).catch(() => {})
   },
 
   // Project comments (chat per card)
@@ -727,6 +770,7 @@ export const Store = {
       const comment = { id: `CMT-${Date.now()}`, created_at: new Date().toISOString(), ...data }
       all.push(comment)
       localStorage.setItem('ls_proj_comments', JSON.stringify(all))
+      db.upsertProjectComment(comment).catch(() => {})
       return comment
     } catch { return null }
   },
