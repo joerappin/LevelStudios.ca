@@ -136,13 +136,7 @@ export function AuthProvider({ children }) {
   const register = async ({ firstName, lastName, email, password, company, tps, tvq, clientType, googleAuth }) => {
     const name = `${firstName || ''} ${lastName || ''}`.trim()
 
-    // Check duplicate in Supabase
-    const { data: existing } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('email', email.toLowerCase())
-      .maybeSingle()
-    if (existing) return { success: false, error: 'Un compte avec cet email existe déjà.' }
+    // La vérification de doublon est gérée par Supabase Auth (email unique)
 
     const appId = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
 
@@ -153,33 +147,24 @@ export function AuthProvider({ children }) {
       options: { data: { name, type: 'client', app_id: appId } },
     })
 
-    if (authError) return { success: false, error: authError.message }
+    if (authError) return { success: false, error: authError.message === 'User already registered' ? 'Un compte avec cet email existe déjà.' : authError.message }
 
     const authId = authData.user?.id
 
-    // Insert into accounts table
-    const accountRow = {
-      id: appId,
-      email: email.toLowerCase(),
-      name,
-      type: 'client',
+    // Le trigger Supabase (handle_new_user) insère automatiquement dans accounts.
+    // On met à jour les champs supplémentaires non couverts par le trigger.
+    await supabase.from('accounts').update({
       client_type: clientType || 'particulier',
       company: company || null,
       tps: tps || null,
       tvq: tvq || null,
       google_auth: !!googleAuth,
-      pending: false,
-      active: true,
-      auth_id: authId,
-    }
+    }).eq('auth_id', authId)
 
-    const { error: insertError } = await supabase.from('accounts').insert(accountRow)
-    if (insertError) return { success: false, error: insertError.message }
+    // Lire le compte créé par le trigger
+    const { data: account } = await supabase.from('accounts').select('*').eq('auth_id', authId).single()
 
-    // Also write to localStorage for backward compat during progressive migration
-    Store.addAccount({ ...accountRow, clientType: accountRow.client_type, googleAuth: accountRow.google_auth, created_at: new Date().toISOString() })
-
-    const userData = toUserShape(accountRow)
+    const userData = toUserShape(account || { id: appId, email: email.toLowerCase(), name, type: 'client', auth_id: authId })
     setUser(userData)
     localStorage.setItem('level_studio_user', JSON.stringify(userData))
 
