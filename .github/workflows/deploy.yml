@@ -73,6 +73,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist-app/
-          server-dir: /domains/levelstudios.ca/public_html/app/
+          server-dir: /public_html/app/
           protocol: ftps
           timeout: 60000
