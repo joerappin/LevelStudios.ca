@@ -93,10 +93,10 @@ function LoginModal({ onClose, initialTab = 'login' }) {
       if (type === 'admin' || type === 'employee' || type === 'client' || type === 'freelance') {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
-          const hash = `access_token=${session.access_token}&refresh_token=${session.refresh_token}&expires_in=${session.expires_in}&token_type=bearer&type=recovery`
-          window.location.href = `https://app.levelstudios.ca/login#${hash}`
+          const params = new URLSearchParams({ at: session.access_token, rt: session.refresh_token })
+          window.location.href = `https://app.levelstudios.ca/auth?${params.toString()}`
         } else {
-          window.location.href = 'https://app.levelstudios.ca'
+          window.location.href = 'https://app.levelstudios.ca/login'
         }
         return
       }

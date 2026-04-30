@@ -11,8 +11,9 @@ import { useRealtimeSync } from './lib/realtime'
 import SiteOverrideInjector from './components/SiteOverrideInjector'
 
 // Auth pages
-import Login      from './pages/Login'
-import SetPassword from './pages/SetPassword'
+import Login        from './pages/Login'
+import SetPassword  from './pages/SetPassword'
+import AuthCallback from './pages/AuthCallback'
 
 // Admin pages
 import AdminDashboard   from './pages/admin/Dashboard'
@@ -159,8 +160,9 @@ function ManagementRoutes() {
     <>
       <ImpersonationBanner />
       <Routes>
-        <Route path="/"     element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/"            element={<Navigate to="/login" replace />} />
+        <Route path="/login"       element={<Login />} />
+        <Route path="/auth"        element={<AuthCallback />} />
         <Route path="/set-password" element={<SetPassword />} />
 
         {/* Admin */}
