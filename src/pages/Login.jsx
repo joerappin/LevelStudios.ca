@@ -24,8 +24,7 @@ function dashboardFor(user) {
   }
   if (user.type === 'client') return '/client/dashboard'
   if (user.type === 'freelance') return '/freelance/dashboard'
-  if (user.type === 'clienttest') return '/clienttest/dashboard'
-  return null
+  return null // clienttest → levelstudios.ca uniquement
 }
 
 export default function Login() {

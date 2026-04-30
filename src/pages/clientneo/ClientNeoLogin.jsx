@@ -20,9 +20,14 @@ export default function ClientNeoLogin() {
     setError('')
     setLoading(true)
     await new Promise(r => setTimeout(r, 400))
-    const result = login(loginForm.email, loginForm.password)
+    const result = await login(loginForm.email, loginForm.password)
     setLoading(false)
     if (result.success) {
+      const type = result.user?.type
+      if (type === 'admin' || type === 'employee' || type === 'freelance') {
+        setError('Cet espace est réservé aux clients. Accès équipe : app.levelstudios.ca')
+        return
+      }
       navigate('/espace-client/dashboard')
     } else {
       setError(result.error || 'Email ou mot de passe incorrect.')
@@ -34,7 +39,7 @@ export default function ClientNeoLogin() {
     setError('')
     setLoading(true)
     await new Promise(r => setTimeout(r, 400))
-    const result = register({ ...regForm, clientType: 'particulier' })
+    const result = await register({ ...regForm, clientType: 'particulier' })
     setLoading(false)
     if (result.success) {
       navigate('/espace-client/dashboard')
@@ -45,7 +50,7 @@ export default function ClientNeoLogin() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#F2F2F2',
+      minHeight: '100vh', background: '#141414',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       padding: '32px 16px',
