@@ -98,9 +98,9 @@ export default function Login() {
       return
     }
 
-    if (result.user.type === 'client') {
+    if (result.user.type === 'client' || result.user.type === 'clienttest') {
       logout()
-      setError('Cet espace est réservé aux équipes Level Studios.')
+      setError('Cet espace est réservé aux équipes Level Studios. Espace client : levelstudios.ca')
       return
     }
 

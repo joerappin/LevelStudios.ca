@@ -5,7 +5,6 @@ import {
   Zap, Shield, Award, Camera, Mic, Sun, CheckCircle, LogOut
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 import { createPageUrl } from '../utils'
 import { sendWelcomeEmail } from '../utils/emailService'
 import VisitorChatBot from '../components/VisitorChatBot'
@@ -90,14 +89,9 @@ function LoginModal({ onClose, initialTab = 'login' }) {
     const result = await login(loginForm.email, loginForm.password)
     if (result.success) {
       const type = result.user.type
-      if (type === 'admin' || type === 'employee' || type === 'client' || type === 'freelance') {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) {
-          const params = new URLSearchParams({ at: session.access_token, rt: session.refresh_token })
-          window.location.href = `https://app.levelstudios.ca/auth?${params.toString()}`
-        } else {
-          window.location.href = 'https://app.levelstudios.ca/login'
-        }
+      if (type === 'admin' || type === 'employee' || type === 'freelance') {
+        await logout()
+        setLoginError('Cet espace est réservé aux clients. Accès équipe : app.levelstudios.ca')
         return
       }
       onClose()
