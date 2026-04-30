@@ -34,12 +34,12 @@ export default function ClientNeoLayout({ children }) {
 
   useEffect(() => { setUserMenu(false) }, [location.pathname])
 
-  const doLogout = () => { logout(); navigate('/neo') }
+  const doLogout = () => { logout(); navigate('/') }
 
   const topOffset = impersonatedBy ? 36 : 0
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F2F2F2', color: '#111' }}>
+    <div style={{ minHeight: '100vh', background: '#141414', color: '#fff' }}>
 
       {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
       <nav style={{

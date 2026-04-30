@@ -64,13 +64,13 @@ function QuickIcon({ icon: Icon, label, path }) {
     >
       <div style={{
         width: 44, height: 44, borderRadius: 10,
-        background: hov ? `rgba(245,197,24,0.15)` : '#f2f2f2',
+        background: hov ? `rgba(245,197,24,0.15)` : 'rgba(255,255,255,0.07)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.18s',
       }}>
         <Icon size={20} style={{ color: hov ? GOLD : '#555' }} />
       </div>
-      <span style={{ fontSize: 11, fontWeight: 600, color: hov ? '#111' : '#555', textAlign: 'center', lineHeight: 1.3 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: hov ? '#fff' : 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 1.3 }}>
         {label}
       </span>
     </button>
@@ -104,21 +104,21 @@ export default function ClientNeoDashboard() {
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px 64px' }}>
 
         {/* Greeting */}
-        <h1 style={{ fontSize: 34, fontWeight: 900, color: '#111', margin: '0 0 28px', letterSpacing: '-0.02em' }}>
+        <h1 style={{ fontSize: 34, fontWeight: 900, color: '#fff', margin: '0 0 28px', letterSpacing: '-0.02em' }}>
           Bonjour <span style={{ color: GOLD }}>{firstName.toUpperCase()}</span>
         </h1>
 
         {/* Alert if pending payments */}
         {pendingCount > 0 && (
           <div style={{
-            background: '#fff3cd', border: '1px solid #f59e0b', borderRadius: 10,
+            background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10,
             padding: '14px 18px', marginBottom: 24,
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>Paiement en attente</div>
-              <div style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24' }}>Paiement en attente</div>
+              <div style={{ fontSize: 12, color: 'rgba(251,191,36,0.8)', marginTop: 2 }}>
                 Vous avez {pendingCount} réservation{pendingCount > 1 ? 's' : ''} en attente de paiement.{' '}
                 <span style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate('/espace-client/reservations')}>
                   Voir →
@@ -204,7 +204,7 @@ export default function ClientNeoDashboard() {
 
         {/* Quick navigation icons */}
         <section style={{ marginBottom: 36 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 16 }}>Mes outils</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 16 }}>Mes outils</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {QUICK.map(q => <QuickIcon key={q.label} {...q} />)}
           </div>
@@ -213,7 +213,7 @@ export default function ClientNeoDashboard() {
         {/* Recent reservations */}
         <section style={{ marginBottom: 36 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#111' }}>Mes dernières sessions</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>Mes dernières sessions</div>
             <button onClick={() => navigate('/espace-client/reservations')} style={{
               display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700,
               color: GOLD, background: 'none', border: 'none', cursor: 'pointer', padding: 0,
@@ -224,12 +224,12 @@ export default function ClientNeoDashboard() {
 
           {recent.length === 0 ? (
             <div style={{
-              background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12,
+              background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12,
               padding: '32px', textAlign: 'center',
             }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>🎙</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#555', marginBottom: 6 }}>Aucune session pour le moment</div>
-              <div style={{ fontSize: 13, color: '#999', marginBottom: 16 }}>Réservez votre premier studio Level.</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Aucune session pour le moment</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>Réservez votre premier studio Level.</div>
               <button onClick={() => navigate('/reservation')} style={{
                 padding: '10px 22px', borderRadius: 7, fontSize: 13, fontWeight: 700,
                 background: GOLD, color: '#000', border: 'none', cursor: 'pointer',
@@ -239,35 +239,35 @@ export default function ClientNeoDashboard() {
               </button>
             </div>
           ) : (
-            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+            <div style={{ background: '#1a1a1a', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
               {recent.map((r, i) => (
                 <div key={r.id} style={{
                   display: 'flex', alignItems: 'center', gap: 16,
                   padding: '14px 20px',
-                  borderBottom: i < recent.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none',
+                  borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                   cursor: 'pointer', transition: 'background 0.15s',
                 }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   onClick={() => navigate('/espace-client/reservations')}
                 >
                   <div style={{
                     width: 42, height: 42, borderRadius: 8, flexShrink: 0,
-                    background: '#f5f5f5',
+                    background: 'rgba(255,255,255,0.07)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Film size={18} style={{ color: '#999' }} />
+                    <Film size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
                       Studio {r.studio || '—'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#888' }}>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                       {r.date ? formatDate(r.date) : '—'} · {r.formula || 'Bronze'}
                     </div>
                   </div>
                   <StatusBadge status={r.status} />
-                  <ChevronRight size={14} style={{ color: '#ccc', flexShrink: 0 }} />
+                  <ChevronRight size={14} style={{ color: 'rgba(255,255,255,0.25)', flexShrink: 0 }} />
                 </div>
               ))}
             </div>
