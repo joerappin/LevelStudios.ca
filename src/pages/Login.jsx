@@ -22,6 +22,9 @@ function dashboardFor(user) {
   if (user.type === 'employee') {
     return user.roleKey === 'chef_projet' ? '/chef/dashboard' : '/employee/dashboard'
   }
+  if (user.type === 'client') return '/client/dashboard'
+  if (user.type === 'freelance') return '/freelance/dashboard'
+  if (user.type === 'clienttest') return '/clienttest/dashboard'
   return null
 }
 
