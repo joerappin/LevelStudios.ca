@@ -31,7 +31,10 @@ export default function AuthCallback() {
 
   useEffect(() => {
     if (loading) return
-    if (user) navigate(dashboardFor(user.type, user.roleKey), { replace: true })
+    if (user) {
+      const redirect = searchParams.get('redirect')
+      navigate(redirect || dashboardFor(user.type, user.roleKey), { replace: true })
+    }
   }, [user, loading])
 
   return (

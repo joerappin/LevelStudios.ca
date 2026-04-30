@@ -134,41 +134,64 @@ export function AuthProvider({ children }) {
 
   // ─── Register ─────────────────────────────────────────────────────────────
   const register = async ({ firstName, lastName, email, password, company, tps, tvq, clientType, googleAuth }) => {
-    const name = `${firstName || ''} ${lastName || ''}`.trim()
+    try {
+      const name = `${firstName || ''} ${lastName || ''}`.trim()
+      const appId = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
 
-    // La vérification de doublon est gérée par Supabase Auth (email unique)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: googleAuth ? Math.random().toString(36) : password,
+        options: { data: { name, type: 'client', app_id: appId } },
+      })
 
-    const appId = `LVL4${Math.floor(10000 + Math.random() * 90000)}`
+      if (authError) {
+        const msg = authError.message
+        if (msg.includes('already registered') || msg.includes('already been registered'))
+          return { success: false, error: 'Un compte avec cet email existe déjà.' }
+        return { success: false, error: msg }
+      }
 
-    // Create in Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password: googleAuth ? Math.random().toString(36) : password,
-      options: { data: { name, type: 'client', app_id: appId } },
-    })
+      if (!authData.user) return { success: false, error: 'Erreur lors de la création du compte Auth.' }
 
-    if (authError) return { success: false, error: authError.message === 'User already registered' ? 'Un compte avec cet email existe déjà.' : authError.message }
+      const authId = authData.user.id
+      const accountRow = {
+        id: appId,
+        email: email.toLowerCase(),
+        name,
+        type: 'client',
+        client_type: clientType || 'particulier',
+        company: company || null,
+        tps: tps || null,
+        tvq: tvq || null,
+        google_auth: !!googleAuth,
+        pending: false,
+        active: true,
+        auth_id: authId,
+      }
 
-    const authId = authData.user?.id
+      // INSERT — si le trigger a déjà inséré, on met à jour à la place
+      const { error: insertError } = await supabase.from('accounts').insert(accountRow)
+      if (insertError) {
+        await supabase.from('accounts').update({
+          client_type: accountRow.client_type,
+          company: accountRow.company,
+          tps: accountRow.tps,
+          tvq: accountRow.tvq,
+          google_auth: accountRow.google_auth,
+        }).eq('auth_id', authId)
+      }
 
-    // Le trigger Supabase (handle_new_user) insère automatiquement dans accounts.
-    // On met à jour les champs supplémentaires non couverts par le trigger.
-    await supabase.from('accounts').update({
-      client_type: clientType || 'particulier',
-      company: company || null,
-      tps: tps || null,
-      tvq: tvq || null,
-      google_auth: !!googleAuth,
-    }).eq('auth_id', authId)
+      // Écriture localStorage
+      Store.addAccount({ ...accountRow, clientType: accountRow.client_type, googleAuth: accountRow.google_auth, created_at: new Date().toISOString() })
 
-    // Lire le compte créé par le trigger
-    const { data: account } = await supabase.from('accounts').select('*').eq('auth_id', authId).single()
+      const userData = toUserShape(accountRow)
+      setUser(userData)
+      localStorage.setItem('level_studio_user', JSON.stringify(userData))
 
-    const userData = toUserShape(account || { id: appId, email: email.toLowerCase(), name, type: 'client', auth_id: authId })
-    setUser(userData)
-    localStorage.setItem('level_studio_user', JSON.stringify(userData))
-
-    return { success: true, user: userData }
+      return { success: true, user: userData }
+    } catch (e) {
+      return { success: false, error: e?.message || 'Erreur inattendue.' }
+    }
   }
 
   // ─── Set password (from token link) ───────────────────────────────────────
