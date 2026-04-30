@@ -88,14 +88,14 @@ function LoginModal({ onClose, initialTab = 'login' }) {
     setLoginError('')
     const result = await login(loginForm.email, loginForm.password)
     if (result.success) {
-      if (result.user.type === 'employee') {
+      const type = result.user.type
+      if (type === 'admin' || type === 'employee' || type === 'client' || type === 'freelance') {
         logout()
-        setLoginError('Accès équipe : utilisez le logo en bas de page.')
+        window.location.href = 'https://app.levelstudios.ca'
         return
       }
       onClose()
-      if (result.user.type === 'admin') navigate('/admin/dashboard')
-      else navigate(createPageUrl('ClientDashboard'))
+      navigate('/espace-client/dashboard')
     } else setLoginError(result.error)
   }
 
