@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"node server.js\"",
     "build": "vite build",
-    "build:public": "vite build --config vite.public.config.js",
-    "build:app": "vite build --config vite.app.config.js",
+    "build:public": "vite build --config vite.public.config.js && mv dist-public/index.public.html dist-public/index.html",
+    "build:app": "vite build --config vite.app.config.js && mv dist-app/index.app.html dist-app/index.html",
     "build:all": "npm run build:public && npm run build:app",
     "preview": "vite preview",
     "preview:public": "vite preview --config vite.public.config.js --outDir dist-public",
